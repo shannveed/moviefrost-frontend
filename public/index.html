@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon1.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="MovieFrost - Watch Free Movies & Web Series Online | Stream HD Movies">
+    <meta name="description" content="Watch movies online free in HD quality. Stream latest movies, web series, Hollywood, Bollywood films without registration. Download movies for offline viewing.">
+    <meta name="keywords" content="watch movies online free, free movies, stream movies, HD movies online, watch web series, download movies, Hollywood movies, Bollywood movies, free movie streaming, MovieFrost">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="MovieFrost">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://moviefrost.com/">
+    <meta property="og:title" content="MovieFrost - Watch Free Movies & Web Series Online">
+    <meta property="og:description" content="Stream thousands of movies and web series for free in HD quality. No registration required.">
+    <meta property="og:image" content="https://moviefrost.com/og-image.jpg">
+    <meta property="og:site_name" content="MovieFrost">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://moviefrost.com/">
+    <meta property="twitter:title" content="MovieFrost - Watch Free Movies Online">
+    <meta property="twitter:description" content="Stream movies and web series free in HD. Latest Hollywood and Bollywood movies.">
+    <meta property="twitter:image" content="https://moviefrost.com/twitter-image.jpg">
+    
+    <!-- Mobile Web App Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MovieFrost">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://moviefrost.com/" />
+    
+    <!-- Alternate languages -->
+    <link rel="alternate" hreflang="en" href="https://moviefrost.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://moviefrost.com/" />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cloud.appwrite.io">
+    <link rel="dns-prefetch" href="https://cloud.appwrite.io">
+    
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/MOVIEFROST.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <title>MovieFrost - Watch Free Movies & Web Series Online HD | Stream & Download</title>
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "MovieFrost",
+      "url": "https://moviefrost.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://moviefrost.com/movies/{search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-J06332VTF2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-J06332VTF2');
+    </script>
+
+    <!-- Global Error Handler -->
+    <script>
+      window.addEventListener('error', function(e) {
+        if (e.message && (
+          e.message.includes('Fu is not a function') ||
+          e.message.includes('script error') ||
+          e.message.includes('profitableratecpm') ||
+          e.message.includes('invoke.js') ||
+          e.message.includes('logo192.png')
+        )) {
+          console.warn('External script error suppressed:', e.message);
+          e.preventDefault();
+          return false;
+        }
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e.reason && e.reason.message && (
+          e.reason.message.includes('Fu is not a function') ||
+          e.reason.message.includes('profitableratecpm')
+        )) {
+          console.warn('Ad script promise rejection suppressed:', e.reason);
+          e.preventDefault();
+          return false;
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
