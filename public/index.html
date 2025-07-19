@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cloud.appwrite.io">
+    <link rel="preconnect" href="https://moviefrost-backend.vercel.app">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"></noscript>
+    
     <!-- Primary Meta Tags -->
     <meta name="title" content="MovieFrost - Watch Free Movies & Web Series Online | Stream HD Movies">
     <meta name="description" content="Watch movies online free in HD quality. Stream latest movies, web series, Hollywood, Bollywood films without registration. Download movies for offline viewing.">
@@ -42,11 +53,6 @@
     <link rel="alternate" hreflang="en" href="https://moviefrost.com/" />
     <link rel="alternate" hreflang="x-default" href="https://moviefrost.com/" />
     
-    <!-- Preconnect to external domains -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://cloud.appwrite.io">
-    <link rel="dns-prefetch" href="https://cloud.appwrite.io">
-    
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/MOVIEFROST.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     
@@ -63,20 +69,31 @@
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "https://moviefrost.com/movies/{search_term_string}"
+          "urlTemplate": "https://moviefrost.com/movies?search={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
     }
     </script>
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-J06332VTF2"></script>
+    <!-- Defer Google Analytics -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-J06332VTF2');
+      
+      // Load GA after page load
+      window.addEventListener('load', function() {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-J06332VTF2';
+        script.onload = function() {
+          gtag('config', 'G-J06332VTF2', {
+            'page_view': false,
+            'transport_type': 'beacon'
+          });
+        };
+        document.head.appendChild(script);
+      });
     </script>
 
     <!-- Global Error Handler -->
@@ -106,6 +123,27 @@
         }
       });
     </script>
+    
+    <!-- Critical CSS -->
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #080A1A;
+      }
+      
+      .blur-sm {
+        filter: blur(4px);
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

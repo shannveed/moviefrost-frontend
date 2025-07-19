@@ -28,7 +28,6 @@ module.exports = {
         border: '#4b5563',
         dryGray: '#E0D5D5',
       },
-      // Add custom utilities for better performance
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
@@ -45,10 +44,5 @@ module.exports = {
       },
     },
   },
-  plugins: [require("@tailwindcss/line-clamp")],
-  // Optimize for production
-  future: {
-    removeDeprecatedGapUtilities: true,
-    purgeLayersByDefault: true,
-  },
+  plugins: [],
 }

@@ -1,4 +1,3 @@
-// src/Redux/APIs/Axios.js
 import axios from "axios";
 
 // Create axios instance with dynamic base URL
@@ -8,17 +7,17 @@ const Axios = axios.create({
 
 // Function to determine the correct API URL
 function getApiBaseUrl() {
-    // Check if we have an environment variable
+    // Use environment variable if available
     if (process.env.REACT_APP_API_URL) {
         return process.env.REACT_APP_API_URL;
     }
     
-    // Fallback for local development
-    if (window.location.hostname === 'localhost') {
+    // Fallback based on environment
+    if (process.env.NODE_ENV === 'development') {
         return "http://localhost:5000/api";
     }
     
-    // Default to production backend
+    // Production default
     return "https://moviefrost-backend.vercel.app/api";
 }
 
