@@ -7,13 +7,18 @@ const Axios = axios.create({
 
 // Function to determine the correct API URL
 function getApiBaseUrl() {
+    // Use environment variable if available
+    if (process.env.REACT_APP_API_URL) {
+        return process.env.REACT_APP_API_URL;
+    }
+    
     // In development, use localhost
     if (window.location.hostname === 'localhost') {
         return "http://localhost:5000/api";
     }
     
-    // In production, use the API endpoint
-    return "https://moviefrost.com/api";
+    // In production, use the backend Vercel URL
+    return "https://moviefrost-backend.vercel.app/api";
 }
 
 // Add request interceptor to handle CORS and ensure correct URL

@@ -101,18 +101,18 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    // Handle www to non-www redirect in production
-    if (process.env.NODE_ENV === 'production') {
-      const currentHost = window.location.hostname;
-      if (currentHost === 'www.moviefrost.com') {
-        const newUrl = window.location.href.replace('://www.', '://');
-        if (newUrl !== window.location.href) {
-          window.location.replace(newUrl);
-        }
-      }
-    }
-  }, []);
+  // useEffect(() => {
+  //   // Handle www to non-www redirect in production
+  //   if (process.env.NODE_ENV === 'production') {
+  //     const currentHost = window.location.hostname;
+  //     if (currentHost === 'www.moviefrost.com') {
+  //       const newUrl = window.location.href.replace('://www.', '://');
+  //       if (newUrl !== window.location.href) {
+  //         window.location.replace(newUrl);
+  //       }
+  //     }
+  //   }
+  // }, []);
 
   const { userInfo } = useSelector((state) => state.userLogin || {});
   const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
