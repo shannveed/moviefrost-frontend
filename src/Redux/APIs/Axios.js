@@ -1,3 +1,4 @@
+// src/Redux/APIs/Axios.js
 import axios from "axios";
 
 // Create axios instance with dynamic base URL
@@ -7,38 +8,33 @@ const Axios = axios.create({
 
 // Function to determine the correct API URL
 function getApiBaseUrl() {
-    // Use environment variable if available
+    // Check if we have an environment variable
     if (process.env.REACT_APP_API_URL) {
         return process.env.REACT_APP_API_URL;
     }
     
-    // In development, use localhost
+    // Fallback for local development
     if (window.location.hostname === 'localhost') {
         return "http://localhost:5000/api";
     }
     
-    // In production, use the backend Vercel URL
+    // Default to production backend
     return "https://moviefrost-backend.vercel.app/api";
 }
 
-// Add request interceptor to handle CORS and ensure correct URL
+// Add request interceptor
 Axios.interceptors.request.use(
     (config) => {
-        // Ensure we're always hitting the correct domain
-        if (config.url && !config.url.startsWith('http')) {
-            config.url = config.url.startsWith('/') ? config.url : `/${config.url}`;
-        }
+        // Ensure proper headers
+        config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
         
-        // Add timestamp to prevent caching issues
+        // Add timestamp to prevent caching on GET requests
         if (config.method === 'get') {
             config.params = {
                 ...config.params,
                 _t: Date.now()
             };
         }
-        
-        // Add credentials for CORS
-        config.withCredentials = true;
         
         return config;
     },
@@ -47,14 +43,12 @@ Axios.interceptors.request.use(
     }
 );
 
-// Add response interceptor to handle errors
+// Add response interceptor
 Axios.interceptors.response.use(
     (response) => response,
     (error) => {
-        // If it's a CORS error, provide a more helpful message
         if (error.message === 'Network Error' && !error.response) {
-            console.error('CORS or Network error detected:', error);
-            // You might want to redirect or handle this differently
+            console.error('Network error - please check your connection');
         }
         return Promise.reject(error);
     }
