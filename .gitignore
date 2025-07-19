@@ -56,3 +56,4 @@ public/uploads/
 # Build files
 *.log
 
+".env.production" 
