@@ -66,25 +66,42 @@ function EditMovie() {
   ];
 
   // Merge distinct with predefined
-  const browseByOptions = React.useMemo(() => {
-    const placeholder = [{ _id: '', title: 'Select Browse By...' }];
+const browseByOptions = React.useMemo(() => {
+  const placeholder = [{ _id: '', title: 'Select Browse By...' }];
 
-    const distinctNonEmpty = distinctBrowseBy
-      ? distinctBrowseBy.filter((v) => v.trim() !== '')
-      : [];
+  const distinctNonEmpty = distinctBrowseBy
+    ? distinctBrowseBy.filter((v) => v.trim() !== '')
+    : [];
 
-    const merged = Array.from(new Set([...distinctNonEmpty, ...preDefinedExtraBrowseBy]));
-    const finalOptions = merged.map((item) => ({ _id: item, title: item }));
+  // Define predefined options inside useMemo
+  const predefinedOptions = [
+    "Hollywood (English)",
+    "Hollywood (Hindi Dubbed)",
+    "Bollywood",
+    "South Indian (Hindi Dubbed)",
+    "Korean (English Dubbed)",
+    "Korean Dramas (English Dubbed)",
+    "Pakistan Movies",
+    "Turkish Movies (English Dubbed)",
+    "Turkish Dramas (English Dubbed)",
+    "Blockbuster Movies",
+    "Hollywood Web Series (English)",
+    "Hollywood Web Series (Hindi Dubbed)",
+    "Bollywood Web Series"
+  ];
 
-    return [...placeholder, ...finalOptions];
-  }, [distinctBrowseBy]);
+  const merged = Array.from(new Set([...distinctNonEmpty, ...predefinedOptions]));
+  const finalOptions = merged.map((item) => ({ _id: item, title: item }));
+
+  return [...placeholder, ...finalOptions];
+}, [distinctBrowseBy]);
+
 
   const {
     register,
     handleSubmit,
     control,
     watch,
-    setValue,
     formState: { errors },
     reset,
   } = useForm({

@@ -119,7 +119,7 @@ export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
     loadAd();
 
     return () => {
-      // Cleanup specific to this instance
+      // Fix: Store refs in variables for cleanup
       const currentBannerRef = bannerRef.current;
       const currentContainerId = containerIdRef.current;
       
@@ -186,6 +186,7 @@ export const AdsterraNative = ({ atOptions }) => {
     loadAd();
 
     return () => {
+      // Fix: Store refs in variables for cleanup
       const currentNativeRef = nativeRef.current;
       const currentContainerId = containerIdRef.current;
       

@@ -52,23 +52,40 @@ function AddMovie() {
   ];
 
   // Format browseBy options for the Select component
-  const browseByOptions = React.useMemo(() => {
-    // Placeholder
-    const placeholder = [{ _id: '', title: 'Select Browse By...' }];
+const browseByOptions = React.useMemo(() => {
+  // Placeholder
+  const placeholder = [{ _id: '', title: 'Select Browse By...' }];
 
-    // Filter out any empty strings from distinct
-    const distinctNonEmpty = distinctBrowseBy
-      ? distinctBrowseBy.filter((v) => v.trim() !== '')
-      : [];
+  // Filter out any empty strings from distinct
+  const distinctNonEmpty = distinctBrowseBy
+    ? distinctBrowseBy.filter((v) => v.trim() !== '')
+    : [];
 
-    // Merge distinct from server with our predefined list
-    const merged = Array.from(new Set([...distinctNonEmpty, ...preDefinedExtraBrowseBy]));
+  // Define predefined options inside useMemo to avoid dependency issue
+  const predefinedOptions = [
+    "Hollywood (English)",
+    "Hollywood (Hindi Dubbed)",
+    "Bollywood",
+    "South Indian (Hindi Dubbed)",
+    "Korean (English Dubbed)",
+    "Korean Dramas (English Dubbed)",
+    "Pakistan Movies",
+    "Turkish Movies (English Dubbed)",
+    "Turkish Dramas (English Dubbed)",
+    "Blockbuster Movies",
+    "Hollywood Web Series (English)",
+    "Hollywood Web Series (Hindi Dubbed)",
+    "Bollywood Web Series"
+  ];
 
-    // Convert each to { _id, title } type
-    const finalOptions = merged.map((item) => ({ _id: item, title: item }));
+  // Merge distinct from server with our predefined list
+  const merged = Array.from(new Set([...distinctNonEmpty, ...predefinedOptions]));
 
-    return [...placeholder, ...finalOptions];
-  }, [distinctBrowseBy, ]);
+  // Convert each to { _id, title } type
+  const finalOptions = merged.map((item) => ({ _id: item, title: item }));
+
+  return [...placeholder, ...finalOptions];
+}, [distinctBrowseBy]);
 
   // Validate movie
   const {
