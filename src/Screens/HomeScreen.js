@@ -1,4 +1,4 @@
-// HomeScreen.js
+// HomeScreen.js - Updated to remove Ezoic placeholders
 import React, { useEffect, useState, useRef } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
@@ -13,7 +13,7 @@ import {
   getLatestMoviesAction 
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
-import { AdsterraBanner, AdsterraNative, EzoicPlaceholder, PopAdsIntegration } from '../Components/Ads/AdWrapper';
+import { AdsterraBanner, AdsterraNative, PopAdsIntegration } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
 
@@ -99,7 +99,6 @@ function HomeScreen() {
       </script>
       
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        {/* Updated Banner component to use latest movies */}
         <Banner 
           movies={randomMovies.length > 0 ? randomMovies : movies} 
           isLoading={isLoading || randomLoading || latestLoading} 
@@ -111,10 +110,6 @@ function HomeScreen() {
             websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID} 
             enabled={true}
           />
-        )}
-        
-        {adsEnabled && (
-          <EzoicPlaceholder id={AD_CONFIG.ezoic.home_after_banner} className="my-8 mobile:my-4" />
         )}
         
         {adsEnabled && (
@@ -135,10 +130,6 @@ function HomeScreen() {
         )}
              
         <Promos />
-        
-        {adsEnabled && (
-          <EzoicPlaceholder id={AD_CONFIG.ezoic.home_after_promo} className="my-8 mobile:my-4" />
-        )}
         
         <TopRated movies={topMovies} isLoading={topLoading} />
       </div>

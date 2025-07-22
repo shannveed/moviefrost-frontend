@@ -1,3 +1,4 @@
+// SingleMovie.js - Updated to remove Ezoic ads
 import { trackMovieView } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -13,7 +14,7 @@ import ShareMovieModal from '../Components/Modals/ShareModal';
 import { getMovieByIdAction, getAllMoviesAction } from '../Redux/Actions/MoviesActions';
 import { DownloadVideo } from '../Context/Functionalities';
 import Movie from '../Components/movie';
-import { AdsterraNative, EzoicPlaceholder } from '../Components/Ads/AdWrapper';
+import { AdsterraNative, MonetagBanner } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
 
@@ -138,7 +139,15 @@ function SingleMovie() {
             
             <MovieRates movie={movie} />
             
-            <EzoicPlaceholder id={AD_CONFIG.ezoic.single_after_rates} className="my-8" />
+            {/* Monetag Banner after movie rates */}
+            {adsEnabled && AD_CONFIG.monetag.banner.enabled && (
+              <MonetagBanner 
+                zoneId={AD_CONFIG.monetag.banner.zoneId}
+                width={728}
+                height={90}
+                className="my-8"
+              />
+            )}
 
             {RelatedMovies?.length > 0 && (
               <div className="my-16">

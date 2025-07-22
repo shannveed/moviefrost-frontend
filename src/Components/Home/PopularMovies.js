@@ -1,4 +1,4 @@
-// PopularMovies.js
+// PopularMovies.js - Updated to use Monetag banner instead of Ezoic
 import React from 'react';
 import Titles from '../Titles';
 import { BsCollectionFill } from 'react-icons/bs';
@@ -7,7 +7,8 @@ import { Empty } from '../Notifications/Empty';
 import Loader from '../Loader';
 import { Link } from 'react-router-dom';
 import { FaArrowRight } from 'react-icons/fa';
-import { EzoicPlaceholder } from '../Ads/AdWrapper';
+import { MonetagBanner } from '../Ads/AdWrapper';
+import { AD_CONFIG } from '../Ads/AdConfig';
 
 function PopularMovies({ isLoading, movies }) {
   return (
@@ -26,8 +27,15 @@ function PopularMovies({ isLoading, movies }) {
             ))}
           </div>
           
-          {/* Ezoic Ad in the middle of the grid */}
-          <EzoicPlaceholder id="ezoic-pub-ad-placeholder-105" className="my-4" />
+          {/* Monetag Banner in the middle of the grid (if enabled) */}
+          {AD_CONFIG.monetag.banner.enabled && (
+            <MonetagBanner 
+              zoneId={AD_CONFIG.monetag.banner.zoneId}
+              width={728}
+              height={90}
+              className="my-4"
+            />
+          )}
           
           <div className="grid xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 grid-cols-1 gap-4 mobile:gap-0">
             {movies.slice(5, 10).map((movie) => (       

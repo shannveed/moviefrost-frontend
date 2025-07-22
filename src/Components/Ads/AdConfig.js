@@ -1,4 +1,4 @@
-// AdConfig.js - Updated with proper Adsterra configuration
+// AdConfig.js - Updated with Monetag configuration
 export const AD_CONFIG = {
   // Adsterra Ad Configuration with proper keys
   adsterra: {
@@ -34,19 +34,22 @@ export const AD_CONFIG = {
     directLink: 'https://www.profitableratecpm.com/yhj6nn10?key=e6a0850d911a706749887b58b273f025'
   },
   
-  // Ezoic Placeholder IDs
-  ezoic: {
-    home_after_banner: 'ezoic-pub-ad-placeholder-102',
-    home_after_promo: 'ezoic-pub-ad-placeholder-103',
-    single_after_rates: 'ezoic-pub-ad-placeholder-104',
-    movies_grid_middle: 'ezoic-pub-ad-placeholder-105',
-    watch_page_top: 'ezoic-pub-ad-placeholder-106',
-    sticky_video: 'ezoic-pub-video-placeholder-101',
-  },
-  
   // PopAds Configuration
   popAds: {
     websiteId: 'XXXXXXX', // Replace with your PopAds website ID
     frequency: 1,
+  },
+  
+  // Monetag Configuration
+  monetag: {
+    popunder: {
+      // zoneId is read from env at run-time so you don't leak it in the repo
+      enabled: true,          // quick switch
+      frequencyCap: 1         // impressions per session
+    },
+    banner: {
+      enabled: false,         // enable if/when you have banner zone
+      zoneId: '9607403'
+    }
   }
 };

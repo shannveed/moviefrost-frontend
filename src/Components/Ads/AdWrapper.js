@@ -1,4 +1,4 @@
-// AdWrapper.js - Fixed version with proper ad script handling
+// AdWrapper.js - Updated with Monetag integration
 import React, { useEffect, useRef, useState } from 'react';
 
 // Detect if user is on iOS/Safari
@@ -73,7 +73,7 @@ const loadScript = (src, onLoad, onError) => {
   return loadPromise;
 };
 
-// Adsterra Banner Component - Fixed
+// Adsterra Banner Component
 export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
   const bannerRef = useRef(null);
   const [isAdLoaded, setIsAdLoaded] = useState(false);
@@ -143,7 +143,7 @@ export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
   );
 };
 
-// Adsterra Native Banner - Fixed
+// Adsterra Native Banner
 export const AdsterraNative = ({ atOptions }) => {
   const nativeRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -289,7 +289,7 @@ export const AdsterraPopunder = ({ atOptions }) => {
   return null;
 };
 
-// PopAds Integration - Updated
+// PopAds Integration
 export const PopAdsIntegration = ({ websiteId, enabled = true }) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -332,59 +332,82 @@ export const PopAdsIntegration = ({ websiteId, enabled = true }) => {
   return null;
 };
 
-// Ezoic Placeholder Component - Updated
-export const EzoicPlaceholder = ({ id, className = "" }) => {
+// ---------------------------------------------------------------------------
+//             M O N E T A G    (ex-PropellerAds)   –   NEW
+// ---------------------------------------------------------------------------
+let monetagLoaded = false;
+
+export const MonetagPopunder = ({
+  zoneId = process.env.REACT_APP_MONETAG_ZONE_ID,
+  frequencyCap = 1,
+  enabled = true
+}) => {
   const [showAd, setShowAd] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (isIOS() || isSafari()) {
-      setShowAd(false);
+    if (!enabled || monetagLoaded || !zoneId || isIOS() || isSafari()) {
       return;
     }
 
-    if (!isInitialized && window.ezstandalone && window.ezstandalone.cmd) {
-      try {
-        window.ezstandalone.cmd.push(function() {
-          if (window.ezstandalone.define) {
-            window.ezstandalone.define(id);
-          }
-          if (window.ezstandalone.refresh) {
-            window.ezstandalone.refresh();
-          }
-        });
-        setIsInitialized(true);
-      } catch (error) {
-        console.warn('Ezoic error:', error);
-        setShowAd(false);
-      }
-    }
-  }, [id, isInitialized]);
+    // Delay a bit – avoids CLS and improves Core-Web-Vitals
+    const timer = setTimeout(() => {
+      loadScript(
+        `https://cdn.monetag.com/geo/?zoneid=${zoneId}`,
+        () => {
+          monetagLoaded = true;
+          // apply frequency cap if needed
+          window.monetag = window.monetag || {};
+          window.monetag.fcapFrequency = frequencyCap;
+        },
+        () => {
+          console.warn('Monetag popunder failed to load');
+          setShowAd(false);
+        }
+      );
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [zoneId, enabled, frequencyCap]);
 
   if (!showAd) return null;
-  
-  return <div id={id} className={`ezoic-ad ${className}`} />;
+  return null;
 };
 
-// Sticky Video Ad Component
+/* Example banner (iframe) – optional */
+export const MonetagBanner = ({
+  zoneId,
+  width = 300,
+  height = 250,
+  enabled = true
+}) => {
+  const containerRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!enabled || !zoneId || mounted || isIOS() || isSafari()) return;
+
+    const html = `<iframe 
+      src="https://a.monetag.com/f.php?z=${zoneId}" 
+      width="${width}" 
+      height="${height}" 
+      frameborder="0"
+      scrolling="no"
+      style="border:0;">
+    </iframe>`;
+    
+    if (containerRef.current) {
+      containerRef.current.innerHTML = html;
+      setMounted(true);
+    }
+  }, [zoneId, enabled, mounted, width, height]);
+
+  if (!enabled) return null;
+  
+  return <div ref={containerRef} className="flex justify-center items-center my-4" />;
+};
+
+// Sticky Video Ad Component - Removed Ezoic
 export const StickyVideoAd = ({ position = 'bottom-right' }) => {
-  const positionClasses = {
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'top-right': 'top-20 right-4',
-    'top-left': 'top-20 left-4'
-  };
-
-  // Don't show on mobile/iOS
-  if (isIOS() || window.innerWidth < 1024) {
-    return null;
-  }
-
-  return (
-    <div className={`fixed ${positionClasses[position]} z-40 hidden lg:block`}>
-      <div className="relative">
-        <EzoicPlaceholder id="ezoic-pub-video-placeholder-101" />
-      </div>
-    </div>
-  );
+  // This component can be removed or repurposed for other video ads
+  return null;
 };
