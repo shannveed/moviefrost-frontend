@@ -13,6 +13,9 @@ const MetaTags = ({
   
   return (
     <Helmet>
+      {/* Canonical URL MUST be first for Google's canonicalization */}
+      <link rel="canonical" href={url} />
+      
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
@@ -29,9 +32,6 @@ const MetaTags = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
-      
-      {/* Canonical URL */}
-      <link rel="canonical" href={url} />
     </Helmet>
   );
 };

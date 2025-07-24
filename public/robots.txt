@@ -1,6 +1,7 @@
 # MovieFrost Robots.txt
 User-agent: *
 Allow: /
+Allow: /static/
 Allow: /movies
 Allow: /movie/*
 Allow: /about-us
@@ -14,7 +15,7 @@ Disallow: /api/
 
 # Sitemaps
 Sitemap: https://moviefrost.com/sitemap.xml
-Sitemap: https://moviefrost.com/sitemap-movies.xml
+Sitemap: https://moviefrost.com/api/movies/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 1

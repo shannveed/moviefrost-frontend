@@ -1,13 +1,13 @@
-// AdWrapper.js - Updated with Monetag integration
+// AdWrapper.js - Updated with PopAds integration and iOS support
 import React, { useEffect, useRef, useState } from 'react';
 
-// Detect if user is on iOS/Safari
+// Modified detection functions - no longer blocking iOS/Safari
 const isIOS = () => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return false; // Always return false to enable ads on iOS
 };
 
 const isSafari = () => {
-  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  return false; // Always return false to enable ads on Safari
 };
 
 // Global tracking for loaded scripts to prevent duplicates
@@ -16,13 +16,8 @@ const scriptLoadPromises = new Map();
 
 // Safe script loader with deduplication
 const loadScript = (src, onLoad, onError) => {
-  // Skip loading ads on iOS Safari to prevent errors
-  if (isIOS() || isSafari()) {
-    console.warn('Ad scripts disabled on iOS/Safari for better performance');
-    if (onError) onError();
-    return null;
-  }
-
+  // No longer skip loading on iOS/Safari
+  
   // Check if script is already loaded or loading
   if (loadedScripts.has(src)) {
     console.log('Script already loaded:', src);
@@ -81,12 +76,6 @@ export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
   const containerIdRef = useRef(`banner-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
-    // Don't show ads on iOS/Safari
-    if (isIOS() || isSafari()) {
-      setShowAd(false);
-      return;
-    }
-
     if (!atOptions || isAdLoaded || !bannerRef.current || !showAd) return;
 
     const loadAd = async () => {
@@ -119,7 +108,6 @@ export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
     loadAd();
 
     return () => {
-      // Fix: Store refs in variables for cleanup
       const currentBannerRef = bannerRef.current;
       const currentContainerId = containerIdRef.current;
       
@@ -151,11 +139,6 @@ export const AdsterraNative = ({ atOptions }) => {
   const containerIdRef = useRef(`native-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
-    if (isIOS() || isSafari()) {
-      setShowAd(false);
-      return;
-    }
-
     if (!atOptions || isLoaded || !nativeRef.current || !showAd) return;
 
     const loadAd = async () => {
@@ -186,7 +169,6 @@ export const AdsterraNative = ({ atOptions }) => {
     loadAd();
 
     return () => {
-      // Fix: Store refs in variables for cleanup
       const currentNativeRef = nativeRef.current;
       const currentContainerId = containerIdRef.current;
       
@@ -211,11 +193,6 @@ export const AdsterraSocialBar = ({ atOptions }) => {
   const [showAd, setShowAd] = useState(true);
 
   useEffect(() => {
-    if (isIOS() || isSafari()) {
-      setShowAd(false);
-      return;
-    }
-
     if (!atOptions || socialBarLoaded || !showAd) return;
 
     const loadAd = async () => {
@@ -254,11 +231,6 @@ export const AdsterraPopunder = ({ atOptions }) => {
   const [showAd, setShowAd] = useState(true);
 
   useEffect(() => {
-    if (isIOS() || isSafari()) {
-      setShowAd(false);
-      return;
-    }
-
     if (!atOptions || popunderLoaded || !showAd) return;
 
     // Delay popunder to avoid immediate blocking
@@ -289,52 +261,60 @@ export const AdsterraPopunder = ({ atOptions }) => {
   return null;
 };
 
-// PopAds Integration
-export const PopAdsIntegration = ({ websiteId, enabled = true }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+// NEW PopAds Integration Component
+export const PopAdsPopunder = ({
+  enabled = true,
+  websiteId = process.env.REACT_APP_POPADS_WEBSITE_ID,
+  popundersIP = '10:6,5:6',
+  delay = 120,
+  minBid = 0.001
+}) => {
+  const loadedRef = useRef(false);
 
   useEffect(() => {
-    // Disable on iOS/Safari
-    if (!enabled || !websiteId || isLoaded || isIOS() || isSafari()) return;
+    if (!enabled || loadedRef.current || !websiteId) return;
 
-    const timer = setTimeout(() => {
-      try {
-        if (window.popAdsConfig) {
-          return;
-        }
+    // PopAds official snippet converted to React
+    const popTag = document.createElement('script');
+    popTag.setAttribute('data-cfasync', 'false');
+    popTag.type = 'text/javascript';
+    popTag.async = true;
+    popTag.innerHTML = `
+      var _pop = _pop || [];
+      _pop.push(['siteId', ${websiteId}]);
+      _pop.push(['minBid', ${minBid}]);
+      _pop.push(['popundersPerIP', '${popundersIP}']);
+      _pop.push(['delayBetween', ${delay}]);
+      _pop.push(['default', false]);
+      _pop.push(['defaultPerDay', 0]);
+      _pop.push(['topmostLayer', 'auto']);
+      (function() {
+        var pa = document.createElement('script');
+        pa.type = 'text/javascript'; 
+        pa.async = true;
+        pa.src = '//c1.popads.net/pop.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(pa, s);
+      })();
+    `;
+    
+    document.body.appendChild(popTag);
+    loadedRef.current = true;
 
-        window.popAdsConfig = {
-          website_id: websiteId,
-          frequency_cap: 1,
-          trigger_method: 2,
-        };
+    console.log('PopAds script loaded with websiteId:', websiteId);
 
-        loadScript(
-          'https://c1.popads.net/pop.js',
-          () => {
-            setIsLoaded(true);
-            console.log('PopAds loaded successfully');
-          },
-          () => {
-            console.warn('PopAds script blocked or failed to load');
-          }
-        );
-      } catch (error) {
-        console.warn('Error initializing PopAds:', error);
-      }
-    }, 2000);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [websiteId, enabled, isLoaded]);
+  }, [enabled, websiteId, popundersIP, delay, minBid]);
 
   return null;
 };
 
-// ---------------------------------------------------------------------------
-//             M O N E T A G    (ex-PropellerAds)   –   NEW
-// ---------------------------------------------------------------------------
+// PopAds Integration (Legacy compatibility)
+export const PopAdsIntegration = ({ websiteId, enabled = true }) => {
+  // This is now just a wrapper around PopAdsPopunder for backward compatibility
+  return <PopAdsPopunder enabled={enabled} websiteId={websiteId} />;
+};
+
+// Monetag Popunder
 let monetagLoaded = false;
 
 export const MonetagPopunder = ({
@@ -345,7 +325,7 @@ export const MonetagPopunder = ({
   const [showAd, setShowAd] = useState(true);
 
   useEffect(() => {
-    if (!enabled || monetagLoaded || !zoneId || isIOS() || isSafari()) {
+    if (!enabled || monetagLoaded || !zoneId) {
       return;
     }
 
@@ -373,7 +353,7 @@ export const MonetagPopunder = ({
   return null;
 };
 
-/* Example banner (iframe) – optional */
+/* Monetag banner (iframe) – optional */
 export const MonetagBanner = ({
   zoneId,
   width = 300,
@@ -384,7 +364,7 @@ export const MonetagBanner = ({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !zoneId || mounted || isIOS() || isSafari()) return;
+    if (!enabled || !zoneId || mounted) return;
 
     const html = `<iframe 
       src="https://a.monetag.com/f.php?z=${zoneId}" 

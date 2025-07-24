@@ -1,4 +1,4 @@
-// AdConfig.js - Updated with Monetag configuration
+// AdConfig.js - Updated with PopAds configuration
 export const AD_CONFIG = {
   // Adsterra Ad Configuration with proper keys
   adsterra: {
@@ -36,19 +36,22 @@ export const AD_CONFIG = {
   
   // PopAds Configuration
   popAds: {
-    websiteId: 'XXXXXXX', // Replace with your PopAds website ID
+    enabled: true,
+    websiteId: 5214524,
+    popundersPerIP: '10:6,5:6',
+    delayBetween: 120,
+    minBid: 0.001,
     frequency: 1,
   },
   
   // Monetag Configuration
   monetag: {
     popunder: {
-      // zoneId is read from env at run-time so you don't leak it in the repo
-      enabled: true,          // quick switch
-      frequencyCap: 1         // impressions per session
+      enabled: true,
+      frequencyCap: 1
     },
     banner: {
-      enabled: false,         // enable if/when you have banner zone
+      enabled: false,
       zoneId: '9607403'
     }
   }

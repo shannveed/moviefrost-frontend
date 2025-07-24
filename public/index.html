@@ -11,6 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cloud.appwrite.io">
     <link rel="preconnect" href="https://moviefrost-backend.vercel.app">
+    <link rel="preconnect" href="https://c1.popads.net">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://cdn.monetag.com">
     
@@ -20,11 +21,14 @@
     
     <!-- Primary Meta Tags -->
     <meta name="title" content="MovieFrost - Watch Free Movies & Web Series Online | Stream HD Movies">
-    <meta name="description" content="Watch movies online free in HD quality. Stream latest movies, web series, Hollywood, Bollywood films without registration. Download movies for offline viewing.">
-    <meta name="keywords" content="watch movies online free, free movies, stream movies, HD movies online, watch web series, download movies, Hollywood movies, Bollywood movies, free movie streaming, MovieFrost">
+    <meta name="description" content="Watch movies online free in HD quality on MovieFrost. Stream latest Hollywood, Bollywood movies and web series without registration. Download movies for offline viewing.">
+    <meta name="keywords" content="moviefrost, watch movies online free, free movies, stream movies, HD movies online, watch web series, download movies, Hollywood movies, Bollywood movies, free movie streaming">
     <meta name="robots" content="index, follow">
     <meta name="language" content="English">
     <meta name="author" content="MovieFrost">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://moviefrost.com/" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -46,9 +50,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MovieFrost">
-    
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://moviefrost.com/" />
     
     <!-- Alternate languages -->
     <link rel="alternate" hreflang="en" href="https://moviefrost.com/" />
@@ -73,7 +74,12 @@
           "urlTemplate": "https://moviefrost.com/movies?search={search_term_string}"
         },
         "query-input": "required name=search_term_string"
-      }
+      },
+      "sameAs": [
+        "https://www.facebook.com/moviefrost",
+        "https://twitter.com/moviefrost",
+        "https://www.instagram.com/moviefrost"
+      ]
     }
     </script>
     
@@ -105,7 +111,8 @@
           e.message.includes('script error') ||
           e.message.includes('profitableratecpm') ||
           e.message.includes('invoke.js') ||
-          e.message.includes('logo192.png')
+          e.message.includes('logo192.png') ||
+          e.message.includes('popads')
         )) {
           console.warn('External script error suppressed:', e.message);
           e.preventDefault();
@@ -116,7 +123,8 @@
       window.addEventListener('unhandledrejection', function(e) {
         if (e.reason && e.reason.message && (
           e.reason.message.includes('Fu is not a function') ||
-          e.reason.message.includes('profitableratecpm')
+          e.reason.message.includes('profitableratecpm') ||
+          e.reason.message.includes('popads')
         )) {
           console.warn('Ad script promise rejection suppressed:', e.reason);
           e.preventDefault();
