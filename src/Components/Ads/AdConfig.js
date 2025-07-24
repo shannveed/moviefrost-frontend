@@ -38,8 +38,8 @@ export const AD_CONFIG = {
   popAds: {
     enabled: true,
     websiteId: 5214524,
-    popundersPerIP: '10:6,5:6',
-    delayBetween: 120,
+    popundersPerIP: '0',
+    delayBetween: 0,
     minBid: 0.001,
     frequency: 1,
   },
