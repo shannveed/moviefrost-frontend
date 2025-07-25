@@ -1,0 +1,33 @@
+# MovieFrost Robots.txt
+User-agent: *
+Allow: /
+Allow: /movies
+Allow: /movie/*
+Allow: /about-us
+Allow: /contact-us
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /profile
+Disallow: /password
+Disallow: /edit/*
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://moviefrost.com/sitemap.xml
+Sitemap: https://moviefrost.com/sitemap-movies.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Major Search Engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
