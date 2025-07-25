@@ -1,4 +1,4 @@
-// AdWrapper.js - Updated with PopAds integration and iOS support
+// AdWrapper.js - Updated with PopAds integration, iOS support, and Monetag improvements
 import React, { useEffect, useRef, useState } from 'react';
 
 // Modified detection functions - no longer blocking iOS/Safari
@@ -314,7 +314,7 @@ export const PopAdsIntegration = ({ websiteId, enabled = true }) => {
   return <PopAdsPopunder enabled={enabled} websiteId={websiteId} />;
 };
 
-// Monetag Popunder
+// Monetag Popunder - Updated with new loader
 let monetagLoaded = false;
 
 export const MonetagPopunder = ({
@@ -331,19 +331,19 @@ export const MonetagPopunder = ({
 
     // Delay a bit – avoids CLS and improves Core-Web-Vitals
     const timer = setTimeout(() => {
-      loadScript(
-        `https://cdn.monetag.com/geo/?zoneid=${zoneId}`,
-        () => {
-          monetagLoaded = true;
-          // apply frequency cap if needed
-          window.monetag = window.monetag || {};
-          window.monetag.fcapFrequency = frequencyCap;
-        },
-        () => {
-          console.warn('Monetag popunder failed to load');
-          setShowAd(false);
-        }
-      );
+      // Official Monetag popunder snippet (async, data-zone param)
+      const pop = document.createElement('script');
+      pop.setAttribute('data-cfasync', 'false');
+      pop.async = true;
+      pop.src = 'https://a.monetag.com/fp.js';
+      pop.setAttribute('data-zone', zoneId);
+      pop.setAttribute('data-frequency', String(frequencyCap));
+      pop.onerror = () => {
+        console.warn('Monetag popunder failed to load');
+        setShowAd(false);
+      };
+      document.body.appendChild(pop);
+      monetagLoaded = true;
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -353,12 +353,13 @@ export const MonetagPopunder = ({
   return null;
 };
 
-/* Monetag banner (iframe) – optional */
+/* Monetag banner (iframe) */
 export const MonetagBanner = ({
   zoneId,
   width = 300,
   height = 250,
-  enabled = true
+  enabled = true,
+  className = ''
 }) => {
   const containerRef = useRef(null);
   const [mounted, setMounted] = useState(false);
@@ -383,7 +384,7 @@ export const MonetagBanner = ({
 
   if (!enabled) return null;
   
-  return <div ref={containerRef} className="flex justify-center items-center my-4" />;
+  return <div ref={containerRef} className={`flex justify-center items-center my-4 ${className}`} />;
 };
 
 // Sticky Video Ad Component - Removed Ezoic

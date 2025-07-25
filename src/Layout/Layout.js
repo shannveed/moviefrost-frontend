@@ -1,10 +1,10 @@
-// Layout.js - Updated to include PopAds
+// Layout.js - Updated to include PopAds and Monetag
 import React, { useRef, useEffect } from 'react';
 import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
-import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, PopAdsPopunder } from '../Components/Ads/AdWrapper';
+import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 
 function Layout({ children }) {
@@ -38,11 +38,22 @@ function Layout({ children }) {
             {/* Adsterra Popunder - Single instance */}
             <AdsterraPopunder atOptions={AD_CONFIG.adsterra.popunder} />
             
-            {/* Monetag Popunder */}
+            {/* Monetag Popunder - one global instance */}
             {AD_CONFIG.monetag.popunder.enabled && (
               <MonetagPopunder 
                 frequencyCap={AD_CONFIG.monetag.popunder.frequencyCap}
               />
+            )}
+            
+            {/* Optional 728×90 banner right above the footer */}
+            {AD_CONFIG.monetag.banner.enabled && (
+              <div className="container mx-auto px-4 mb-8">
+                <MonetagBanner
+                  zoneId={AD_CONFIG.monetag.banner.zoneId}
+                  width={728}
+                  height={90}
+                />
+              </div>
             )}
             
             {/* PopAds Popunder - NEW (now also runs on iOS) */}

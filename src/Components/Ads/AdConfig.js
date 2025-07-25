@@ -1,4 +1,4 @@
-// AdConfig.js - Updated with PopAds configuration
+// AdConfig.js - Updated with PopAds and Monetag configuration
 export const AD_CONFIG = {
   // Adsterra Ad Configuration with proper keys
   adsterra: {
@@ -46,13 +46,15 @@ export const AD_CONFIG = {
   
   // Monetag Configuration
   monetag: {
+    enabled: process.env.REACT_APP_MONETAG_ENABLE !== 'false',
+    siteId: process.env.REACT_APP_MONETAG_SITE_ID,
     popunder: {
       enabled: true,
       frequencyCap: 1
     },
     banner: {
-      enabled: false,
-      zoneId: '9607403'
+      enabled: true,
+      zoneId: process.env.REACT_APP_MONETAG_ZONE_ID
     }
   }
 };
