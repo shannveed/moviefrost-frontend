@@ -50,7 +50,7 @@ function PopularMovies({ isLoading, movies }) {
                 to="/movies" 
                 className="group inline-flex items-center gap-2 bg-dry hover:bg-customPurple border-2 border-customPurple text-white transitions text-sm font-medium px-6 py-3 rounded-md"
               >
-                <span>Show More</span>
+                <span>Show More 5</span>
                 <FaArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
