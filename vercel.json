@@ -11,21 +11,22 @@
 
   "installCommand": "npm ci --legacy-peer-deps",
   "buildCommand":   "npm run vercel-build",
-  "outputDirectory": "build",
 
-  "rewrites": [
-    
+
+  "routes": [
+
     { "handle": "filesystem" },
 
-    { "source": "/(.*)", "destination": "/index.html" }
+
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
+
 
   "headers": [
     {
       "source": "/static/(.*)",
       "headers": [
-        { "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable" }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
