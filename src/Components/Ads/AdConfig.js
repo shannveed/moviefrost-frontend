@@ -29,7 +29,7 @@ export const AD_CONFIG = {
     popunder: {
       key: '62c8f34a5a4d1afbb8ec9a7b28896caa',
       format: 'popunder',
-      frequency_cap: 1,
+      frequency_cap: 10,
     },
     directLink: 'https://www.profitableratecpm.com/yhj6nn10?key=e6a0850d911a706749887b58b273f025'
   },
@@ -38,7 +38,7 @@ export const AD_CONFIG = {
   popAds: {
     enabled: true,
     websiteId: 5214524,
-    popundersPerIP: '0',
+    popundersPerIP: '10',
     delayBetween: 0,
     minBid: 0.001,
     frequency: 1,
