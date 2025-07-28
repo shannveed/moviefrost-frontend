@@ -319,7 +319,7 @@ let monetagLoaded = false;
 
 export const MonetagPopunder = ({
   zoneId = process.env.REACT_APP_MONETAG_ZONE_ID,
-  frequencyCap = 1,
+  frequencyCap = 10,
   enabled = true
 }) => {
   const [showAd, setShowAd] = useState(true);
