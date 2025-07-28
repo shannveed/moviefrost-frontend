@@ -91,24 +91,15 @@
     }
     </script>
     
-    <!-- Defer Google Analytics -->
+     <!-- Updated Google Analytics 4 - Official snippet with immediate load -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-J06332VTF2"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
       
-      // Load GA after page load
-      window.addEventListener('load', function() {
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-J06332VTF2';
-        script.onload = function() {
-          gtag('config', 'G-J06332VTF2', {
-            'page_view': false,
-            'transport_type': 'beacon'
-          });
-        };
-        document.head.appendChild(script);
-      });
+      /* Do NOT send an automatic page_view – SPA will do it manually */
+      gtag('config', 'G-J06332VTF2', { send_page_view: false });
     </script>
 
     <!-- Global Error Handler -->
