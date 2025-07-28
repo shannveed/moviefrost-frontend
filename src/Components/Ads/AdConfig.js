@@ -50,10 +50,10 @@ export const AD_CONFIG = {
     siteId: process.env.REACT_APP_MONETAG_SITE_ID,
     popunder: {
       enabled: true,
-      frequencyCap: 1
+      frequencyCap: 10
     },
     banner: {
-      enabled: true,
+      enabled: false,
       zoneId: process.env.REACT_APP_MONETAG_ZONE_ID
     }
   }
