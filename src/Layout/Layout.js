@@ -1,10 +1,10 @@
-// Layout.js - Updated to include PopAds, Monetag, and Hilltop-Ads
+// Layout.js - Updated to include PopAds and Monetag
 import React, { useRef, useEffect } from 'react';
 import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
-import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder, HilltopVastTag } from '../Components/Ads/AdWrapper';
+import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 
 function Layout({ children }) {
@@ -64,16 +64,6 @@ function Layout({ children }) {
                 popundersIP={AD_CONFIG.popAds.popundersPerIP}
                 delay={AD_CONFIG.popAds.delayBetween}
                 minBid={AD_CONFIG.popAds.minBid}
-              />
-            )}
-            
-            {/* Hilltop-Ads VAST tag – one global invisible 1×1 iframe */}
-            {AD_CONFIG.hilltop.enabled && (
-              <HilltopVastTag
-                enabled={AD_CONFIG.hilltop.enabled}
-                vastUrl={AD_CONFIG.hilltop.vastUrl}
-                width={AD_CONFIG.hilltop.width}
-                height={AD_CONFIG.hilltop.height}
               />
             )}
           </>

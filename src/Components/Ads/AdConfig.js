@@ -1,4 +1,4 @@
-// AdConfig.js - Updated with PopAds, Monetag configuration, and Hilltop-Ads
+// AdConfig.js - Updated with PopAds and Monetag configuration
 export const AD_CONFIG = {
   // Adsterra Ad Configuration with proper keys
   adsterra: {
@@ -56,13 +56,5 @@ export const AD_CONFIG = {
       enabled: true,
       zoneId: process.env.REACT_APP_MONETAG_ZONE_ID
     }
-  },
-  
-  // Hilltop-Ads VAST Configuration
-  hilltop: {
-    enabled: process.env.REACT_APP_HILLTOP_VAST_URL ? true : false,
-    vastUrl: process.env.REACT_APP_HILLTOP_VAST_URL,
-    width: 1,      // 1×1 invisible iframe placeholder
-    height: 1
   }
 };

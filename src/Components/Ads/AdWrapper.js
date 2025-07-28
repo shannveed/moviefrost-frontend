@@ -1,4 +1,4 @@
-// AdWrapper.js - Updated with PopAds integration, iOS support, Monetag improvements, and Hilltop-Ads
+// AdWrapper.js - Updated with PopAds integration, iOS support, and Monetag improvements
 import React, { useEffect, useRef, useState } from 'react';
 
 // Modified detection functions - no longer blocking iOS/Safari
@@ -391,42 +391,4 @@ export const MonetagBanner = ({
 export const StickyVideoAd = ({ position = 'bottom-right' }) => {
   // This component can be removed or repurposed for other video ads
   return null;
-};
-
-/* ------------------------------------------------------------------ */
-/*  HILLTOP – VAST tag loader                                         */
-/* ------------------------------------------------------------------ */
-
-// 1×1 hidden iframe that simply hits the VAST url once – the player
-// you embed inside your pages will then pick the ad-tag automatically.
-export const HilltopVastTag = ({
-  enabled = true,
-  vastUrl,
-  width = 1,
-  height = 1,
-  className = ''
-}) => {
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!enabled || !vastUrl || !ref.current) return;
-
-    // create a single invisible iframe so that the tag is present
-    const iframe = document.createElement('iframe');
-    iframe.src = vastUrl;
-    iframe.width = width;
-    iframe.height = height;
-    iframe.title = 'hilltop-vast';
-    iframe.style.display = 'none';
-    iframe.referrerPolicy = 'no-referrer';
-    iframe.loading = 'lazy';
-    
-    ref.current.appendChild(iframe);
-
-    return () => iframe.remove();
-  }, [enabled, vastUrl, width, height]);
-
-  if (!enabled) return null;
-  
-  return <div ref={ref} className={className} />;
 };
