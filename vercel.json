@@ -1,21 +1,15 @@
 {
   "version": 2,
   "builds": [
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "build" } }
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "build" }
+    }
   ],
   "installCommand": "npm ci --legacy-peer-deps",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "build",
-
-
-  "redirects": [
-    {
-      "source": "/ads.txt",
-      "destination": "https://srv.adstxtmanager.com/19390/moviefrost.com", 
-      "statusCode": 302                                     
-    }
-  ],
-
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
