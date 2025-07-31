@@ -102,7 +102,6 @@ const browseByOptions = React.useMemo(() => {
       episodes: [],
       browseBy: '',
       thumbnailInfo: '',
-      displayOrder: 'normal',   // NEW
     },
   });
 
@@ -145,10 +144,6 @@ const browseByOptions = React.useMemo(() => {
       titleImage: imageTitle,
       category: data.category,
     };
-
-    /*  NEW - decide ordering flags from "displayOrder"  */
-    processedData.latest      = data.displayOrder === 'latest';
-    processedData.previousHit = data.displayOrder === 'previousHit';
 
     // Web Series
     if (data.type === 'WebSeries') {
@@ -205,7 +200,6 @@ const browseByOptions = React.useMemo(() => {
         videoUrl2: '',
         downloadUrl: '',
         episodes: [],
-        displayOrder: 'normal',
       });
       setImageWithoutTitle('');
       setImageTitle('');
@@ -371,38 +365,6 @@ const browseByOptions = React.useMemo(() => {
               <InlineError text={errors.thumbnailInfo.message} />
             )}
           </div>
-        </div>
-
-        {/* NEW - Display Order Selector */}
-        <div className="w-full">
-          <label className="text-border font-semibold text-sm">
-            Display Position *
-          </label>
-          <div className="mt-2 grid grid-cols-3 gap-3">
-            {['normal', 'latest', 'previousHit'].map((opt) => (
-              <label
-                key={opt}
-                className={`flex items-center justify-center p-3 rounded-md border-2 cursor-pointer transition ${
-                  watch('displayOrder') === opt
-                    ? 'border-customPurple bg-dry text-white'
-                    : 'border-border hover:border-customPurple'
-                }`}
-              >
-                <input
-                  type="radio"
-                  value={opt}
-                  {...register('displayOrder')}
-                  className="sr-only"
-                />
-                <span className="text-sm font-medium capitalize">
-                  {opt === 'normal' ? 'Default' : opt === 'latest' ? 'Latest (First)' : 'Previous Hit (Last)'}
-                </span>
-              </label>
-            ))}
-          </div>
-          {errors.displayOrder && (
-            <InlineError text={errors.displayOrder.message} />
-          )}
         </div>
 
         {/* Movie-Specific Fields */}
