@@ -102,6 +102,8 @@ const browseByOptions = React.useMemo(() => {
       episodes: [],
       browseBy: '',
       thumbnailInfo: '',
+      latest: false,
+      previousHit: false,
     },
   });
 
@@ -143,6 +145,8 @@ const browseByOptions = React.useMemo(() => {
       image: imageWithoutTitle,
       titleImage: imageTitle,
       category: data.category,
+      latest: !!data.latest,
+      previousHit: !!data.previousHit,
     };
 
     // Web Series
@@ -200,6 +204,8 @@ const browseByOptions = React.useMemo(() => {
         videoUrl2: '',
         downloadUrl: '',
         episodes: [],
+        latest: false,
+        previousHit: false,
       });
       setImageWithoutTitle('');
       setImageTitle('');
@@ -366,6 +372,33 @@ const browseByOptions = React.useMemo(() => {
             )}
           </div>
         </div>
+
+        {/* NEW FLAGS CHECKBOXES */}
+        <div className="w-full grid md:grid-cols-2 gap-6">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="latest"
+              {...register('latest')}
+              className="w-4 h-4 text-customPurple bg-main border-border rounded focus:ring-customPurple"
+            />
+            <label htmlFor="latest" className="text-sm text-white">
+              Mark as Latest (show on first page)
+            </label>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="previousHit"
+              {...register('previousHit')}
+              className="w-4 h-4 text-customPurple bg-main border-border rounded focus:ring-customPurple"
+            />
+            <label htmlFor="previousHit" className="text-sm text-white">
+              Mark as Previous-Hit (send to last page)
+            </label>
+          </div>
+        </div>
+        {errors.previousHit && <InlineError text={errors.previousHit.message} />}
 
         {/* Movie-Specific Fields */}
         {watchType === 'Movie' && (

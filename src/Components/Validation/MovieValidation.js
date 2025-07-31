@@ -117,9 +117,17 @@ const movieValidation = yup
       otherwise: (schema) => schema.notRequired().nullable(),
     }),
 
-    // ---- Common Optional Fields ----
-    // Removed browseByOptional
-    // Removed custom test for browseBy-validation
+    // ---------- NEW FLAGS (optional booleans) ----------
+    latest: yup.boolean(),
+    previousHit: yup.boolean()
+      .test(
+        'not-both',
+        'Latest and PreviousHit cannot both be selected',
+        function (value) {
+          const { latest } = this.parent;
+          return !(latest && value);
+        }
+      ),
 });
 
 
