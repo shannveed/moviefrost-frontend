@@ -120,6 +120,12 @@ const movieValidation = yup
     // ---- Common Optional Fields ----
     // Removed browseByOptional
     // Removed custom test for browseBy-validation
+    
+    // NEW - Display Order validation
+    displayOrder: yup
+      .string()
+      .oneOf(['normal', 'latest', 'previousHit'])
+      .required('Choose how the movie should be displayed'),
 });
 
 

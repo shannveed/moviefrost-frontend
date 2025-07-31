@@ -111,6 +111,7 @@ const browseByOptions = React.useMemo(() => {
       episodes: [],
       browseBy: '',
       thumbnailInfo: '',
+      displayOrder: 'normal',
     },
   });
 
@@ -161,6 +162,11 @@ const browseByOptions = React.useMemo(() => {
         video: movie.video || '',
         videoUrl2: movie.videoUrl2 || '',
         downloadUrl: movie.downloadUrl || '',
+        displayOrder: movie.latest
+          ? 'latest'
+          : movie.previousHit
+          ? 'previousHit'
+          : 'normal',
       });
 
       setImageWithoutTitle(movie.image || '');
@@ -212,6 +218,10 @@ const browseByOptions = React.useMemo(() => {
       titleImage: imageTitle,
       category: data.category,
     };
+
+    /* ordering flags */
+    processedData.latest      = data.displayOrder === 'latest';
+    processedData.previousHit = data.displayOrder === 'previousHit';
 
     if (data.type === 'WebSeries') {
       if (!data.episodes || data.episodes.length === 0) {
@@ -425,6 +435,38 @@ const browseByOptions = React.useMemo(() => {
           />
           {errors.thumbnailInfo && (
             <InlineError text={errors.thumbnailInfo.message} />
+          )}
+        </div>
+
+        {/* NEW - Display Order Selector */}
+        <div className="w-full">
+          <label className="text-border font-semibold text-sm above-1000:text-xs">
+            Display Position *
+          </label>
+          <div className="mt-2 grid grid-cols-3 gap-3">
+            {['normal', 'latest', 'previousHit'].map((opt) => (
+              <label
+                key={opt}
+                className={`flex items-center justify-center p-3 above-1000:p-2 rounded-md border-2 cursor-pointer transition ${
+                  watch('displayOrder') === opt
+                    ? 'border-customPurple bg-dry text-white'
+                    : 'border-border hover:border-customPurple'
+                }`}
+              >
+                <input
+                  type="radio"
+                  value={opt}
+                  {...register('displayOrder')}
+                  className="sr-only"
+                />
+                <span className="text-sm above-1000:text-xs font-medium capitalize">
+                  {opt === 'normal' ? 'Default' : opt === 'latest' ? 'Latest (First)' : 'Previous Hit (Last)'}
+                </span>
+              </label>
+            ))}
+          </div>
+          {errors.displayOrder && (
+            <InlineError text={errors.displayOrder.message} />
           )}
         </div>
 
