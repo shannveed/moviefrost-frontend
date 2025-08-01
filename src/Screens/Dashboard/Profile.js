@@ -10,7 +10,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { deleteProfileAction, updateProfileAction } from "../../Redux/Actions/userActions";
 import toast from "react-hot-toast";
 import { Imagepreview } from "../../Components/imagePreview";
-import { Helmet } from 'react-helmet-async';
 
 function Profile() {
   const dispatch = useDispatch();
@@ -60,10 +59,6 @@ function Profile() {
   
   return (
     <SideBar>
-      {/* Add no-index meta */}
-      <Helmet>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 above-1000:gap-4">
         <h2 className="text-xl font-bold above-1000:text-lg">Profile</h2>
         

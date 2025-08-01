@@ -13,7 +13,6 @@ import { toast } from 'react-toastify';
 import { Imagepreview } from '../../../Components/imagePreview';
 import { InlineError } from '../../../Components/Notifications/Error';
 import { parseDuration } from '../../../Context/Functionalities';
-import { Helmet } from 'react-helmet-async';
 
 function AddMovie() {
   const [imageWithoutTitle, setImageWithoutTitle] = useState('');
@@ -219,9 +218,6 @@ const browseByOptions = React.useMemo(() => {
 
   return (
     <SideBar>
-       <Helmet>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <h2 className="text-xl font-bold">
           Create {watchType === 'WebSeries' ? 'Web Series' : 'Movie'}

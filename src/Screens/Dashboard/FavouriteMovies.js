@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import Loader from "../../Components/Loader";
 import { Empty } from "../../Components/Notifications/Empty";
 import { DownloadVideo } from "../../Context/Functionalities";
-import { Helmet } from 'react-helmet-async';
 
 function FavoritesMovies() {
   const dispatch = useDispatch();
@@ -47,9 +46,6 @@ function FavoritesMovies() {
 
   return (
     <SideBar>
-      <Helmet>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
       <div className="flex flex-col gap-6 above-1000:gap-4 mobile:gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mobile:gap-2">
           <h2 className="text-xl font-bold above-1000:text-lg mobile:text-base">Favorites Movies</h2>

@@ -65,7 +65,7 @@ function SingleMovie() {
     }
   }, [movie]);
 
-    // Structured data for movie
+  // Structured data for movie
   const movieStructuredData = movie ? {
     "@context": "https://schema.org",
     "@type": "Movie",
@@ -89,15 +89,22 @@ function SingleMovie() {
   return (
     <Layout>
       {movie && (
-        <MetaTags 
-          title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
-          description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
-          keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
-          image={movie.titleImage || movie.image}
-          url={`https://moviefrost.com/movie/${movie._id}`}
-          type="video.movie"
-          jsonLd={movieStructuredData} // NEW - pass as prop
-        />
+        <>
+          <MetaTags 
+            title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
+            description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
+            keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
+            image={movie.titleImage || movie.image}
+            url={`https://moviefrost.com/movie/${movie._id}`}
+            type="video.movie"
+          />
+          
+          {movieStructuredData && (
+            <script type="application/ld+json">
+              {JSON.stringify(movieStructuredData)}
+            </script>
+          )}
+        </>
       )}
       
       {isLoading ? (
