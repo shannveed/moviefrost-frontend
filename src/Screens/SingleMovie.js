@@ -1,3 +1,4 @@
+// SingleMovie.js - Updated to remove Ezoic ads
 import { trackMovieView } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -15,7 +16,7 @@ import { DownloadVideo } from '../Context/Functionalities';
 import Movie from '../Components/movie';
 import { AdsterraNative, MonetagBanner } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
-import MetaTags from '../Components/SEO/MetaTags'; // SEO Improvement
+import MetaTags from '../Components/SEO/MetaTags';
 
 function SingleMovie() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -49,16 +50,14 @@ function SingleMovie() {
 
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
-    if (RelatedMovies.length === 0) {
-      dispatch(getAllMoviesAction({ category: movie?.category }));
-    }
+    dispatch(getAllMoviesAction({}));
     
     const timer = setTimeout(() => {
       setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
     }, 1500);
     
     return () => clearTimeout(timer);
-  }, [dispatch, id, movie?.category]);
+  }, [dispatch, id]);
 
   useEffect(() => {
     if (movie && movie._id) {
@@ -66,13 +65,13 @@ function SingleMovie() {
     }
   }, [movie]);
 
-  // SEO Improvement: Structured data for the specific movie
+  // Structured data for movie
   const movieStructuredData = movie ? {
     "@context": "https://schema.org",
     "@type": "Movie",
     "name": movie.name,
-    "description": movie.seoDescription || movie.desc,
-    "image": movie.image,
+    "description": movie.desc,
+    "image": movie.titleImage,
     "datePublished": movie.year,
     "genre": movie.category,
     "duration": `PT${movie.time}M`,
@@ -84,24 +83,22 @@ function SingleMovie() {
       "worstRating": "0"
     },
     "inLanguage": movie.language,
-    "url": `https://www.moviefrost.com/movie/${movie._id}`,
-    "keywords": movie.seoKeywords || `${movie.name}, watch ${movie.name} online, ${movie.category}, ${movie.language}`,
-    "director": movie.casts?.length > 0 ? { "@type": "Person", "name": movie.casts[0].name } : undefined
+    "url": `https://moviefrost.com/movie/${movie._id}`
   } : null;
 
   return (
     <Layout>
-      {/* SEO Improvement: Dynamic meta tags and structured data */}
       {movie && (
         <>
           <MetaTags 
-            title={movie.seoTitle || `Watch ${movie.name} (${movie.year}) Free Online HD`}
-            description={movie.seoDescription || `${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality.`}
-            keywords={movie.seoKeywords || `${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
+            title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
+            description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
+            keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
             image={movie.titleImage || movie.image}
-            url={`/movie/${id}`}
+            url={`https://moviefrost.com/movie/${movie._id}`}
             type="video.movie"
           />
+          
           {movieStructuredData && (
             <script type="application/ld+json">
               {JSON.stringify(movieStructuredData)}
@@ -121,7 +118,7 @@ function SingleMovie() {
           </div>
           <p className="text-border text-sm">Something went wrong</p>
         </div>
-      ) : movie ? (
+      ) : (
         <>
           <ShareMovieModal
             modalOpen={modalOpen}
@@ -133,6 +130,7 @@ function SingleMovie() {
             movie={movie}
             setModalOpen={setModalOpen}
             DownloadVideo={DownloadMovieVideo}
+            progress={0}
             onBackClick={handleBackClick}
           />
 
@@ -141,6 +139,7 @@ function SingleMovie() {
             
             <MovieRates movie={movie} />
             
+            {/* Monetag Banner after movie rates */}
             {adsEnabled && AD_CONFIG.monetag.banner.enabled && (
               <MonetagBanner 
                 zoneId={AD_CONFIG.monetag.banner.zoneId}
@@ -162,13 +161,6 @@ function SingleMovie() {
             )}
           </div>
         </>
-      ) : (
-         <div className={sameClass}>
-            <div className="flex-colo w-24 h-24 p-5 mb-4 rounded-full bg-dry text-customPurple text-4xl">
-              <RiMovie2Line />
-            </div>
-            <p className="text-border text-sm">Movie could not be found.</p>
-          </div>
       )}
     </Layout>
   );

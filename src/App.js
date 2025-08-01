@@ -13,30 +13,26 @@ import toast from 'react-hot-toast';
 import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analytics';
 import Loader from './Components/Loader';
 
-// SEO Improvement: Lazy load ALL screen components
+// Lazy load ALL components
 const HomeScreen = lazy(() => import('./Screens/HomeScreen'));
-const AboutUs = lazy(() => import('./Screens/AboutUs'));
-const ContactUs = lazy(() => import('./Screens/ContactUs'));
 const MoviesPage = lazy(() => import('./Screens/Movies'));
 const SingleMovie = lazy(() => import('./Screens/SingleMovie'));
 const WatchPage = lazy(() => import('./Screens/WatchPage'));
+const Dashboard = lazy(() => import('./Screens/Dashboard/Admin/Dashboard'));
+const MoviesList = lazy(() => import('./Screens/Dashboard/Admin/MoviesList'));
+const AddMovie = lazy(() => import('./Screens/Dashboard/Admin/AddMovie'));
+const EditMovie = lazy(() => import('./Screens/Dashboard/Admin/EditMovie'));
+const AboutUs = lazy(() => import('./Screens/AboutUs'));
+const ContactUs = lazy(() => import('./Screens/ContactUs'));
 const Login = lazy(() => import('./Screens/Login'));
 const Register = lazy(() => import('./Screens/Register'));
-const NotFound = lazy(() => import('./Screens/NotFound'));
-const GoogleAnalytics = lazy(() => import('./Components/GoogleAnalytics'));
-
-// Lazy load User/Dashboard components
 const Profile = lazy(() => import('./Screens/Dashboard/Profile'));
 const Password = lazy(() => import('./Screens/Dashboard/Password'));
 const FavoritesMovies = lazy(() => import('./Screens/Dashboard/FavouriteMovies'));
-
-// Lazy load Admin components
-const Dashboard = lazy(() => import('./Screens/Dashboard/Admin/Dashboard'));
-const MoviesList = lazy(() => import('./Screens/Dashboard/Admin/MoviesList'));
 const Categories = lazy(() => import('./Screens/Dashboard/Admin/Categories'));
 const Users = lazy(() => import('./Screens/Dashboard/Admin/Users'));
-const AddMovie = lazy(() => import('./Screens/Dashboard/Admin/AddMovie'));
-const EditMovie = lazy(() => import('./Screens/Dashboard/Admin/EditMovie'));
+const NotFound = lazy(() => import('./Screens/NotFound'));
+const GoogleAnalytics = lazy(() => import('./Components/GoogleAnalytics'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
