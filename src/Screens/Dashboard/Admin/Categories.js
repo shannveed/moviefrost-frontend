@@ -7,6 +7,7 @@
   import { useDispatch, useSelector } from 'react-redux';
   import { Empty } from '../../../Components/Notifications/Empty';
   import Loader from '../../../Components/Loader';
+  import { Helmet } from 'react-helmet-async';
 
   function Categories() {
     const [modalOpen, setModalOpen] = useState(false);
@@ -37,6 +38,9 @@
 
     return (
       <SideBar>
+        <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
         {modalOpen && (
           <CategoryModal
             isOpen={modalOpen}

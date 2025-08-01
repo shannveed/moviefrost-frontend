@@ -7,7 +7,8 @@ const MetaTags = ({
   keywords = 'watch movies online, free movies, stream movies, HD movies',
   image = 'https://moviefrost.com/og-image.jpg',
   url = 'https://moviefrost.com',
-  type = 'website'
+  type = 'website',
+  jsonLd = null // NEW
 }) => {
   const fullTitle = title.includes('MovieFrost') ? title : `${title} | MovieFrost`;
   
@@ -32,6 +33,13 @@ const MetaTags = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+      
+      {/* JSON-LD Structured Data */}
+      {jsonLd && (
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
+      )}
     </Helmet>
   );
 };

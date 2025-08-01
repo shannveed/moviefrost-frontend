@@ -8,6 +8,7 @@ import Loader from '../../../Components/Loader';
 import { Empty } from '../../../Components/Notifications/Empty';
 import { TbPlayerTrackNext, TbPlayerTrackPrev } from 'react-icons/tb';
 import { FaSearch } from 'react-icons/fa';
+import { Helmet } from 'react-helmet-async';
 
 function MoviesList() {
   const dispatch = useDispatch();
@@ -80,6 +81,9 @@ function MoviesList() {
 
   return (
     <SideBar>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="flex flex-col gap-6 above-1000:gap-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row gap-4 above-1000:gap-3 sm:items-center sm:justify-between">

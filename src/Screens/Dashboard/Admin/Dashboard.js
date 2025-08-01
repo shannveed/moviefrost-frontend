@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import Loader from "../../../Components/Loader";
 import { Empty } from "../../../Components/Notifications/Empty";
 import { deleteMovieAction } from "../../../Redux/Actions/MoviesActions";
+import { Helmet } from 'react-helmet-async';
 
 function Dashboard() {
   const dispatch = useDispatch();
@@ -75,6 +76,9 @@ function Dashboard() {
 
   return (
     <SideBar>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="flex flex-col gap-6 above-1000:gap-4">
         <h2 className="text-xl font-bold above-1000:text-lg">Dashboard</h2>
         

@@ -19,6 +19,7 @@ import {
 import { parseDuration, formatTime } from '../../../Context/Functionalities';
 import Loader from '../../../Components/Loader';
 import { RiMovie2Line } from 'react-icons/ri';
+import { Helmet } from 'react-helmet-async';
 
 function EditMovie() {
   const [imageWithoutTitle, setImageWithoutTitle] = useState('');
@@ -278,6 +279,9 @@ const browseByOptions = React.useMemo(() => {
 
   return (
     <SideBar>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 above-1000:gap-4 above-1000:max-w-4xl above-1000:mx-auto">
         <h2 className="text-xl font-bold above-1000:text-lg">
           Edit "{movie?.name || 'Movie/Series'}"

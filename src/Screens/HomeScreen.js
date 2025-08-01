@@ -93,9 +93,9 @@ function HomeScreen() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name:  "MovieFrost - Free Movie Streaming",
+    name: "MovieFrost - Free Movie Streaming",
     description: "Watch thousands of movies and web series online for free in HD quality",
-    url:   "https://moviefrost.com",
+    url: "https://moviefrost.com",
   };
 
   return (
@@ -105,6 +105,7 @@ function HomeScreen() {
         description="Stream unlimited movies and web series for free. Watch Hollywood, Bollywood films in HD quality. No registration required."
         keywords="free movies online, watch movies free, stream movies HD, movie streaming site, web series online"
         url="https://moviefrost.com"
+        jsonLd={structuredData} // NEW - pass as prop
       />
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
