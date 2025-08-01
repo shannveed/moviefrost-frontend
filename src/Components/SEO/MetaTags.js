@@ -2,12 +2,14 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
 const MetaTags = ({ 
-  title = 'MovieFrost - Watch Free Movies & Web Series Online',
-  description = 'Watch movies online free in HD quality. Stream latest movies, web series without registration.',
-  keywords = 'watch movies online, free movies, stream movies, HD movies',
+  title = 'MovieFrost – Watch Movies & Web-Series Free',
+  description = 'Stream thousands of Hollywood, Bollywood & Web-Series in HD quality. No sign-up needed.',
+  keywords = 'watch movies online free, stream movies, HD movies, web series',
   image = 'https://moviefrost.com/og-image.jpg',
   url = 'https://moviefrost.com',
-  type = 'website'
+  type = 'website',
+  published = null,
+  updated = null
 }) => {
   const fullTitle = title.includes('MovieFrost') ? title : `${title} | MovieFrost`;
   
@@ -32,6 +34,10 @@ const MetaTags = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+      
+      {/* Article meta tags for movies */}
+      {published && <meta property="article:published_time" content={published} />}
+      {updated && <meta property="article:modified_time" content={updated} />}
     </Helmet>
   );
 };

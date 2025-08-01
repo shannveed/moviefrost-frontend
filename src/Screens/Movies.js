@@ -215,6 +215,19 @@ function MoviesPage() {
       
       <div className="min-height-screen container mx-auto px-8 mobile:px-0 my-2">
         <Filters data={datas} />
+        {/* SEO H1 */}
+        <h1 className="text-2xl font-bold mb-4 mobile:px-4 mobile:text-xl">
+          Browse {browseByParam || category?.title || 'all'} movies {search && `matching "${search}"`}
+        </h1>
+
+        <p className="text-md font-medium my-4 mobile:px-4">
+          Total{' '}
+          <span className="font-bold text-customPurple">
+            {movies ? movies?.length : 0}
+          </span>{' '}
+          Items Found On This Page {search && `for "${search}"`}
+          {browseByParam && ` in "${browseByParam}"`}
+        </p>
         <p className="text-md font-medium my-4 mobile:px-4">
           Total{' '}
           <span className="font-bold text-customPurple">

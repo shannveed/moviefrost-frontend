@@ -91,14 +91,15 @@ function SingleMovie() {
       {movie && (
         <>
           <MetaTags 
-            title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
-            description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
-            keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
-            image={movie.titleImage || movie.image}
-            url={`https://moviefrost.com/movie/${movie._id}`}
-            type="video.movie"
-          />
-          
+  title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
+  description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
+  keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
+  image={movie.titleImage || movie.image}
+  url={`https://moviefrost.com/movie/${movie._id}`}
+  type="video.movie"
+  published={movie.createdAt}
+  updated={movie.updatedAt}
+/>
           {movieStructuredData && (
             <script type="application/ld+json">
               {JSON.stringify(movieStructuredData)}

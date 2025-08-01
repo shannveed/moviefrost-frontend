@@ -1,11 +1,11 @@
 # MovieFrost Robots.txt
 User-agent: *
 Allow: /
-Allow: /static/
 Allow: /movies
 Allow: /movie/*
 Allow: /about-us
 Allow: /contact-us
+Allow: https://c1.popads.net
 Disallow: /dashboard
 Disallow: /admin
 Disallow: /profile
@@ -13,12 +13,11 @@ Disallow: /password
 Disallow: /edit/*
 Disallow: /api/
 
-# Sitemaps
-Sitemap: https://moviefrost.com/sitemap.xml
-Sitemap: https://moviefrost.com/api/movies/sitemap.xml
-
 # Crawl-delay
 Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://moviefrost.com/sitemap.xml
 
 # Major Search Engines
 User-agent: Googlebot
@@ -32,3 +31,7 @@ Allow: /
 
 User-agent: DuckDuckBot
 Allow: /
+
+# Ad Networks
+User-agent: *
+Allow: https://c1.popads.net

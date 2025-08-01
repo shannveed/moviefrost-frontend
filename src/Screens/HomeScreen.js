@@ -114,7 +114,9 @@ function HomeScreen() {
           movies={bannerFeed}
           isLoading={latestLoading || randomLoading}   // 🌟
         />
-
+       {/* SEO H1 - Hidden but important for search engines */}
+       <h1 className="sr-only">MovieFrost – Free HD Movie Streaming & Download</h1>
+       
         {/* Ads etc. stay the same */}
         {adsEnabled && !adsInitRef.current && (
           <PopAdsIntegration
