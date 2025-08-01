@@ -101,10 +101,10 @@ function HomeScreen() {
   return (
     <Layout>
       <MetaTags
-        title="MovieFrost - Watch Free Movies & Web Series Online | HD Streaming"
-        description="Stream unlimited movies and web series for free. Watch Hollywood, Bollywood films in HD quality. No registration required."
-        keywords="free movies online, watch movies free, stream movies HD, movie streaming site, web series online"
-        url="https://moviefrost.com"
+        title="MovieFrost - Watch Free Movies & Web Series Online in HD"
+        description="Discover and stream thousands of the latest movies and web series for free on MovieFrost. Enjoy high-definition streaming without any registration. Your ultimate source for online entertainment."
+        keywords="moviefrost, free movies, watch movies online, movie streaming, web series, HD movies, online cinema, latest movies"
+        url="https://www.moviefrost.com"
       />
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 

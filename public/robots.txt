@@ -1,34 +1,34 @@
-# MovieFrost Robots.txt
+# MovieFrost Robots.txt - SEO Optimized
+# Allow all major search engines full access to public content.
 User-agent: *
 Allow: /
-Allow: /static/
 Allow: /movies
-Allow: /movie/*
+Allow: /movie/
 Allow: /about-us
 Allow: /contact-us
+
+# Disallow crawling of private, admin, and non-content pages.
 Disallow: /dashboard
-Disallow: /admin
+Disallow: /admin/
 Disallow: /profile
 Disallow: /password
-Disallow: /edit/*
+Disallow: /favorites
+Disallow: /edit/
+Disallow: /addmovie
+Disallow: /users
+Disallow: /categories
+Disallow: /movieslist
 Disallow: /api/
+Disallow: /login
+Disallow: /register
 
-# Sitemaps
-Sitemap: https://moviefrost.com/sitemap.xml
+# Allow ad crawlers
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: AdsBot-Google-Mobile
+Allow: /
+
+# Sitemaps (specify the canonical www version)
+Sitemap: https://www.moviefrost.com/sitemap.xml
 Sitemap: https://moviefrost.com/api/movies/sitemap.xml
-
-# Crawl-delay
-Crawl-delay: 1
-
-# Major Search Engines
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Slurp
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /

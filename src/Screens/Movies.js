@@ -23,6 +23,7 @@ function MoviesPage() {
   const { search } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const browseByParam = searchParams.get('browseBy') || '';
+  
   const location = useLocation();
   const scrollPositionRef = useRef(0);
 
@@ -199,7 +200,7 @@ function MoviesPage() {
     else if (browseByParam) desc = `Watch ${browseByParam} movies online. `;
     else if (category?.title && category.title !== 'All Categories') desc = `Stream ${category.title} movies. `;
     
-    desc += 'HD quality streaming, no registration required.';
+    desc += 'Stream in HD quality for free.';
     return desc;
   };
 
@@ -208,7 +209,7 @@ function MoviesPage() {
       <MetaTags 
         title={generateSEOTitle()}
         description={generateSEODescription()}
-        keywords={`free movies, online streaming, ${category?.title || 'all'} movies, ${language?.title || 'all languages'}, ${year?.title || 'all years'}`}
+        keywords={`free movies, watch online movies, online streaming, ${category?.title || 'all'} movies, ${language?.title || 'all languages'}, ${year?.title || 'all years'}`}
         url={`https://moviefrost.com/movies${search ? `/${search}` : ''}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
       />
       
