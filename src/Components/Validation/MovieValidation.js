@@ -1,4 +1,3 @@
-// MovieValidation.js
 import * as yup from 'yup';
 
 const ReviewValidation = yup.object().shape({
@@ -128,7 +127,14 @@ const movieValidation = yup
           return !(latest && value);
         }
       ),
-});
+  })
+  .test(
+    'not-both-flags',
+    'Movie cannot be both Latest and PreviousHit',
+    function (value) {
+      return !(value.latest && value.previousHit);
+    }
+  );
 
 
 export { ReviewValidation, movieValidation };

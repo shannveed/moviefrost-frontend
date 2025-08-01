@@ -1,4 +1,3 @@
-// AddMovie.js
 import React, { useState, useEffect } from 'react';
 import SideBar from '../SideBar';
 import { Input, Message, Select } from '../../../Components/Usedinputs';

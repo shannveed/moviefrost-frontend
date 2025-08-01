@@ -1,5 +1,5 @@
-// HomeScreen.js - Updated to remove Ezoic placeholders
-import React, { useEffect, useState, useRef } from 'react';
+// HomeScreen.js
+import React, { useEffect, useRef, useState } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
 import Promos from '../Components/Home/Promos';
@@ -10,114 +10,123 @@ import {
   getAllMoviesAction,
   getRandomMoviesAction,
   getTopRatedMovieAction,
-  getLatestMoviesAction 
+  getLatestMoviesAction,          // 🌟 UPDATED
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
-import { AdsterraBanner, AdsterraNative, PopAdsIntegration } from '../Components/Ads/AdWrapper';
+import {
+  AdsterraBanner,
+  AdsterraNative,
+  PopAdsIntegration,
+} from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
 
 function HomeScreen() {
   const dispatch = useDispatch();
   const [adsEnabled, setAdsEnabled] = useState(false);
-  const adsInitializedRef = useRef(false);
-  
-  const {
-    isLoading: latestLoading = false,
-    isError: latestError = null,
-    movies: latestMovies = [],
-  } = useSelector((state) => state.moviesLatest || {});
+  const adsInitRef = useRef(false);
 
+  /* ---------------- REDUX SELECTORS ---------------- */
+
+  // Popular-movies list (page 1 of /movies)
   const {
-    isLoading: randomLoading = false,
-    isError: randomError = null,
-    movies: randomMovies = [],
-  } = useSelector((state) => state.getRandomMovies || {});
-  
-  const {
-    isLoading: topLoading = false,
-    isError: topError = null,
-    movies: topMovies = [],
-  } = useSelector((state) => state.getTopRatedMovie || {});
-  
-  const { 
-    isLoading = false, 
-    isError = null, 
-    movies = [] 
+    isLoading,
+    isError,
+    movies = [],
   } = useSelector((state) => state.getAllMovies || {});
 
+  // Random 8
+  const {
+    isLoading: randomLoading,
+    isError:  randomError,
+    movies:   randomMovies = [],
+  } = useSelector((state) => state.getRandomMovies || {});
+
+  // 🌟 LATEST (flagged) – for the banner
+  const {
+    isLoading: latestLoading,      // 🌟
+    isError:   latestError,        // 🌟
+    movies:    latestMovies = [],  // 🌟
+  } = useSelector((state) => state.moviesLatest || {});
+
+  // Top rated
+  const {
+    isLoading: topLoading,
+    isError:   topError,
+    movies:    topMovies = [],
+  } = useSelector((state) => state.getTopRatedMovie || {});
+
+  /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    dispatch(getLatestMoviesAction()); 
+    dispatch(getLatestMoviesAction());           // 🌟 NEW
+    dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
-    dispatch(getAllMoviesAction({}));
     dispatch(getTopRatedMovieAction());
-    
-    if (!adsInitializedRef.current) {
-      const timer = setTimeout(() => {
-        setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
-        adsInitializedRef.current = true;
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
+
+    const timer = setTimeout(() => {
+      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
+      adsInitRef.current = true;
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [dispatch]);
 
+  /* ---------------- ERROR HANDLING ---------------- */
   useEffect(() => {
-    if (latestError || isError || randomError || topError) {
-      toast.error(latestError || isError || randomError || topError);
+    if (isError || randomError || topError || latestError) {      // 🌟
+      toast.error(isError || randomError || topError || latestError);
     }
-  }, [latestError, isError, randomError, topError]);
+  }, [isError, randomError, topError, latestError]);              // 🌟
 
-  // Structured data for homepage
-  const homeStructuredData = {
+  /* ---------------- BANNER FEED PRIORITY ----------------
+        1) latestMovies (flagged)
+        2) random sample
+        3) generic list                                          */
+  const bannerFeed =
+    latestMovies.length > 0
+      ? latestMovies
+      : randomMovies.length > 0
+      ? randomMovies
+      : movies;
+
+  /* ---------------- SEO META ---------------- */
+  const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "MovieFrost - Free Movie Streaming",
-    "description": "Watch thousands of movies and web series online for free in HD quality",
-    "url": "https://moviefrost.com",
-    "publisher": {
-      "@type": "Organization",
-      "name": "MovieFrost",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://moviefrost.com/images/MOVIEFROST.png"
-      }
-    }
+    name:  "MovieFrost - Free Movie Streaming",
+    description: "Watch thousands of movies and web series online for free in HD quality",
+    url:   "https://moviefrost.com",
   };
 
   return (
     <Layout>
-      <MetaTags 
+      <MetaTags
         title="MovieFrost - Watch Free Movies & Web Series Online | HD Streaming"
-        description="Stream unlimited movies and web series for free. Watch Hollywood, Bollywood films in HD quality. No registration required. Download movies for offline viewing."
-        keywords="free movies online, watch movies free, stream movies HD, movie streaming site, web series online, download movies, Hollywood movies free, Bollywood movies online"
+        description="Stream unlimited movies and web series for free. Watch Hollywood, Bollywood films in HD quality. No registration required."
+        keywords="free movies online, watch movies free, stream movies HD, movie streaming site, web series online"
         url="https://moviefrost.com"
       />
-      
-      <script type="application/ld+json">
-        {JSON.stringify(homeStructuredData)}
-      </script>
-      
+      <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        <Banner 
-          movies={randomMovies.length > 0 ? randomMovies : movies} 
-          isLoading={isLoading || randomLoading || latestLoading} 
-          latestMovies={latestMovies}
+        {/* ------------ BANNER (Latest-flag first) ------------ */}
+        <Banner
+          movies={bannerFeed}
+          isLoading={latestLoading || randomLoading}   // 🌟
         />
-        
-        {adsEnabled && !adsInitializedRef.current && (
-          <PopAdsIntegration 
-            websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID} 
-            enabled={true}
+
+        {/* Ads etc. stay the same */}
+        {adsEnabled && !adsInitRef.current && (
+          <PopAdsIntegration
+            enabled
+            websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID}
           />
         )}
-        
-        {adsEnabled && (
-          <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />
-        )}
-        
-        <PopularMovies movies={latestMovies} isLoading={latestLoading} />
-        
+        {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
+
+        {/* Latest grid (unchanged) */}
+        <PopularMovies movies={movies} isLoading={isLoading} />
+
         {adsEnabled && (
           <>
             <div className="hidden md:block">
@@ -128,9 +137,9 @@ function HomeScreen() {
             </div>
           </>
         )}
-             
+
         <Promos />
-        
+
         <TopRated movies={topMovies} isLoading={topLoading} />
       </div>
     </Layout>

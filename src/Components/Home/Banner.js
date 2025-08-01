@@ -1,3 +1,4 @@
+// Banner.js  <-- UPDATED
 import React, { memo, useCallback } from 'react';
 import 'swiper/css';
 import 'swiper/css/autoplay';
@@ -17,19 +18,20 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
 
-  const isLiked = useCallback((movie) => {
-    return IfMovieLiked(movie);
-  }, []);
+  const isLiked = useCallback((movie) => IfMovieLiked(movie), []);
 
-  const handleLikeMovie = useCallback((movie) => {
-    LikeMovie(movie, dispatch, userInfo);
-  }, [dispatch, userInfo]);
+  const handleLikeMovie = useCallback(
+    (movie) => {
+      LikeMovie(movie, dispatch, userInfo);
+    },
+    [dispatch, userInfo]
+  );
 
   return (
     <Swiper
       direction="vertical"
       slidesPerView={1}
-      loop={true}
+      loop
       speed={1000}
       autoplay={{
         delay: 4000,
@@ -39,7 +41,10 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
       className={sameClass}
     >
       {movies?.slice(0, 8).map((movie, index) => (
-        <SwiperSlide key={movie._id || index} className="relative rounded overflow-hidden">
+        <SwiperSlide
+          key={movie._id || index}
+          className="relative rounded overflow-hidden"
+        >
           <OptimizedImage
             src={movie?.image || '/images/c1.jpg'}
             alt={movie?.name || 'Movie banner'}
@@ -66,7 +71,11 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
               <button
                 onClick={() => handleLikeMovie(movie)}
                 disabled={isLiked(movie) || isLoading}
-                aria-label={isLiked(movie) ? `Remove ${movie?.name} from favorites` : `Add ${movie?.name} to favorites`}
+                aria-label={
+                  isLiked(movie)
+                    ? `Remove ${movie?.name} from favorites`
+                    : `Add ${movie?.name} to favorites`
+                }
                 className={`bg-white ${
                   isLiked(movie) ? 'text-customPurple' : 'text-white'
                 } hover:text-customPurple transitions px-4 py-3 rounded text-sm bg-opacity-30`}
@@ -80,22 +89,19 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
     </Swiper>
   );
 });
-
 SwiperComponent.displayName = 'SwiperComponent';
 
-function Banner({ movies, isLoading, latestMovies }) {
+function Banner({ movies = [], isLoading = false }) {
   const sameClass = 'w-full flex-colo xl:h-[530px] bg-dry lg:h-96 h-80';
-  
-  const bannerMovies = latestMovies && latestMovies.length > 0 ? latestMovies : movies;
-  
+
   return (
     <section className="relative w-full" aria-label="Featured movies">
       {isLoading ? (
         <div className={sameClass}>
           <Loader />
         </div>
-      ) : bannerMovies?.length > 0 ? (
-        <SwiperComponent sameClass={sameClass} movies={bannerMovies} />
+      ) : movies?.length > 0 ? (
+        <SwiperComponent sameClass={sameClass} movies={movies} />
       ) : (
         <div className={sameClass}>
           <div className="flex-colo w-24 h-24 p-5 mb-4 rounded-full bg-dry text-customPurple text-4xl">
