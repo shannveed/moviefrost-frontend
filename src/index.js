@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { hydrate, createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 import 'swiper/css';
@@ -16,18 +16,14 @@ import { HelmetProvider } from 'react-helmet-async';
 // Register service worker
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
+    navigator.serviceWorker.register('/service-worker.js').then(
+      registration => {
         console.log('ServiceWorker registration successful');
-        
-        // Check for updates every hour
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000);
-      })
-      .catch(err => {
+      },
+      err => {
         console.log('ServiceWorker registration failed: ', err);
-      });
+      }
+    );
   });
 }
 
@@ -37,8 +33,8 @@ if (!googleClientId) {
   console.error('Google Client ID is not set in environment variables');
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+const container = document.getElementById('root');
+const app = (
   <React.StrictMode>
     <HelmetProvider>
       {googleClientId ? (
@@ -59,3 +55,11 @@ root.render(
     </HelmetProvider>
   </React.StrictMode>
 );
+
+// Use hydrate for react-snap pre-rendered content
+if (container?.hasChildNodes()) {
+  hydrate(app, container);
+} else {
+  const root = createRoot(container);
+  root.render(app);
+}

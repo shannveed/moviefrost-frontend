@@ -80,6 +80,13 @@ const LoadingFallback = () => (
 );
 
 function App() {
+  // React-snap compatibility
+  useEffect(() => {
+    if (navigator.userAgent.includes('ReactSnap')) {
+      // Disable certain features during pre-rendering
+      console.log('Pre-rendering detected');
+    }
+  }, []);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();

@@ -67,37 +67,46 @@ function SingleMovie() {
 
   // Structured data for movie
   const movieStructuredData = movie ? {
-    "@context": "https://schema.org",
-    "@type": "Movie",
-    "name": movie.name,
-    "description": movie.desc,
-    "image": movie.titleImage,
-    "datePublished": movie.year,
-    "genre": movie.category,
-    "duration": `PT${movie.time}M`,
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": movie.rate,
-      "reviewCount": movie.numberOfReviews,
-      "bestRating": "5",
-      "worstRating": "0"
-    },
-    "inLanguage": movie.language,
-    "url": `https://moviefrost.com/movie/${movie._id}`
-  } : null;
+  "@context": "https://schema.org",
+  "@type": "Movie",
+  "name": movie.name,
+  "description": movie.desc,
+  "image": movie.titleImage || movie.image,
+  "datePublished": movie.year,
+  "genre": movie.category,
+  "duration": `PT${movie.time}M`,
+  "aggregateRating": movie.numberOfReviews > 0 ? {
+    "@type": "AggregateRating",
+    "ratingValue": movie.rate || 0,
+    "reviewCount": movie.numberOfReviews,
+    "bestRating": "5",
+    "worstRating": "0"
+  } : undefined,
+  "inLanguage": movie.language,
+  "url": `https://moviefrost.com/movie/${movie._id}`,
+  "actor": movie.casts?.map(cast => ({
+    "@type": "Person",
+    "name": cast.name
+  })),
+  "potentialAction": {
+    "@type": "WatchAction",
+    "target": `https://moviefrost.com/watch/${movie._id}`
+  }
+} : null;
 
   return (
     <Layout>
       {movie && (
         <>
           <MetaTags 
-            title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
-            description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
-            keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
-            image={movie.titleImage || movie.image}
-            url={`https://moviefrost.com/movie/${movie._id}`}
-            type="video.movie"
-          />
+  title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
+  description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
+  keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
+  image={movie.titleImage || movie.image}
+  url={`https://moviefrost.com/movie/${movie._id}`}
+  type="video.movie"
+  schema={movieStructuredData}
+/>
           
           {movieStructuredData && (
             <script type="application/ld+json">

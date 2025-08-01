@@ -7,7 +7,8 @@ const MetaTags = ({
   keywords = 'watch movies online, free movies, stream movies, HD movies',
   image = 'https://moviefrost.com/og-image.jpg',
   url = 'https://moviefrost.com',
-  type = 'website'
+  type = 'website',
+  schema = null
 }) => {
   const fullTitle = title.includes('MovieFrost') ? title : `${title} | MovieFrost`;
   
@@ -26,12 +27,24 @@ const MetaTags = ({
       <meta property="og:image" content={image} />
       <meta property="og:url" content={url} />
       <meta property="og:type" content={type} />
+      <meta property="og:site_name" content="MovieFrost" />
       
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+      
+      {/* Additional SEO tags */}
+      <meta name="robots" content="index, follow" />
+      <meta httpEquiv="x-ua-compatible" content="ie=edge" />
+      
+      {/* JSON-LD structured data */}
+      {schema && (
+        <script type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      )}
     </Helmet>
   );
 };
