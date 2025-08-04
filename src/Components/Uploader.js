@@ -1,10 +1,40 @@
 // Uploader.js
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useMemo } from 'react';
+import { Client, Storage, Permission, Role } from 'appwrite';
 
 function Uploader({ setImageUrl }) {
   const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
+
+  // Initialize Appwrite client and storage using useMemo
+  const { storage, configError } = useMemo(() => {
+    const endpoint = process.env.REACT_APP_APPWRITE_ENDPOINT;
+    const projectId = process.env.REACT_APP_APPWRITE_PROJECT_ID;
+
+    // Check if required environment variables are defined
+    if (!endpoint || !projectId) {
+      return {
+        configError: 'Appwrite configuration is missing in environment variables.',
+        client: null,
+        storage: null,
+      };
+    }
+
+    const clientInstance = new Client();
+    clientInstance.setEndpoint(endpoint).setProject(projectId);
+    const storageInstance = new Storage(clientInstance);
+
+    return {
+      client: clientInstance,
+      storage: storageInstance,
+      configError: null,
+    };
+  }, []); // Empty dependency array since env variables won't change during runtime
+
+  // If there's a configuration error, show it
+  if (configError) {
+    return <div className="text-red-500">{configError}</div>;
+  }
 
   const handleUpload = async () => {
     if (!file) {
@@ -18,27 +48,28 @@ function Uploader({ setImageUrl }) {
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+    const bucketId = process.env.REACT_APP_APPWRITE_BUCKET_ID;
+    if (!bucketId) {
+      setError('Bucket ID is missing in environment variables.');
+      return;
+    }
 
-      // Upload to our backend API
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      const { data } = await axios.post(
-        `${apiUrl.replace(/\/api$/, '')}/api/upload`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+    try {
+      // Upload the file to Appwrite with public read permissions
+      const response = await storage.createFile(
+        bucketId,
+        'unique()',
+        file,
+        [Permission.read(Role.any())] // Set public read permissions
       );
 
-      if (data.success && data.url) {
-        setImageUrl(data.url);
-        setError(null);
-      } else {
-        throw new Error(data.message || 'Upload failed');
-      }
+      // Get the image URL using the getFileView method
+      const imageUrl = storage.getFileView(bucketId, response.$id);
+
+      setImageUrl(imageUrl);
     } catch (error) {
       console.error('Upload failed:', error);
-      setError(error.response?.data?.message || error.message || 'Failed to upload image.');
+      setError('Failed to upload image.');
     }
   };
 
