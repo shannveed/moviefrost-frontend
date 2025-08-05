@@ -1,4 +1,4 @@
-// HomeScreen.js
+// HomeScreen.js - Updated with new ad control
 import React, { useEffect, useRef, useState } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
@@ -10,46 +10,42 @@ import {
   getAllMoviesAction,
   getRandomMoviesAction,
   getTopRatedMovieAction,
-  getLatestMoviesAction,          // 🌟 UPDATED
+  getLatestMoviesAction,
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
 import {
   AdsterraBanner,
   AdsterraNative,
   PopAdsIntegration,
+  useAdControl,
 } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
 
 function HomeScreen() {
   const dispatch = useDispatch();
-  const [adsEnabled, setAdsEnabled] = useState(false);
+  const { adsEnabled } = useAdControl();
   const adsInitRef = useRef(false);
 
   /* ---------------- REDUX SELECTORS ---------------- */
-
-  // Popular-movies list (page 1 of /movies)
   const {
     isLoading,
     isError,
     movies = [],
   } = useSelector((state) => state.getAllMovies || {});
 
-  // Random 8
   const {
     isLoading: randomLoading,
     isError:  randomError,
     movies:   randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
-  // 🌟 LATEST (flagged) – for the banner
   const {
-    isLoading: latestLoading,      // 🌟
-    isError:   latestError,        // 🌟
-    movies:    latestMovies = [],  // 🌟
+    isLoading: latestLoading,
+    isError:   latestError,
+    movies:    latestMovies = [],
   } = useSelector((state) => state.moviesLatest || {});
 
-  // Top rated
   const {
     isLoading: topLoading,
     isError:   topError,
@@ -58,30 +54,20 @@ function HomeScreen() {
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    dispatch(getLatestMoviesAction());           // 🌟 NEW
+    dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
-
-    const timer = setTimeout(() => {
-      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
-      adsInitRef.current = true;
-    }, 1500);
-
-    return () => clearTimeout(timer);
   }, [dispatch]);
 
   /* ---------------- ERROR HANDLING ---------------- */
   useEffect(() => {
-    if (isError || randomError || topError || latestError) {      // 🌟
+    if (isError || randomError || topError || latestError) {
       toast.error(isError || randomError || topError || latestError);
     }
-  }, [isError, randomError, topError, latestError]);              // 🌟
+  }, [isError, randomError, topError, latestError]);
 
-  /* ---------------- BANNER FEED PRIORITY ----------------
-        1) latestMovies (flagged)
-        2) random sample
-        3) generic list                                          */
+  /* ---------------- BANNER FEED PRIORITY ---------------- */
   const bannerFeed =
     latestMovies.length > 0
       ? latestMovies
@@ -112,20 +98,23 @@ function HomeScreen() {
         {/* ------------ BANNER (Latest-flag first) ------------ */}
         <Banner
           movies={bannerFeed}
-          isLoading={latestLoading || randomLoading}   // 🌟
+          isLoading={latestLoading || randomLoading}
         />
-       {/* SEO H1 - Hidden but important for search engines */}
-       <h1 className="sr-only">MovieFrost – Free HD Movie Streaming & Download</h1>
-        {/* Ads etc. stay the same */}
-        {adsEnabled && !adsInitRef.current && (
-          <PopAdsIntegration
-            enabled
-            websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID}
-          />
-        )}
-        {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
 
-        {/* Latest grid (unchanged) */}
+        {/* Ads - Only show if enabled */}
+        {adsEnabled && (
+          <>
+            {!adsInitRef.current && (
+              <PopAdsIntegration
+                enabled
+                websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID}
+              />
+            )}
+            <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />
+          </>
+        )}
+
+        {/* Latest grid */}
         <PopularMovies movies={movies} isLoading={isLoading} />
 
         {adsEnabled && (

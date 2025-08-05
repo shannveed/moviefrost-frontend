@@ -1,4 +1,4 @@
-// SingleMovie.js - Updated to remove Ezoic ads
+// SingleMovie.js - Updated with ad control
 import { trackMovieView } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -14,13 +14,13 @@ import ShareMovieModal from '../Components/Modals/ShareModal';
 import { getMovieByIdAction, getAllMoviesAction } from '../Redux/Actions/MoviesActions';
 import { DownloadVideo } from '../Context/Functionalities';
 import Movie from '../Components/movie';
-import { AdsterraNative, MonetagBanner } from '../Components/Ads/AdWrapper';
+import { AdsterraNative, MonetagBanner, useAdControl } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
 
 function SingleMovie() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [adsEnabled, setAdsEnabled] = useState(false);
+  const { adsEnabled } = useAdControl();
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -51,12 +51,6 @@ function SingleMovie() {
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
-    
-    const timer = setTimeout(() => {
-      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
-    }, 1500);
-    
-    return () => clearTimeout(timer);
   }, [dispatch, id]);
 
   useEffect(() => {
@@ -97,9 +91,8 @@ function SingleMovie() {
             image={movie.titleImage || movie.image}
             url={`https://moviefrost.com/movie/${movie._id}`}
             type="video.movie"
-            published={movie.createdAt}
-            updated={movie.updatedAt}
           />
+          
           {movieStructuredData && (
             <script type="application/ld+json">
               {JSON.stringify(movieStructuredData)}
@@ -136,11 +129,12 @@ function SingleMovie() {
           />
 
           <div className="container mx-auto min-h-screen px-8 mobile:px-4 my-6">
+            {/* Only show ads if enabled */}
             {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
             
             <MovieRates movie={movie} />
             
-            {/* Monetag Banner after movie rates */}
+            {/* Monetag Banner - Only show if ads enabled */}
             {adsEnabled && AD_CONFIG.monetag.banner.enabled && (
               <MonetagBanner 
                 zoneId={AD_CONFIG.monetag.banner.zoneId}

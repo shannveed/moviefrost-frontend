@@ -16,12 +16,53 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cloud.appwrite.io">
     <link rel="preconnect" href="https://moviefrost-backend.vercel.app">
-    <link rel="preconnect" href="https://c1.popads.net">
-    <link rel="preconnect" href="https://a.monetag.com">
-    <link rel="preconnect" href="https://cdn.monetag.com">
+    
+    <!-- Conditional ad preconnects - will be added by script after delay -->
+    <script>
+      // Check if ads should be loaded
+      function shouldLoadAds() {
+        const path = window.location.pathname;
+        const disabledPaths = ['/login', '/register'];
+        if (disabledPaths.includes(path)) return false;
+        
+        const adDelayExpiry = sessionStorage.getItem('adDelayExpiry');
+        if (!adDelayExpiry) return false;
+        
+        return Date.now() >= parseInt(adDelayExpiry);
+      }
+      
+      // Add ad preconnects after delay
+      function addAdPreconnects() {
+        if (!shouldLoadAds()) return;
+        
+        const adDomains = [
+          'https://c1.popads.net',
+          'https://a.monetag.com',
+          'https://cdn.monetag.com'
+        ];
+        
+        adDomains.forEach(domain => {
+          const link = document.createElement('link');
+          link.rel = 'preconnect';
+          link.href = domain;
+          document.head.appendChild(link);
+          
+          const dnsLink = document.createElement('link');
+          dnsLink.rel = 'dns-prefetch';
+          dnsLink.href = domain;
+          document.head.appendChild(dnsLink);
+        });
+      }
+      
+      // Check on page load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addAdPreconnects);
+      } else {
+        addAdPreconnects();
+      }
+    </script>
+    
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-    <link rel="dns-prefetch" href="https://cdn.monetag.com">
-    <link rel="dns-prefetch" href="https://a.monetag.com">
     
     <!-- Preload critical fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -102,7 +143,7 @@
       gtag('config', 'G-J06332VTF2', { send_page_view: false });
     </script>
 
-    <!-- Global Error Handler -->
+    <!-- Enhanced Global Error Handler -->
     <script>
       window.addEventListener('error', function(e) {
         if (e.message && (
@@ -154,7 +195,45 @@
         min-height: 100vh;
       }
     </style>
-    <!-- REMOVED the inline ad script -->
+    
+    <!-- Conditional ad script loading -->
+    <script>
+      // Load ad script only after delay and not on disabled pages
+      function loadAdScript() {
+        if (!shouldLoadAds()) return;
+        
+        const script = document.createElement('script');
+        script.src = 'https://fpyf8.com/88/tag.min.js';
+        script.setAttribute('data-zone', '159997');
+        script.async = true;
+        script.setAttribute('data-cfasync', 'false');
+        document.body.appendChild(script);
+      }
+      
+      // Check if we should load ad scripts
+      const adDelayExpiry = sessionStorage.getItem('adDelayExpiry');
+      const currentTime = Date.now();
+      
+      if (adDelayExpiry && currentTime >= parseInt(adDelayExpiry)) {
+        // Delay has passed, load immediately
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', loadAdScript);
+        } else {
+          loadAdScript();
+        }
+      } else if (!adDelayExpiry) {
+        // First visit - set delay and wait
+        const delayMs = 3 * 60 * 1000; // 3 minutes
+        const expiryTime = currentTime + delayMs;
+        sessionStorage.setItem('adDelayExpiry', expiryTime.toString());
+        
+        setTimeout(loadAdScript, delayMs);
+      } else {
+        // Still within delay period
+        const remainingTime = parseInt(adDelayExpiry) - currentTime;
+        setTimeout(loadAdScript, remainingTime);
+      }
+    </script>
     
   </head>
   <body>
