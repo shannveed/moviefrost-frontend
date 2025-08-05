@@ -1,5 +1,5 @@
 // HomeScreen.js
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
 import Promos from '../Components/Home/Promos';
@@ -10,7 +10,7 @@ import {
   getAllMoviesAction,
   getRandomMoviesAction,
   getTopRatedMovieAction,
-  getLatestMoviesAction,          // 🌟 UPDATED
+  getLatestMoviesAction,
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
 import {
@@ -20,10 +20,11 @@ import {
 } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
+import useAdsAllowed from '../hooks/useAdsAllowed'; // NEW
 
 function HomeScreen() {
   const dispatch = useDispatch();
-  const [adsEnabled, setAdsEnabled] = useState(false);
+  const adsEnabled = useAdsAllowed(); // NEW
   const adsInitRef = useRef(false);
 
   /* ---------------- REDUX SELECTORS ---------------- */
@@ -42,11 +43,11 @@ function HomeScreen() {
     movies:   randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
-  // 🌟 LATEST (flagged) – for the banner
+  // LATEST (flagged) – for the banner
   const {
-    isLoading: latestLoading,      // 🌟
-    isError:   latestError,        // 🌟
-    movies:    latestMovies = [],  // 🌟
+    isLoading: latestLoading,
+    isError:   latestError,
+    movies:    latestMovies = [],
   } = useSelector((state) => state.moviesLatest || {});
 
   // Top rated
@@ -58,25 +59,22 @@ function HomeScreen() {
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    dispatch(getLatestMoviesAction());           // 🌟 NEW
+    dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
 
-    const timer = setTimeout(() => {
-      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
-      adsInitRef.current = true;
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [dispatch]);
+    if (adsEnabled && !adsInitRef.current) {
+      adsInitRef.current = true; // PopAds only once
+    }
+  }, [dispatch, adsEnabled]);
 
   /* ---------------- ERROR HANDLING ---------------- */
   useEffect(() => {
-    if (isError || randomError || topError || latestError) {      // 🌟
+    if (isError || randomError || topError || latestError) {
       toast.error(isError || randomError || topError || latestError);
     }
-  }, [isError, randomError, topError, latestError]);              // 🌟
+  }, [isError, randomError, topError, latestError]);
 
   /* ---------------- BANNER FEED PRIORITY ----------------
         1) latestMovies (flagged)
@@ -112,10 +110,9 @@ function HomeScreen() {
         {/* ------------ BANNER (Latest-flag first) ------------ */}
         <Banner
           movies={bannerFeed}
-          isLoading={latestLoading || randomLoading}   // 🌟
+          isLoading={latestLoading || randomLoading}
         />
-       {/* SEO H1 - Hidden but important for search engines */}
-       <h1 className="sr-only">MovieFrost – Free HD Movie Streaming & Download</h1>
+
         {/* Ads etc. stay the same */}
         {adsEnabled && !adsInitRef.current && (
           <PopAdsIntegration
