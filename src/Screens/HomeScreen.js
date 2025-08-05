@@ -1,4 +1,4 @@
-// HomeScreen.js
+// HomeScreen.js - Updated with ad manager
 import React, { useEffect, useRef, useState } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
@@ -10,7 +10,7 @@ import {
   getAllMoviesAction,
   getRandomMoviesAction,
   getTopRatedMovieAction,
-  getLatestMoviesAction,          // 🌟 UPDATED
+  getLatestMoviesAction,
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
 import {
@@ -20,36 +20,32 @@ import {
 } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
+import { useAdManager } from '../Components/hooks/useAdManager';
 
 function HomeScreen() {
   const dispatch = useDispatch();
-  const [adsEnabled, setAdsEnabled] = useState(false);
+  const { adsEnabled } = useAdManager();
   const adsInitRef = useRef(false);
 
   /* ---------------- REDUX SELECTORS ---------------- */
-
-  // Popular-movies list (page 1 of /movies)
   const {
     isLoading,
     isError,
     movies = [],
   } = useSelector((state) => state.getAllMovies || {});
 
-  // Random 8
   const {
     isLoading: randomLoading,
     isError:  randomError,
     movies:   randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
-  // 🌟 LATEST (flagged) – for the banner
   const {
-    isLoading: latestLoading,      // 🌟
-    isError:   latestError,        // 🌟
-    movies:    latestMovies = [],  // 🌟
+    isLoading: latestLoading,
+    isError:   latestError,
+    movies:    latestMovies = [],
   } = useSelector((state) => state.moviesLatest || {});
 
-  // Top rated
   const {
     isLoading: topLoading,
     isError:   topError,
@@ -58,30 +54,27 @@ function HomeScreen() {
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    dispatch(getLatestMoviesAction());           // 🌟 NEW
+    dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
-
-    const timer = setTimeout(() => {
-      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
-      adsInitRef.current = true;
-    }, 1500);
-
-    return () => clearTimeout(timer);
   }, [dispatch]);
+
+  /* ---------------- AD INITIALIZATION ---------------- */
+  useEffect(() => {
+    if (adsEnabled && !adsInitRef.current) {
+      adsInitRef.current = true;
+    }
+  }, [adsEnabled]);
 
   /* ---------------- ERROR HANDLING ---------------- */
   useEffect(() => {
-    if (isError || randomError || topError || latestError) {      // 🌟
+    if (isError || randomError || topError || latestError) {
       toast.error(isError || randomError || topError || latestError);
     }
-  }, [isError, randomError, topError, latestError]);              // 🌟
+  }, [isError, randomError, topError, latestError]);
 
-  /* ---------------- BANNER FEED PRIORITY ----------------
-        1) latestMovies (flagged)
-        2) random sample
-        3) generic list                                          */
+  /* ---------------- BANNER FEED PRIORITY ---------------- */
   const bannerFeed =
     latestMovies.length > 0
       ? latestMovies
@@ -109,25 +102,27 @@ function HomeScreen() {
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        {/* ------------ BANNER (Latest-flag first) ------------ */}
+        {/* BANNER */}
         <Banner
           movies={bannerFeed}
-          isLoading={latestLoading || randomLoading}   // 🌟
+          isLoading={latestLoading || randomLoading}
         />
-       {/* SEO H1 - Hidden but important for search engines */}
-       <h1 className="sr-only">MovieFrost – Free HD Movie Streaming & Download</h1>
-        {/* Ads etc. stay the same */}
-        {adsEnabled && !adsInitRef.current && (
+
+        {/* PopAds Integration - only if ads enabled */}
+        {adsEnabled && adsInitRef.current && (
           <PopAdsIntegration
             enabled
             websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID}
           />
         )}
+        
+        {/* Native Ad - only if ads enabled */}
         {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
 
-        {/* Latest grid (unchanged) */}
+        {/* Latest grid */}
         <PopularMovies movies={movies} isLoading={isLoading} />
 
+        {/* Banner Ads - only if ads enabled */}
         {adsEnabled && (
           <>
             <div className="hidden md:block">
