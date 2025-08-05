@@ -1,6 +1,6 @@
 // SingleMovie.js - Updated to remove Ezoic ads
 import { trackMovieView } from '../utils/analytics';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../Layout/Layout';
 import MovieInfo from '../Components/Single/MovieInfo';
@@ -17,12 +17,10 @@ import Movie from '../Components/movie';
 import { AdsterraNative, MonetagBanner } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
-import useAdsAllowed from '../hooks/useAdsAllowed'; // NEW
 
 function SingleMovie() {
   const [modalOpen, setModalOpen] = useState(false);
-  const adsEnabled = useAdsAllowed(); // NEW
-  const adsInitRef = useRef(false);
+  const [adsEnabled, setAdsEnabled] = useState(false);
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -53,13 +51,13 @@ function SingleMovie() {
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
+    
+    const timer = setTimeout(() => {
+      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
+    }, 1500);
+    
+    return () => clearTimeout(timer);
   }, [dispatch, id]);
-
-  useEffect(() => {
-    if (adsEnabled && !adsInitRef.current) {
-      adsInitRef.current = true; // PopAds guard
-    }
-  }, [adsEnabled]);
 
   useEffect(() => {
     if (movie && movie._id) {
@@ -99,8 +97,9 @@ function SingleMovie() {
             image={movie.titleImage || movie.image}
             url={`https://moviefrost.com/movie/${movie._id}`}
             type="video.movie"
+            published={movie.createdAt}
+            updated={movie.updatedAt}
           />
-          
           {movieStructuredData && (
             <script type="application/ld+json">
               {JSON.stringify(movieStructuredData)}

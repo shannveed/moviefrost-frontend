@@ -6,11 +6,9 @@ import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
 import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
-import useAdsAllowed from '../hooks/useAdsAllowed'; // NEW
 
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
-  const adsAllowed = useAdsAllowed(); // NEW
   
   useEffect(() => {
     // Ensure ads are only loaded once per layout mount
@@ -31,11 +29,8 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if:
-            1) component already mounted AND
-            2) the 3-minute delay passed AND
-            3) we are NOT on /login or /register */}
-        {adsLoadedRef.current && adsAllowed && (
+        {/* Only render ads if not already loaded */}
+        {adsLoadedRef.current && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
