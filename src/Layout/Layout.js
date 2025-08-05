@@ -1,23 +1,57 @@
-// Layout.js - Updated to include PopAds and Monetag
-import React, { useRef, useEffect } from 'react';
+// Layout.js - Updated with 3-minute ad delay and auth page exclusion
+import React, { useRef, useEffect, useState } from 'react';
 import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
 import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
+import { useLocation } from 'react-router-dom';
+
+const AD_DELAY = 180000; // 3 minutes in ms
 
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
+  const timerRef = useRef(null);
+  const location = useLocation();
+  const [adsEnabled, setAdsEnabled] = useState(false);
   
+  /* ----------------------------------------------------------
+     Delay-initialiser (runs only once - 3-minute timer)
+  ---------------------------------------------------------- */
   useEffect(() => {
-    // Ensure ads are only loaded once per layout mount
-    adsLoadedRef.current = true;
+    if (adsLoadedRef.current) return; // do this only once
     
-    return () => {
-      adsLoadedRef.current = false;
+    const startTimer = () => {
+      timerRef.current = setTimeout(() => {
+        const path = window.location.pathname;
+        const onAuth = path === '/login' || path === '/register';
+        if (!onAuth) setAdsEnabled(true);
+      }, AD_DELAY);
     };
+    
+    startTimer();
+    
+    return () => timerRef.current && clearTimeout(timerRef.current);
   }, []);
+  
+  /* ----------------------------------------------------------
+     Disable ads immediately whenever we arrive on auth pages
+  ---------------------------------------------------------- */
+  useEffect(() => {
+    const onAuth = location.pathname === '/login' || location.pathname === '/register';
+    if (onAuth) {
+      setAdsEnabled(false); // hide / stop rendering
+    } else if (!adsEnabled && adsLoadedRef.current) {
+      // user left /login or /register AFTER the 3-min mark
+      setAdsEnabled(true);
+    }
+  }, [location, adsEnabled]);
+  
+  /* remember once the components were injected - never do it again */
+  useEffect(() => {
+    if (adsEnabled) adsLoadedRef.current = true;
+  }, [adsEnabled]);
   
   return (
     <div className="bg-main text-white">
@@ -29,8 +63,8 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if not already loaded */}
-        {adsLoadedRef.current && (
+        {/* Only render ads if adsEnabled is true */}
+        {adsEnabled && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
