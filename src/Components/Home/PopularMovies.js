@@ -1,4 +1,4 @@
-// PopularMovies.js - Updated with ad manager
+// PopularMovies.js - Updated to use Monetag banner instead of Ezoic
 import React from 'react';
 import Titles from '../Titles';
 import { BsCollectionFill } from 'react-icons/bs';
@@ -9,11 +9,8 @@ import { Link } from 'react-router-dom';
 import { FaArrowRight } from 'react-icons/fa';
 import { MonetagBanner } from '../Ads/AdWrapper';
 import { AD_CONFIG } from '../Ads/AdConfig';
-import { useAdManager } from '../../Components/hooks/useAdManager';
 
 function PopularMovies({ isLoading, movies }) {
-  const { adsEnabled } = useAdManager();
-  
   return (
     <div className="my-8 mobile:my-4">
       <div className="flex justify-between items-center mb-6 mobile:mb-4 mobile:px-4">
@@ -30,8 +27,8 @@ function PopularMovies({ isLoading, movies }) {
             ))}
           </div>
           
-          {/* Monetag Banner - only if ads enabled */}
-          {adsEnabled && AD_CONFIG.monetag.banner.enabled && (
+          {/* Monetag Banner in the middle of the grid (if enabled) */}
+          {AD_CONFIG.monetag.banner.enabled && (
             <MonetagBanner 
               zoneId={AD_CONFIG.monetag.banner.zoneId}
               width={728}
@@ -46,7 +43,7 @@ function PopularMovies({ isLoading, movies }) {
             ))}
           </div>
           
-          {/* Show More Button */}
+          {/* Updated Show More Button - Centered and styled */}
           {movies?.length > 10 && (
             <div className="flex justify-center mt-8 mobile:mt-6">
               <Link 

@@ -1,4 +1,4 @@
-// Layout.js - Updated with ad manager
+// Layout.js - Updated to include PopAds and Monetag
 import React, { useRef, useEffect } from 'react';
 import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
@@ -6,42 +6,31 @@ import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
 import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
-import { useAdManager } from '../Components/hooks/useAdManager';
 
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
-  const { adsEnabled, timeRemaining } = useAdManager();
   
   useEffect(() => {
-    if (adsEnabled) {
-      adsLoadedRef.current = true;
-    }
+    // Ensure ads are only loaded once per layout mount
+    adsLoadedRef.current = true;
     
     return () => {
       adsLoadedRef.current = false;
     };
-  }, [adsEnabled]);
+  }, []);
   
   return (
     <div className="bg-main text-white">
       <ScrollOnTop>
         <NavBar />
-        
-        {/* Ad countdown timer - only show if ads are delayed */}
-        {!adsEnabled && timeRemaining > 0 && (
-          <div className="fixed top-20 right-4 bg-dry border border-customPurple rounded-lg px-4 py-2 z-40 text-sm">
-            Ad-free browsing: {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
-          </div>
-        )}
-        
         <div className="mobile:pt-4">
           {children}
         </div>
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if enabled and loaded */}
-        {adsEnabled && adsLoadedRef.current && (
+        {/* Only render ads if not already loaded */}
+        {adsLoadedRef.current && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
@@ -67,7 +56,7 @@ function Layout({ children }) {
               </div>
             )}
             
-            {/* PopAds Popunder */}
+            {/* PopAds Popunder - NEW (now also runs on iOS) */}
             {AD_CONFIG.popAds.enabled && (
               <PopAdsPopunder
                 enabled={AD_CONFIG.popAds.enabled}
