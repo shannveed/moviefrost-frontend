@@ -1,12 +1,5 @@
-// AdConfig.js - Updated with global ad control and delay
+// AdConfig.js - Updated with PopAds and Monetag configuration
 export const AD_CONFIG = {
-  // Global ad settings
-  global: {
-    enabled: true,
-    delayMinutes: 3, // 3 minutes delay
-    disabledPaths: ['/login', '/register'], // Pages where ads are disabled
-  },
-  
   // Adsterra Ad Configuration with proper keys
   adsterra: {
     banner: {

@@ -1,66 +1,23 @@
-// AdWrapper.js - Updated with 3-minute delay and path checking
+// AdWrapper.js - Updated with PopAds integration, iOS support, and Monetag improvements
 import React, { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { AD_CONFIG } from './AdConfig';
+
+// Modified detection functions - no longer blocking iOS/Safari
+const isIOS = () => {
+  return false; // Always return false to enable ads on iOS
+};
+
+const isSafari = () => {
+  return false; // Always return false to enable ads on Safari
+};
 
 // Global tracking for loaded scripts to prevent duplicates
 const loadedScripts = new Set();
 const scriptLoadPromises = new Map();
 
-// Check if ads should be loaded based on path and delay
-const useAdControl = () => {
-  const location = useLocation();
-  const [adsEnabled, setAdsEnabled] = useState(false);
-  const [globalAdsEnabled, setGlobalAdsEnabled] = useState(false);
-  
-  useEffect(() => {
-    // Check if current path is in disabled paths
-    const isDisabledPath = AD_CONFIG.global.disabledPaths.some(path => 
-      location.pathname === path
-    );
-    
-    if (isDisabledPath) {
-      setAdsEnabled(false);
-      return;
-    }
-    
-    // Check if we've already waited the delay period in this session
-    const adDelayExpiry = sessionStorage.getItem('adDelayExpiry');
-    const currentTime = Date.now();
-    
-    if (adDelayExpiry && currentTime >= parseInt(adDelayExpiry)) {
-      setAdsEnabled(true);
-      setGlobalAdsEnabled(true);
-    } else if (!adDelayExpiry) {
-      // First visit - set the delay
-      const delayMs = AD_CONFIG.global.delayMinutes * 60 * 1000;
-      const expiryTime = currentTime + delayMs;
-      sessionStorage.setItem('adDelayExpiry', expiryTime.toString());
-      
-      // Set timeout to enable ads after delay
-      const timeoutId = setTimeout(() => {
-        setAdsEnabled(true);
-        setGlobalAdsEnabled(true);
-      }, delayMs);
-      
-      return () => clearTimeout(timeoutId);
-    } else {
-      // Still within delay period
-      const remainingTime = parseInt(adDelayExpiry) - currentTime;
-      const timeoutId = setTimeout(() => {
-        setAdsEnabled(true);
-        setGlobalAdsEnabled(true);
-      }, remainingTime);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [location.pathname]);
-  
-  return { adsEnabled, globalAdsEnabled };
-};
-
 // Safe script loader with deduplication
 const loadScript = (src, onLoad, onError) => {
+  // No longer skip loading on iOS/Safari
+  
   // Check if script is already loaded or loading
   if (loadedScripts.has(src)) {
     console.log('Script already loaded:', src);
@@ -113,14 +70,13 @@ const loadScript = (src, onLoad, onError) => {
 
 // Adsterra Banner Component
 export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
-  const { adsEnabled } = useAdControl();
   const bannerRef = useRef(null);
   const [isAdLoaded, setIsAdLoaded] = useState(false);
   const [showAd, setShowAd] = useState(true);
   const containerIdRef = useRef(`banner-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
-    if (!adsEnabled || !atOptions || isAdLoaded || !bannerRef.current || !showAd) return;
+    if (!atOptions || isAdLoaded || !bannerRef.current || !showAd) return;
 
     const loadAd = async () => {
       try {
@@ -162,9 +118,9 @@ export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
         }
       }
     };
-  }, [atOptions, isAdLoaded, showAd, adsEnabled]);
+  }, [atOptions, isAdLoaded, showAd]);
 
-  if (!showAd || !adsEnabled) return null;
+  if (!showAd) return null;
 
   return (
     <div 
@@ -177,14 +133,13 @@ export const AdsterraBanner = ({ atOptions, width = 728, height = 90 }) => {
 
 // Adsterra Native Banner
 export const AdsterraNative = ({ atOptions }) => {
-  const { adsEnabled } = useAdControl();
   const nativeRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [showAd, setShowAd] = useState(true);
   const containerIdRef = useRef(`native-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
-    if (!adsEnabled || !atOptions || isLoaded || !nativeRef.current || !showAd) return;
+    if (!atOptions || isLoaded || !nativeRef.current || !showAd) return;
 
     const loadAd = async () => {
       try {
@@ -224,9 +179,9 @@ export const AdsterraNative = ({ atOptions }) => {
         }
       }
     };
-  }, [atOptions, isLoaded, showAd, adsEnabled]);
+  }, [atOptions, isLoaded, showAd]);
 
-  if (!showAd || !adsEnabled) return null;
+  if (!showAd) return null;
 
   return <div ref={nativeRef} className="my-4" />;
 };
@@ -235,11 +190,10 @@ export const AdsterraNative = ({ atOptions }) => {
 let socialBarLoaded = false;
 
 export const AdsterraSocialBar = ({ atOptions }) => {
-  const { adsEnabled } = useAdControl();
   const [showAd, setShowAd] = useState(true);
 
   useEffect(() => {
-    if (!adsEnabled || !atOptions || socialBarLoaded || !showAd) return;
+    if (!atOptions || socialBarLoaded || !showAd) return;
 
     const loadAd = async () => {
       try {
@@ -264,9 +218,9 @@ export const AdsterraSocialBar = ({ atOptions }) => {
     return () => {
       // Don't reset socialBarLoaded on unmount to prevent reloading
     };
-  }, [atOptions, showAd, adsEnabled]);
+  }, [atOptions, showAd]);
 
-  if (!showAd || !adsEnabled) return null;
+  if (!showAd) return null;
   return null;
 };
 
@@ -274,11 +228,10 @@ export const AdsterraSocialBar = ({ atOptions }) => {
 let popunderLoaded = false;
 
 export const AdsterraPopunder = ({ atOptions }) => {
-  const { adsEnabled } = useAdControl();
   const [showAd, setShowAd] = useState(true);
 
   useEffect(() => {
-    if (!adsEnabled || !atOptions || popunderLoaded || !showAd) return;
+    if (!atOptions || popunderLoaded || !showAd) return;
 
     // Delay popunder to avoid immediate blocking
     const timer = setTimeout(async () => {
@@ -302,13 +255,13 @@ export const AdsterraPopunder = ({ atOptions }) => {
     return () => {
       clearTimeout(timer);
     };
-  }, [atOptions, showAd, adsEnabled]);
+  }, [atOptions, showAd]);
 
-  if (!showAd || !adsEnabled) return null;
+  if (!showAd) return null;
   return null;
 };
 
-// PopAds Integration Component
+// NEW PopAds Integration Component
 export const PopAdsPopunder = ({
   enabled = true,
   websiteId = process.env.REACT_APP_POPADS_WEBSITE_ID,
@@ -316,11 +269,10 @@ export const PopAdsPopunder = ({
   delay = 120,
   minBid = 0.001
 }) => {
-  const { adsEnabled } = useAdControl();
   const loadedRef = useRef(false);
 
   useEffect(() => {
-    if (!adsEnabled || !enabled || loadedRef.current || !websiteId) return;
+    if (!enabled || loadedRef.current || !websiteId) return;
 
     // PopAds official snippet converted to React
     const popTag = document.createElement('script');
@@ -351,17 +303,18 @@ export const PopAdsPopunder = ({
 
     console.log('PopAds script loaded with websiteId:', websiteId);
 
-  }, [enabled, websiteId, popundersIP, delay, minBid, adsEnabled]);
+  }, [enabled, websiteId, popundersIP, delay, minBid]);
 
   return null;
 };
 
 // PopAds Integration (Legacy compatibility)
 export const PopAdsIntegration = ({ websiteId, enabled = true }) => {
+  // This is now just a wrapper around PopAdsPopunder for backward compatibility
   return <PopAdsPopunder enabled={enabled} websiteId={websiteId} />;
 };
 
-// Monetag Popunder
+// Monetag Popunder - Updated with new loader
 let monetagLoaded = false;
 
 export const MonetagPopunder = ({
@@ -369,16 +322,16 @@ export const MonetagPopunder = ({
   frequencyCap = 10,
   enabled = true
 }) => {
-  const { adsEnabled } = useAdControl();
   const [showAd, setShowAd] = useState(true);
 
   useEffect(() => {
-    if (!adsEnabled || !enabled || monetagLoaded || !zoneId) {
+    if (!enabled || monetagLoaded || !zoneId) {
       return;
     }
 
-    // Delay a bit
+    // Delay a bit – avoids CLS and improves Core-Web-Vitals
     const timer = setTimeout(() => {
+      // Official Monetag popunder snippet (async, data-zone param)
       const pop = document.createElement('script');
       pop.setAttribute('data-cfasync', 'false');
       pop.async = true;
@@ -394,13 +347,13 @@ export const MonetagPopunder = ({
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [zoneId, enabled, frequencyCap, adsEnabled]);
+  }, [zoneId, enabled, frequencyCap]);
 
-  if (!showAd || !adsEnabled) return null;
+  if (!showAd) return null;
   return null;
 };
 
-// Monetag banner (iframe)
+/* Monetag banner (iframe) */
 export const MonetagBanner = ({
   zoneId,
   width = 300,
@@ -408,12 +361,11 @@ export const MonetagBanner = ({
   enabled = true,
   className = ''
 }) => {
-  const { adsEnabled } = useAdControl();
   const containerRef = useRef(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!adsEnabled || !enabled || !zoneId || mounted) return;
+    if (!enabled || !zoneId || mounted) return;
 
     const html = `<iframe 
       src="https://a.monetag.com/f.php?z=${zoneId}" 
@@ -428,17 +380,15 @@ export const MonetagBanner = ({
       containerRef.current.innerHTML = html;
       setMounted(true);
     }
-  }, [zoneId, enabled, mounted, width, height, adsEnabled]);
+  }, [zoneId, enabled, mounted, width, height]);
 
-  if (!enabled || !adsEnabled) return null;
+  if (!enabled) return null;
   
   return <div ref={containerRef} className={`flex justify-center items-center my-4 ${className}`} />;
 };
 
-// Sticky Video Ad Component
+// Sticky Video Ad Component - Removed Ezoic
 export const StickyVideoAd = ({ position = 'bottom-right' }) => {
+  // This component can be removed or repurposed for other video ads
   return null;
 };
-
-// Export the hook for external use
-export { useAdControl };

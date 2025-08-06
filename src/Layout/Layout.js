@@ -1,15 +1,14 @@
-// Layout.js - Updated to use ad control hook
+// Layout.js - Updated to include PopAds and Monetag
 import React, { useRef, useEffect } from 'react';
 import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
-import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder, useAdControl } from '../Components/Ads/AdWrapper';
+import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
-  const { adsEnabled } = useAdControl();
   
   useEffect(() => {
     // Ensure ads are only loaded once per layout mount
@@ -30,8 +29,8 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if enabled and after delay */}
-        {adsLoadedRef.current && adsEnabled && (
+        {/* Only render ads if not already loaded */}
+        {adsLoadedRef.current && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
@@ -57,7 +56,7 @@ function Layout({ children }) {
               </div>
             )}
             
-            {/* PopAds Popunder */}
+            {/* PopAds Popunder - NEW (now also runs on iOS) */}
             {AD_CONFIG.popAds.enabled && (
               <PopAdsPopunder
                 enabled={AD_CONFIG.popAds.enabled}
