@@ -1,4 +1,4 @@
-// SingleMovie.js
+// SingleMovie.js - Updated to remove Ezoic ads
 import { trackMovieView } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -17,11 +17,10 @@ import Movie from '../Components/movie';
 import { AdsterraNative, MonetagBanner } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
-import { useAdsAllowed } from '../Components/Ads/AdsContext';
 
 function SingleMovie() {
   const [modalOpen, setModalOpen] = useState(false);
-  const adsAllowed = useAdsAllowed();
+  const [adsEnabled, setAdsEnabled] = useState(false);
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -52,6 +51,12 @@ function SingleMovie() {
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
+    
+    const timer = setTimeout(() => {
+      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
+    }, 1500);
+    
+    return () => clearTimeout(timer);
   }, [dispatch, id]);
 
   useEffect(() => {
@@ -60,6 +65,7 @@ function SingleMovie() {
     }
   }, [movie]);
 
+  // Structured data for movie
   const movieStructuredData = movie ? {
     "@context": "https://schema.org",
     "@type": "Movie",
@@ -84,13 +90,15 @@ function SingleMovie() {
     <Layout>
       {movie && (
         <>
-          <MetaTags
+          <MetaTags 
             title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
             description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
             keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
             image={movie.titleImage || movie.image}
             url={`https://moviefrost.com/movie/${movie._id}`}
             type="video.movie"
+            published={movie.createdAt}
+            updated={movie.updatedAt}
           />
           {movieStructuredData && (
             <script type="application/ld+json">
@@ -99,7 +107,7 @@ function SingleMovie() {
           )}
         </>
       )}
-
+      
       {isLoading ? (
         <div className={sameClass}>
           <Loader />
@@ -128,14 +136,13 @@ function SingleMovie() {
           />
 
           <div className="container mx-auto min-h-screen px-8 mobile:px-4 my-6">
-            {/* Page ads only if allowed */}
-            {adsAllowed && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
-
+            {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
+            
             <MovieRates movie={movie} />
-
-            {/* Monetag Banner after movie rates - only if allowed */}
-            {adsAllowed && AD_CONFIG.monetag.banner.enabled && (
-              <MonetagBanner
+            
+            {/* Monetag Banner after movie rates */}
+            {adsEnabled && AD_CONFIG.monetag.banner.enabled && (
+              <MonetagBanner 
                 zoneId={AD_CONFIG.monetag.banner.zoneId}
                 width={728}
                 height={90}
