@@ -1,5 +1,5 @@
 // HomeScreen.js
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
 import Promos from '../Components/Home/Promos';
@@ -10,23 +10,20 @@ import {
   getAllMoviesAction,
   getRandomMoviesAction,
   getTopRatedMovieAction,
-  getLatestMoviesAction,          // 🌟 UPDATED
+  getLatestMoviesAction,
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
 import {
   AdsterraBanner,
   AdsterraNative,
-  PopAdsIntegration,
 } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
+import { useAdsAllowed } from '../Components/Ads/AdsContext';
 
 function HomeScreen() {
   const dispatch = useDispatch();
-  const [adsEnabled, setAdsEnabled] = useState(false);
-  const adsInitRef = useRef(false);
-
-  /* ---------------- REDUX SELECTORS ---------------- */
+  const adsAllowed = useAdsAllowed();
 
   // Popular-movies list (page 1 of /movies)
   const {
@@ -42,11 +39,11 @@ function HomeScreen() {
     movies:   randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
-  // 🌟 LATEST (flagged) – for the banner
+  // Latest (for banner)
   const {
-    isLoading: latestLoading,      // 🌟
-    isError:   latestError,        // 🌟
-    movies:    latestMovies = [],  // 🌟
+    isLoading: latestLoading,
+    isError:   latestError,
+    movies:    latestMovies = [],
   } = useSelector((state) => state.moviesLatest || {});
 
   // Top rated
@@ -56,32 +53,20 @@ function HomeScreen() {
     movies:    topMovies = [],
   } = useSelector((state) => state.getTopRatedMovie || {});
 
-  /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    dispatch(getLatestMoviesAction());           // 🌟 NEW
+    dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
-
-    const timer = setTimeout(() => {
-      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
-      adsInitRef.current = true;
-    }, 1500);
-
-    return () => clearTimeout(timer);
   }, [dispatch]);
 
-  /* ---------------- ERROR HANDLING ---------------- */
   useEffect(() => {
-    if (isError || randomError || topError || latestError) {      // 🌟
+    if (isError || randomError || topError || latestError) {
       toast.error(isError || randomError || topError || latestError);
     }
-  }, [isError, randomError, topError, latestError]);              // 🌟
+  }, [isError, randomError, topError, latestError]);
 
-  /* ---------------- BANNER FEED PRIORITY ----------------
-        1) latestMovies (flagged)
-        2) random sample
-        3) generic list                                          */
+  // Banner feed priority
   const bannerFeed =
     latestMovies.length > 0
       ? latestMovies
@@ -89,7 +74,6 @@ function HomeScreen() {
       ? randomMovies
       : movies;
 
-  /* ---------------- SEO META ---------------- */
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -109,26 +93,17 @@ function HomeScreen() {
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        {/* ------------ BANNER (Latest-flag first) ------------ */}
         <Banner
           movies={bannerFeed}
-          isLoading={latestLoading || randomLoading}   // 🌟
+          isLoading={latestLoading || randomLoading}
         />
-       {/* SEO H1 - Hidden but important for search engines */}
-       <h1 className="sr-only">MovieFrost – Free HD Movie Streaming & Download</h1>
-        {/* Ads etc. stay the same */}
-        {adsEnabled && !adsInitRef.current && (
-          <PopAdsIntegration
-            enabled
-            websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID}
-          />
-        )}
-        {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
 
-        {/* Latest grid (unchanged) */}
+        {/* Page-specific ads: only render when adsAllowed is true */}
+        {adsAllowed && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
+
         <PopularMovies movies={movies} isLoading={isLoading} />
 
-        {adsEnabled && (
+        {adsAllowed && (
           <>
             <div className="hidden md:block">
               <AdsterraBanner atOptions={AD_CONFIG.adsterra.banner.desktop} />

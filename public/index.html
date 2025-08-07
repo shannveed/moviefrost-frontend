@@ -5,13 +5,15 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon1.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
+
+    <!-- Site verification (kept as requested) -->
     <meta name="6a97888e-site-verification" content="befef8a475b6927aa629a6d934aaf0c4">
     <meta name="03655eb334dfbf9f6208db64040330859c54dd67" content="03655eb334dfbf9f6208db64040330859c54dd67" />
-    
+
     <!-- Monetag verification meta tag -->
     <meta name="monetag" content="%REACT_APP_MONETAG_SITE_ID%">
-    
-    <!-- Preconnect to external domains -->
+
+    <!-- Preconnects / DNS Prefetches (fixed broken Monetag link) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cloud.appwrite.io">
@@ -22,12 +24,11 @@
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://cdn.monetag.com">
     <link rel="dns-prefetch" href="https://a.monetag.com">
-    
-    
+
     <!-- Preload critical fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"></noscript>
-    
+
     <!-- Primary Meta Tags -->
     <meta name="title" content="MovieFrost - Watch Free Movies & Web Series Online | Stream HD Movies">
     <meta name="description" content="Watch movies online free in HD quality on MovieFrost. Stream latest Hollywood, Bollywood movies and web series without registration. Download movies for offline viewing.">
@@ -35,10 +36,10 @@
     <meta name="robots" content="index, follow">
     <meta name="language" content="English">
     <meta name="author" content="MovieFrost">
-    
+
     <!-- Canonical URL -->
     <link rel="canonical" href="https://moviefrost.com/" />
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://moviefrost.com/">
@@ -46,29 +47,29 @@
     <meta property="og:description" content="Stream thousands of movies and web series for free in HD quality. No registration required.">
     <meta property="og:image" content="https://moviefrost.com/og-image.jpg">
     <meta property="og:site_name" content="MovieFrost">
-    
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://moviefrost.com/">
     <meta property="twitter:title" content="MovieFrost - Watch Free Movies Online">
     <meta property="twitter:description" content="Stream movies and web series free in HD. Latest Hollywood and Bollywood movies.">
     <meta property="twitter:image" content="https://moviefrost.com/twitter-image.jpg">
-    
+
     <!-- Mobile Web App Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MovieFrost">
-    
+
     <!-- Alternate languages -->
     <link rel="alternate" hreflang="en" href="https://moviefrost.com/" />
     <link rel="alternate" hreflang="x-default" href="https://moviefrost.com/" />
-    
+
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/MOVIEFROST.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    
+
     <title>MovieFrost - Watch Free Movies & Web Series Online HD | Stream & Download</title>
-    
+
     <!-- Structured Data -->
     <script type="application/ld+json">
     {
@@ -91,19 +92,17 @@
       ]
     }
     </script>
-    
-     <!-- Updated Google Analytics 4 - Official snippet with immediate load -->
+
+    <!-- Google Analytics 4 (SPA will send page_view manually) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-J06332VTF2"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      
-      /* Do NOT send an automatic page_view – SPA will do it manually */
       gtag('config', 'G-J06332VTF2', { send_page_view: false });
     </script>
 
-    <!-- Global Error Handler -->
+    <!-- Global Error Handler (kept) -->
     <script>
       window.addEventListener('error', function(e) {
         if (e.message && (
@@ -120,7 +119,7 @@
           return false;
         }
       });
-      
+
       window.addEventListener('unhandledrejection', function(e) {
         if (e.reason && e.reason.message && (
           e.reason.message.includes('Fu is not a function') ||
@@ -134,7 +133,7 @@
         }
       });
     </script>
-    
+
     <!-- Critical CSS -->
     <style>
       body {
@@ -146,18 +145,12 @@
         -moz-osx-font-smoothing: grayscale;
         background-color: #080A1A;
       }
-      
-      .blur-sm {
-        filter: blur(4px);
-      }
-      
-      #root {
-        min-height: 100vh;
-      }
+      .blur-sm { filter: blur(4px); }
+      #root { min-height: 100vh; }
     </style>
-    <script src="https://fpyf8.com/88/tag.min.js" data-zone="159997" async data-cfasync="false"></script>
-    
-    
+
+    <!-- IMPORTANT: Removed any early third‑party ad script here.
+         Ads will only be injected by React after the 30s gate. -->
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
