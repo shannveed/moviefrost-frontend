@@ -6,17 +6,9 @@ import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
 import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
-import { useLocation } from 'react-router-dom'; // NEW: Import useLocation
 
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
-  const location = useLocation(); // NEW: Get current location
-  
-  // NEW: Define paths where ads should NOT load
-  const noAdsPaths = ['/login', '/register'];
-  
-  // NEW: Check if current path should show ads
-  const showAds = !noAdsPaths.includes(location.pathname);
   
   useEffect(() => {
     // Ensure ads are only loaded once per layout mount
@@ -37,8 +29,8 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if showAds is true and not already loaded */}
-        {showAds && adsLoadedRef.current && (
+        {/* Only render ads if not already loaded */}
+        {adsLoadedRef.current && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
@@ -82,4 +74,3 @@ function Layout({ children }) {
 }
 
 export default Layout;
-
