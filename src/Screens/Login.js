@@ -181,9 +181,16 @@ function Login() {
           </button>
           <p className="text-center text-border text-sm">
             Don't have an account?{" "}
-            <Link to="/register" className="text-customPurple font-semibold ml-2 hover:underline">
+            <a 
+              href="/register" 
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/register'; // Force full page reload
+              }}
+              className="text-customPurple font-semibold ml-2 hover:underline"
+            >
               Sign Up
-            </Link>
+            </a>
           </p>
         </form>
       </div>
