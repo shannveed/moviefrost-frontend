@@ -29,7 +29,7 @@ export const AD_CONFIG = {
     popunder: {
       key: '62c8f34a5a4d1afbb8ec9a7b28896caa',
       format: 'popunder',
-      frequency_cap: 1,
+      frequency_cap: 10,
     },
     directLink: 'https://www.profitableratecpm.com/yhj6nn10?key=e6a0850d911a706749887b58b273f025'
   },
@@ -50,7 +50,7 @@ export const AD_CONFIG = {
     siteId: process.env.REACT_APP_MONETAG_SITE_ID,
     popunder: {
       enabled: true,
-      frequencyCap: 5
+      frequencyCap: 10
     },
     banner: {
       enabled: false,
