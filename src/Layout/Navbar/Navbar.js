@@ -1,4 +1,4 @@
-// Navbar.js
+// Navbar.js (updated for login/register reload)
 import { trackSearch, trackGuestAction } from '../../utils/analytics';
 import React, { useEffect, useState, useRef } from 'react';
 import { CgUser } from 'react-icons/cg';
@@ -181,6 +181,17 @@ function NavBar() {
     navigate('/movies');
     // Force a page reload to ensure fresh data
     window.location.href = '/movies';
+  };
+
+  // NEW: Handle login/register clicks with full page reload
+  const handleLoginClick = (e) => {
+    e.preventDefault();
+    window.location.href = '/login';
+  };
+
+  const handleRegisterClick = (e) => {
+    e.preventDefault();
+    window.location.href = '/register';
   };
 
   return (
@@ -454,6 +465,7 @@ function NavBar() {
               }
               className={Hover}
               aria-label={userInfo ? `${userInfo.fullName} profile` : 'Login'}
+              onClick={!userInfo ? handleLoginClick : undefined}  // NEW: Force reload if not logged in
             >
             {userInfo ? (
               <img

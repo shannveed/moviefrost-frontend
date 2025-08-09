@@ -1,4 +1,4 @@
-// Layout.js - Updated to include PopAds and Monetag
+// Layout.js - Updated to include PopAds and Monetag with conditional loading
 import React, { useRef, useEffect } from 'react';
 import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
@@ -6,18 +6,24 @@ import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
 import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
 import { AD_CONFIG } from '../Components/Ads/AdConfig';
+import { useLocation } from 'react-router-dom';
 
 function Layout({ children }) {
+  const location = useLocation();
   const adsLoadedRef = useRef(false);
+  const isAdFreePage = ['/login', '/register'].includes(location.pathname);
   
   useEffect(() => {
+    // Skip ad loading on ad-free pages
+    if (isAdFreePage) return;
+
     // Ensure ads are only loaded once per layout mount
     adsLoadedRef.current = true;
     
     return () => {
       adsLoadedRef.current = false;
     };
-  }, []);
+  }, [isAdFreePage]);
   
   return (
     <div className="bg-main text-white">
@@ -29,8 +35,8 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if not already loaded */}
-        {adsLoadedRef.current && (
+        {/* Only render ads if not already loaded AND not on ad-free pages */}
+        {adsLoadedRef.current && !isAdFreePage && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />

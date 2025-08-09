@@ -1,4 +1,4 @@
-// MovieRates.js
+// MovieRates.js (updated for login reload)
 import React, { useEffect, useState } from "react";
 import Titles from "../Titles";
 import { BsBookmarkStarFill } from "react-icons/bs";
@@ -9,7 +9,7 @@ import { ReviewValidation } from "../Validation/MovieValidation";
 import { useDispatch, useSelector } from "react-redux";
 import { InlineError } from "../Notifications/Error";
 import { reviewMovieAction } from "../../Redux/Actions/MoviesActions";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // NEW: Import useNavigate
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-hot-toast";
@@ -27,6 +27,7 @@ const Ratings = [
 
 function MovieRates({ movie }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // NEW: For navigation with reload
 
   // We load createReview state
   const { isLoading, isError } = useSelector((state) => state.createReview);
@@ -79,6 +80,12 @@ function MovieRates({ movie }) {
     dispatch(adminReplyReviewAction(movie._id, reviewId, adminReplyText));
     setAdminReplyText("");
     setActiveReviewId(null);
+  };
+
+  // NEW: Handle login click with full page reload
+  const handleLoginClick = (e) => {
+    e.preventDefault();
+    window.location.href = '/login';
   };
 
   return (
@@ -137,12 +144,12 @@ function MovieRates({ movie }) {
               {isLoading ? "Loading..." : "Submit"}
             </button>
           ) : (
-            <Link
-              to="/login"
-              className="bg-main border border-border text-customPurple py-4 w-full inline-block text-center"
+            <button
+              onClick={handleLoginClick} // NEW: Use reload handler instead of Link
+              className="bg-main border border-border text-customPurple py-4 w-full inline-block text-center cursor-pointer"
             >
               Login to review this movie
-            </Link>
+            </button>
           )}
         </form>
 

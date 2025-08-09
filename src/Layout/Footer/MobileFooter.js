@@ -1,4 +1,4 @@
-// MobileFooter.js
+// MobileFooter.js (unchanged)
 import React, { useContext } from 'react';
 import { BsCollectionPlay } from 'react-icons/bs';
 import { CgMenuBoxed } from 'react-icons/cg';
