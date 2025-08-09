@@ -1,4 +1,4 @@
-// App.js (unchanged, as per your code - I've kept it as is)
+// App.js
 import React, { useEffect, useRef, Suspense, lazy } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ScrollOnTop from './ScrollOnTop';
@@ -80,6 +80,7 @@ const LoadingFallback = () => (
 );
 
 function App() {
+  
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();

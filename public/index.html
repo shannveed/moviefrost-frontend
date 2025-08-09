@@ -11,7 +11,7 @@
     <!-- Monetag verification meta tag -->
     <meta name="monetag" content="%REACT_APP_MONETAG_SITE_ID%">
     
-    <!-- Preconnect to external domains (kept for performance) -->
+    <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cloud.appwrite.io">
@@ -22,6 +22,7 @@
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://cdn.monetag.com">
     <link rel="dns-prefetch" href="https://a.monetag.com">
+    
     
     <!-- Preload critical fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -125,7 +126,7 @@
           e.reason.message.includes('Fu is not a function') ||
           e.reason.message.includes('profitableratecpm') ||
           e.reason.message.includes('popads') ||
-          e.reason.includes('monetag')
+          e.reason.message.includes('monetag')
         )) {
           console.warn('Ad script promise rejection suppressed:', e.reason);
           e.preventDefault();

@@ -1,4 +1,4 @@
-// Register.js (unchanged, as per your code)
+// Register.js
 import { trackUserRegistration } from '../utils/analytics';
 import React, { useEffect, useState } from "react";
 import Layout from "../Layout/Layout";
