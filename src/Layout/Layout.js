@@ -1,5 +1,6 @@
-// Layout.js - Updated to include PopAds and Monetag
+// Layout.js - Updated to exclude ads on login/register pages
 import React, { useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import MobileFooter from './Footer/MobileFooter';
@@ -9,15 +10,25 @@ import { AD_CONFIG } from '../Components/Ads/AdConfig';
 
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
+  const location = useLocation();
+  
+  // Check if current page is login or register
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   
   useEffect(() => {
-    // Ensure ads are only loaded once per layout mount
-    adsLoadedRef.current = true;
+    // Only set ads as loaded if not on auth pages
+    if (!isAuthPage) {
+      adsLoadedRef.current = true;
+    } else {
+      adsLoadedRef.current = false;
+    }
     
     return () => {
-      adsLoadedRef.current = false;
+      if (!isAuthPage) {
+        adsLoadedRef.current = false;
+      }
     };
-  }, []);
+  }, [isAuthPage]);
   
   return (
     <div className="bg-main text-white">
@@ -29,8 +40,8 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if not already loaded */}
-        {adsLoadedRef.current && (
+        {/* Only render ads if not on auth pages and ads are loaded */}
+        {!isAuthPage && adsLoadedRef.current && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
@@ -56,7 +67,7 @@ function Layout({ children }) {
               </div>
             )}
             
-            {/* PopAds Popunder - NEW (now also runs on iOS) */}
+            {/* PopAds Popunder */}
             {AD_CONFIG.popAds.enabled && (
               <PopAdsPopunder
                 enabled={AD_CONFIG.popAds.enabled}

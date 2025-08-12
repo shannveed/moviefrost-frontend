@@ -80,13 +80,13 @@ const LoadingFallback = () => (
 );
 
 function App() {
-  
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const pageEntryTime = useRef(Date.now());
   const hasShownPrompt = useRef(false);
   const aosInitialized = useRef(false);
+  const hasRefreshedAuthPage = useRef(false);
 
   // Initialize AOS only once after component mount
   useEffect(() => {
@@ -102,18 +102,24 @@ function App() {
     }
   }, []);
 
-  // useEffect(() => {
-  //   // Handle www to non-www redirect in production
-  //   if (process.env.NODE_ENV === 'production') {
-  //     const currentHost = window.location.hostname;
-  //     if (currentHost === 'www.moviefrost.com') {
-  //       const newUrl = window.location.href.replace('://www.', '://');
-  //       if (newUrl !== window.location.href) {
-  //         window.location.replace(newUrl);
-  //       }
-  //     }
-  //   }
-  // }, []);
+  // Handle page refresh for login and register pages
+  useEffect(() => {
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+    
+    if (isAuthPage && !hasRefreshedAuthPage.current) {
+      hasRefreshedAuthPage.current = true;
+      
+      // Check if we need to refresh (only if coming from another page)
+      const navigationEntries = window.performance.getEntriesByType('navigation');
+      if (navigationEntries.length > 0 && navigationEntries[0].type !== 'reload') {
+        // Force a page reload
+        window.location.reload();
+      }
+    } else if (!isAuthPage) {
+      // Reset the flag when leaving auth pages
+      hasRefreshedAuthPage.current = false;
+    }
+  }, [location.pathname]);
 
   const { userInfo } = useSelector((state) => state.userLogin || {});
   const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
