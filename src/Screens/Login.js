@@ -32,18 +32,21 @@ function Login() {
     }
   }, []);
 
+  // ------------------------------------------------------------
+  // Google Sign-In: keep everything inside a POP-UP so that the
+  // browser never navigates away (=> no redirect_uri_mismatch)
+  // ------------------------------------------------------------
   const login = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      console.log(tokenResponse);
+    flow: 'implicit',          // we still want an access-token
+    ux_mode: 'popup',         // <-- force popup mode
+    onSuccess: ({ access_token }) => {
       trackUserRegistration('google');
-      dispatch(loginWithGoogleAction(tokenResponse.access_token));
+      dispatch(loginWithGoogleAction(access_token));
     },
     onError: (error) => {
-      console.error('Login Failed', error);
-      toast.error('Google Sign-In failed');
+      console.error('Google Sign-In error:', error);
+      toast.error(error.error_description || 'Google Sign-In failed');
     },
-    // Only initialize if Google Auth is enabled
-    flow: 'implicit',
   });
 
   const handleGoogleSignIn = () => {
