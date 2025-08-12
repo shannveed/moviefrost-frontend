@@ -32,18 +32,33 @@ function Login() {
     }
   }, []);
 
+  // --------------------------------------------
+  // Google Sign-In via POPUP (no redirect)
+  // --------------------------------------------
   const login = useGoogleLogin({
+    flow: 'implicit', // access_token directly
+    ux_mode: 'popup', // never redirect main window
+    redirect_uri: process.env.REACT_APP_GOOGLE_REDIRECT_URI, // harmless in popup mode
+    scope: 'openid profile email',
+    prompt: 'select_account',
     onSuccess: (tokenResponse) => {
-      console.log(tokenResponse);
-      trackUserRegistration('google');
-      dispatch(loginWithGoogleAction(tokenResponse.access_token));
+      try {
+        const accessToken = tokenResponse?.access_token;
+        if (!accessToken) {
+          toast.error('Google returned no access token');
+          return;
+        }
+        trackUserRegistration('google');
+        dispatch(loginWithGoogleAction(accessToken));
+      } catch (e) {
+        console.error('Google Sign-In success handling error:', e);
+        toast.error('Google Sign-In processing failed');
+      }
     },
     onError: (error) => {
-      console.error('Login Failed', error);
-      toast.error('Google Sign-In failed');
-    },
-    // Only initialize if Google Auth is enabled
-    flow: 'implicit',
+      console.error('Google Sign-In error:', error);
+      toast.error(error?.error_description || 'Google Sign-In failed');
+    }
   });
 
   const handleGoogleSignIn = () => {
@@ -79,11 +94,11 @@ function Login() {
         try {
           const redirectState = JSON.parse(redirectStateStr);
           localStorage.removeItem('redirectAfterLogin');
-          
+
           // Navigate to the saved location
           const fullPath = redirectState.pathname + (redirectState.search || '') + (redirectState.hash || '');
           navigate(fullPath);
-          
+
           // Restore scroll position after navigation
           setTimeout(() => {
             if (redirectState.scrollY && redirectState.scrollY > 0) {
@@ -99,7 +114,7 @@ function Login() {
       }
     }
 
-    if (isSuccess) {  
+    if (isSuccess) {
       toast.success(`Welcome back ${userInfo?.fullName}`);
     }
 
@@ -121,6 +136,7 @@ function Login() {
             alt="logo"
             className="w-full h-12 above-1000:h-10 object-contain mb-4"
           />
+
           {/* The additional line requested */}
           <div className="text-center mb-4 mt-2 text-sm font-semibold text-customPurple">
             Please Log In right now for Free
@@ -138,7 +154,7 @@ function Login() {
                 </div>
                 <p className="text-white font-semibold text-lg above-1000:text-base px-6">Sign In with Google</p>
               </div>
-              
+
               <div className="flex items-center gap-4 my-6 above-1000:my-5">
                 <div className="flex-grow h-px bg-border"></div>
                 <span className="text-border text-sm">OR</span>
@@ -146,7 +162,7 @@ function Login() {
               </div>
             </>
           )}
-          
+
           <div className="w-full">
             <Input
               label="Email"
@@ -175,9 +191,11 @@ function Login() {
             disabled={isLoading}
             className="bg-customPurple transitions hover:bg-main flex-rows mt-6 mb-4 above-1000:mt-5 above-1000:mb-3 gap-4 text-white font-semibold p-4 above-1000:p-3 rounded-lg w-full"
           >
-            {isLoading ? "Loading..." : <>
-              <FiLogIn /> Sign In
-            </>}
+            {isLoading ? "Loading..." : (
+              <>
+                <FiLogIn /> Sign In
+              </>
+            )}
           </button>
           <p className="text-center text-border text-sm">
             Don't have an account?{" "}
