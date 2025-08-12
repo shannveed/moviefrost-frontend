@@ -1,4 +1,4 @@
-// Navbar.js - Updated with page refresh for login/register navigation
+// Navbar.js
 import { trackSearch, trackGuestAction } from '../../utils/analytics';
 import React, { useEffect, useState, useRef } from 'react';
 import { CgUser } from 'react-icons/cg';
@@ -8,11 +8,13 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { getDistinctBrowseByAction } from '../../Redux/Actions/MoviesActions';
 import Axios from '../../Redux/APIs/Axios';
 import { IoClose } from 'react-icons/io5';
+// ****** MODIFIED Import Actions ******
 import {
   clearNotifications,
   removeNotification,
-  markNotificationAsRead,
+  markNotificationAsRead, // Import the new action
 } from '../../Redux/Actions/notificationsActions';
+// ****** END MODIFIED ******
 
 function NavBar() {
   const [search, setSearch] = useState('');
@@ -28,31 +30,39 @@ function NavBar() {
   const { browseBy = [] } = useSelector((state) => state.browseByDistinct || {});
 
   // Notifications from Redux store
-  const { notifications } = useSelector((state) => state.notifications) || { notifications: [] };
+  const { notifications } = useSelector((state) => state.notifications) || { notifications: [] }; // Default to empty array
 
+  // ****** MODIFIED Notification Filtering and Count ******
   const [relevantNotifications, setRelevantNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (userInfo) {
+      // Filter notifications based on whether the current user is admin or not
       const filtered = notifications.filter((notif) =>
         userInfo.isAdmin ? notif.forAdmin === true : notif.forAdmin === false
       );
       setRelevantNotifications(filtered);
+      // Calculate unread count based on the filtered notifications
       const count = filtered.filter(n => !n.read).length;
       setUnreadCount(count);
     } else {
+      // If user is logged out, show no notifications
       setRelevantNotifications([]);
       setUnreadCount(0);
     }
-  }, [notifications, userInfo]);
+  }, [notifications, userInfo]); // Re-run when notifications or userInfo changes
+  // ****** END MODIFIED ******
 
+  // local state for showing/hiding notifications dropdown
   const [notifyOpen, setNotifyOpen] = useState(false);
 
   useEffect(() => {
+    // fetch distinct browseBy from the server
     dispatch(getDistinctBrowseByAction());
   }, [dispatch]);
 
+  // Filter out certain values with safe checks:
   const hollywoodBrowseBy = Array.isArray(browseBy) ? browseBy.filter((item) =>
     item && item.toLowerCase().includes('hollywood')
   ) : [];
@@ -66,21 +76,18 @@ function NavBar() {
     (item) => item && !hollywoodBrowseBy.includes(item) && !indianBrowseBy.includes(item)
   ) : [];
 
+  // Tailwind helpers
   const hover = 'hover:text-customPurple transitions text-white';
   const Hover = ({ isActive }) => (isActive ? 'text-customPurple' : hover);
 
-  // Updated function to handle auth navigation with page refresh
-  const handleAuthNavigation = (path) => {
-    if (window.location.pathname !== path) {
-      window.location.href = path;
-    }
-  };
-
+  // Update handleSearch function
   const handleSearch = (e) => {
     e.preventDefault();
     if (search.trim()) {
+      // Track search for all users
       trackSearch(search);
       
+      // Track if it's a guest search
       if (!userInfo) {
         trackGuestAction('search', { search_term: search });
       }
@@ -93,6 +100,7 @@ function NavBar() {
     }
   };
 
+  // For search suggestions
   const handleInputChange = async (e) => {
     const value = e.target.value;
     setSearch(value);
@@ -118,8 +126,10 @@ function NavBar() {
     }
   };
 
+  // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Close search dropdown
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target)
@@ -138,34 +148,45 @@ function NavBar() {
   };
 
   const handleClearNotifications = () => {
+    // If user is admin => pass true, else false
     dispatch(clearNotifications(userInfo?.isAdmin ? true : false));
-    setNotifyOpen(false);
+    setNotifyOpen(false); // Close dropdown after clearing
   };
 
+  // handle remove single notification (explicitly with X button)
   const handleRemoveSingleNotification = (id) => {
     dispatch(removeNotification(id));
+    // Note: The count will auto-update via the useEffect watching `notifications`
   };
 
+  // ****** NEW: Handle clicking a notification item ******
   const handleNotificationClick = (notification) => {
+    // Mark as read if it's not already read
     if (!notification.read) {
       dispatch(markNotificationAsRead(notification.id));
     }
+    // Navigate if there is a link
     if (notification.link) {
       navigate(notification.link);
     }
+    // Close the dropdown
     setNotifyOpen(false);
   };
+  // ****** END NEW ******
 
+  // UPDATED: Handle Movies nav link click to always go to page 1
   const handleMoviesClick = (e) => {
     e.preventDefault();
+    // Navigate to movies page without any parameters, which will default to page 1
     navigate('/movies');
+    // Force a page reload to ensure fresh data
     window.location.href = '/movies';
   };
 
   return (
     <div className="bg-main shadow-md sticky top-0 z-20">
       <div className="container mx-auto py-6 above-1000:py-4 px-8 mobile:px-0 mobile:py-3 lg:grid gap-10 above-1000:gap-8 grid-cols-7 justify-between items-center">
-        {/* Logo Section */}
+        {/* Logo Section - Decreased size */}
         <div className="hidden lg:block col-span-1">
           <Link to="/">    
             <img
@@ -176,19 +197,19 @@ function NavBar() {
           </Link>
         </div>
 
-        {/* Search Form */}
+        {/* Search Form - Modified for mobile full width */}
         <div className="col-span-2 mobile:col-span-7 relative mobile:w-full" ref={dropdownRef}>
           <form
             onSubmit={handleSearch}
             className="w-full mobile:w-full text-sm above-1000:text-xs bg-black rounded mobile:rounded-none flex-btn gap-4 mobile:gap-2 border-2 border-customPurple "
           >
             <button
-              type="submit"
-              className="bg-customPurple w-12 above-1000:w-10 mobile:w-10 flex-colo h-11 above-1000:h-10 mobile:h-10 rounded-sm mobile:rounded-none text-white"
-              aria-label="Search movies"
-            >
-              <FaSearch className="above-1000:text-sm mobile:text-base" aria-hidden="true" />
-            </button>
+  type="submit"
+  className="bg-customPurple w-12 above-1000:w-10 mobile:w-10 flex-colo h-11 above-1000:h-10 mobile:h-10 rounded-sm mobile:rounded-none text-white"
+  aria-label="Search movies"
+>
+  <FaSearch className="above-1000:text-sm mobile:text-base" aria-hidden="true" />
+</button>
             <input
               type="search"
               value={search}
@@ -199,12 +220,12 @@ function NavBar() {
             {search && (
               <button
                 type="button"
-                className="pr-2 mobile:pr-1 text-customPurple hover:text-white"
+                className="pr-2 mobile:pr-1 text-customPurple hover:text-white" // Added padding
                 onClick={() => {
                   setSearch('');
                   setSearchResults([]);
                   setShowDropdown(false);
-                  navigate('/movies');
+                  navigate('/movies'); // Optionally navigate back to all movies
                 }}
               >
                 <IoClose size={20} className="mobile:w-5 mobile:h-5" />
@@ -212,17 +233,17 @@ function NavBar() {
             )}
           </form>
 
-          {/* Dropdown Suggestions */}
+          {/* Dropdown Suggestions - Full width on mobile */}
           {showDropdown && searchResults.length > 0 && (
             <div className="absolute left-0 mobile:left-0 top-full w-full mobile:w-full bg-black text-white border border-customPurple mobile:border-t-0 mobile:border-x-0 rounded mobile:rounded-none mt-1 mobile:mt-0 z-50 max-h-60 overflow-y-auto">
               {searchResults.map((movie) => (
                 <Link
                   key={movie._id}
                   to={`/movie/${movie._id}`}
-                  className="block px-4 mobile:px-3 py-2 mobile:py-3 hover:bg-gray-700 hover:text-customPurple mobile:border-b mobile:border-gray-800"
+                  className="block px-4 mobile:px-3 py-2 mobile:py-3 hover:bg-gray-700 hover:text-customPurple mobile:border-b mobile:border-gray-800" // Style adjustments
                   onClick={() => {
                     setShowDropdown(false);
-                    setSearch('');
+                    setSearch(''); // Clear search on selection
                   }}
                 >
                   {movie.name}
@@ -234,7 +255,7 @@ function NavBar() {
 
         {/* Navigation Links - Hidden on mobile */}
         <div className="hidden lg:flex col-span-4 font-medium text-sm above-1000:text-xs xl:gap-6 2xl:gap-10 justify-between items-center">
-          {/* Movies */}
+          {/* Movies - UPDATED to use onClick handler */}
           <a href="/movies" onClick={handleMoviesClick} className={hover}>
             Movies
           </a>
@@ -352,23 +373,24 @@ function NavBar() {
             Contact Us
           </NavLink>
 
-          {/* Notifications Icon & Dropdown */}
+          {/* =========== MODIFIED: Notifications Icon & Dropdown =========== */}
           <div className="relative">
             <button 
-              className="relative" 
-              onClick={toggleNotifyDropdown}
-              aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
-              aria-expanded={notifyOpen}
-              aria-controls="notifications-dropdown"
-            >
-              <FaBell className="w-6 h-6 above-1000:w-5 above-1000:h-5 text-white" aria-hidden="true" />
-              {unreadCount > 0 && (
-                <span className="w-5 h-5 above-1000:w-4 above-1000:h-4 flex-colo rounded-full text-xs above-1000:text-[10px] bg-customPurple text-white absolute -top-3 -right-3" aria-label={`${unreadCount} unread notifications`}>
-                  {unreadCount}
-                </span>
-              )}
-            </button>
+  className="relative" 
+  onClick={toggleNotifyDropdown}
+  aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
+  aria-expanded={notifyOpen}
+  aria-controls="notifications-dropdown"
+>
+  <FaBell className="w-6 h-6 above-1000:w-5 above-1000:h-5 text-white" aria-hidden="true" />
+  {unreadCount > 0 && (
+    <span className="w-5 h-5 above-1000:w-4 above-1000:h-4 flex-colo rounded-full text-xs above-1000:text-[10px] bg-customPurple text-white absolute -top-3 -right-3" aria-label={`${unreadCount} unread notifications`}>
+      {unreadCount}
+    </span>
+  )}
+</button>
             {notifyOpen && (
+              // Add ref here if needed for click outside closing
               <div className="absolute right-0 mt-2 w-80 bg-black border border-customPurple rounded shadow-xl z-50 p-2 max-h-96 overflow-y-auto">
                 <div className="flex items-center justify-between px-2 mb-2">
                   <h4 className="text-sm font-semibold text-white">
@@ -388,20 +410,28 @@ function NavBar() {
                     No notifications
                   </p>
                 )}
+                {/* Sort by timestamp descending (newest first) */}
                 {[...relevantNotifications].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).map((notif) => (
                   <div
-                    key={notif.id}
+                    key={notif.id} // Use unique ID as key
+                    // Add subtle background change for unread items
                     className={`text-sm text-white px-2 py-2 border-b border-gray-700 last:border-b-0 flex justify-between items-start group ${!notif.read ? 'bg-gray-800/50' : ''}`}
                   >
                     <div
+                      // Make the message area clickable
                       onClick={() => handleNotificationClick(notif)}
-                      className={`cursor-pointer flex-grow mr-2 ${notif.read ? 'opacity-70' : ''}`}
+                      className={`cursor-pointer flex-grow mr-2 ${notif.read ? 'opacity-70' : ''}`} // Dim read notifications slightly
                     >
                       {notif.message}
+                      {/* Optional: Display timestamp */}
+                      {/* <span className="block text-xs text-gray-400 mt-1">
+                        {new Date(notif.timestamp).toLocaleString()}
+                      </span> */}
                     </div>
+                    {/* Explicit remove button */}
                     <button
                       onClick={() => handleRemoveSingleNotification(notif.id)}
-                      className="text-xs text-gray-500 hover:text-red-500 ml-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-xs text-gray-500 hover:text-red-500 ml-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity" // Show on hover
                       title="Remove notification"
                     >
                       <IoClose size={14}/>
@@ -411,29 +441,34 @@ function NavBar() {
               </div>
             )}
           </div>
+          {/* =========== END MODIFIED NOTIFICATIONS =========== */}
 
-          {/* Profile or Admin Dashboard - Updated to use handleAuthNavigation for login */}
-          {userInfo ? (
-            <NavLink
-              to={userInfo?.isAdmin ? "/dashboard" : "/profile"}
+          {/* Profile or Admin Dashboard */}
+          <NavLink
+              to={
+                userInfo?.isAdmin
+                  ? "/dashboard"
+                  : userInfo
+                  ? "/profile"
+                  : "/login"
+              }
               className={Hover}
-              aria-label={`${userInfo.fullName} profile`}
+              aria-label={userInfo ? `${userInfo.fullName} profile` : 'Login'}
             >
+            {userInfo ? (
               <img
-                src={userInfo?.image || "/images/profile-user (1).png"}
+                src={
+                  userInfo?.image
+                    ? userInfo?.image
+                    : "/images/profile-user (1).png"
+                }
                 alt={userInfo?.fullName}
                 className="w-8 h-8 above-1000:w-6 above-1000:h-6 rounded-full border object-cover border-customPurple"
               />
-            </NavLink>
-          ) : (
-            <button
-              onClick={() => handleAuthNavigation('/login')}
-              className={`${hover} cursor-pointer`}
-              aria-label="Login"
-            >
+            ) : (
               <CgUser className="w-8 h-8 above-1000:w-6 above-1000:h-6" />
-            </button>
-          )}
+            )}
+          </NavLink>
 
           {/* Favorites */}
           <NavLink to="/favorites" className={`${Hover} relative`}>

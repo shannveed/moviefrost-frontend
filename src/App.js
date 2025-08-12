@@ -86,7 +86,25 @@ function App() {
   const pageEntryTime = useRef(Date.now());
   const hasShownPrompt = useRef(false);
   const aosInitialized = useRef(false);
-  const hasRefreshedAuthPage = useRef(false);
+
+  // NEW: Force a clean reload once on /login or /register
+  useEffect(() => {
+    const path = location.pathname;
+    const isAuth = path === '/login' || path === '/register';
+    if (isAuth) {
+      const key = 'reloaded:' + path;
+      // Only reload once per path per session
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        // Replace to avoid additional history entry
+        window.location.replace(path + location.search + location.hash);
+      }
+    } else {
+      // When leaving auth pages, clear flags so a future click will reload once again
+      sessionStorage.removeItem('reloaded:/login');
+      sessionStorage.removeItem('reloaded:/register');
+    }
+  }, [location.pathname, location.search, location.hash]);
 
   // Initialize AOS only once after component mount
   useEffect(() => {
@@ -101,25 +119,6 @@ function App() {
       });
     }
   }, []);
-
-  // Handle page refresh for login and register pages
-  useEffect(() => {
-    const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-    
-    if (isAuthPage && !hasRefreshedAuthPage.current) {
-      hasRefreshedAuthPage.current = true;
-      
-      // Check if we need to refresh (only if coming from another page)
-      const navigationEntries = window.performance.getEntriesByType('navigation');
-      if (navigationEntries.length > 0 && navigationEntries[0].type !== 'reload') {
-        // Force a page reload
-        window.location.reload();
-      }
-    } else if (!isAuthPage) {
-      // Reset the flag when leaving auth pages
-      hasRefreshedAuthPage.current = false;
-    }
-  }, [location.pathname]);
 
   const { userInfo } = useSelector((state) => state.userLogin || {});
   const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
@@ -223,17 +222,6 @@ function App() {
     }, 30 * 60 * 1000);
     return () => clearTimeout(timer);
   }, [userInfo, navigate, location]);
-
-  // DevTools detection code - load only in production
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
-      const loadDevToolsDetection = async () => {
-        const module = await import('./utils/devToolsDetection');
-        module.initDevToolsDetection();
-      };
-      loadDevToolsDetection();
-    }
-  }, []);
 
   return (
     <ErrorBoundary>

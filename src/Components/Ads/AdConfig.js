@@ -29,7 +29,7 @@ export const AD_CONFIG = {
     popunder: {
       key: '62c8f34a5a4d1afbb8ec9a7b28896caa',
       format: 'popunder',
-      frequency_cap: 5,
+      frequency_cap: 3,
     },
     directLink: 'https://www.profitableratecpm.com/yhj6nn10?key=e6a0850d911a706749887b58b273f025'
   },

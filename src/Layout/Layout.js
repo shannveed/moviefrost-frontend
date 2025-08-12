@@ -1,4 +1,4 @@
-// Layout.js - Updated to exclude ads on login/register pages
+// Layout.js - Updated to disable ads on /login and /register
 import React, { useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import NavBar from './Navbar/Navbar';
@@ -11,24 +11,16 @@ import { AD_CONFIG } from '../Components/Ads/AdConfig';
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
   const location = useLocation();
-  
-  // Check if current page is login or register
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-  
+  const path = location.pathname;
+  const isAuthRoute = path === '/login' || path === '/register';
+
   useEffect(() => {
-    // Only set ads as loaded if not on auth pages
-    if (!isAuthPage) {
-      adsLoadedRef.current = true;
-    } else {
-      adsLoadedRef.current = false;
-    }
-    
+    // Ensure ads are only loaded once per layout mount
+    adsLoadedRef.current = true;
     return () => {
-      if (!isAuthPage) {
-        adsLoadedRef.current = false;
-      }
+      adsLoadedRef.current = false;
     };
-  }, [isAuthPage]);
+  }, []);
   
   return (
     <div className="bg-main text-white">
@@ -40,8 +32,8 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if not on auth pages and ads are loaded */}
-        {!isAuthPage && adsLoadedRef.current && (
+        {/* Only render ads if NOT on auth routes */}
+        {adsLoadedRef.current && !isAuthRoute && (
           <>
             {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
@@ -67,7 +59,7 @@ function Layout({ children }) {
               </div>
             )}
             
-            {/* PopAds Popunder */}
+            {/* PopAds Popunder - NEW (now also runs on iOS) */}
             {AD_CONFIG.popAds.enabled && (
               <PopAdsPopunder
                 enabled={AD_CONFIG.popAds.enabled}
