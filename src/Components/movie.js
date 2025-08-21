@@ -1,3 +1,6 @@
+
+
+
 import React, { memo } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -42,7 +45,7 @@ const Movie = memo(({ movie }) => {
           alt={movie?.name || 'Movie poster'}
           width={300}
           height={450}
-          className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw*1.2)] object-cover rounded-md mobile:rounded-none"
+          className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw*1.519)] object-cover rounded-md mobile:rounded-none"
         />
       </button>
 
@@ -73,3 +76,4 @@ const Movie = memo(({ movie }) => {
 Movie.displayName = 'Movie';
 
 export default Movie;
+
