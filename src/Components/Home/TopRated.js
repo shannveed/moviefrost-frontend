@@ -1,3 +1,4 @@
+// TopRated.js
 import React, { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Titles from "../Titles";
@@ -95,7 +96,7 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
               <img
                 src={movie?.titleImage ? movie.titleImage : "/images/c3.jpg"}
                 alt={movie?.name}
-                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw*1.519)] object-cover rounded-md mobile:rounded-none" 
+                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw*1.2)] object-cover rounded-md mobile:rounded-none" 
               />
             </Link>
             <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center gap-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 mobile:px-2">
@@ -170,3 +171,4 @@ function TopRated({ movies, isLoading }) {
 }
 
 export default TopRated;
+
