@@ -142,7 +142,7 @@ SwiperComponent.displayName = 'SwiperComponent';
 function Banner({ movies = [], isLoading = false }) {
   /* 16 : 7 on ≥ 640 px,  16 : 10 on mobile for better aspect  */
   const sameClass =
-    'w-full flex-colo xl:h-[530px] bg-dry lg:h-96 h-80 mobile:h-[calc(100vw*0.625)]';
+    'w-full flex-colo xl:h-[530px] bg-dry lg:h-96 h-80 mobile:h-[calc(100vw*0.645)]';
 
   return (
     <section className="relative w-full" aria-label="Featured movies">
