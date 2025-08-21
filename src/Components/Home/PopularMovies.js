@@ -1,3 +1,4 @@
+// PopularMovies.js - Updated to use Monetag banner instead of Ezoic
 import React from 'react';
 import Titles from '../Titles';
 import { BsCollectionFill } from 'react-icons/bs';
