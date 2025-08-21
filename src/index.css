@@ -78,6 +78,13 @@ select:focus {
   }
 }
 
+/* Keep 16:7 banner aspect on very slow connections */
+@media (max-width:639px){
+  .mobile\:h-\[calc\(100vw\*0\.4375\)\]{
+    height:calc(100vw * 0.4375);
+  }
+}
+
 /* DRAWER */
 .drawer {
   overflow: visible;
@@ -412,5 +419,3 @@ button[type="submit"]:hover:not(:disabled) {
 button[type="submit"]:active:not(:disabled) {
   transform: translateY(0);
 }
-
-
