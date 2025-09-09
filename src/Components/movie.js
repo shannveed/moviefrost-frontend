@@ -59,7 +59,7 @@ const Movie = memo(({ movie }) => {
           onClick={handleLikeClick}
           disabled={isLiked || isLoading}
           aria-label={isLiked ? `Remove ${movie?.name} from favorites` : `Add ${movie?.name} to favorites`}
-          className={`h-9 w-9 above-1000:h-7 above-1000:w-7 mobile:h-3 mobile:w-3 text-sm above-1000:text-xs mobile:text-[10px] flex-colo transitions ${
+          className={`h-9 w-9 above-1000:h-7 above-1000:w-7 mobile:h-3 mobile:w-3 text-sm above-1000:text-xs mobile:text-[13px] flex-colo transitions ${
             isLiked ? 'bg-transparent' : 'bg-customPurple'
           } hover:bg-transparent border-2 border-customPurple rounded-md text-white flex-shrink-0`}
         >
