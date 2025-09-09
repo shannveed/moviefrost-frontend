@@ -27,7 +27,7 @@ const Movie = memo(({ movie }) => {
     <article className="border border-border mobile:border-0 p-2 mobile:p-0 mobile:mb-0 hover:scale-95 transitions relative rounded mobile:rounded-none overflow-hidden group">
       {/* Thumbnail info - Updated with smaller mobile styles */}
       {movie?.thumbnailInfo && (
-        <div className="absolute top-1 left-1 bg-customPurple text-white text-xs above-1000:text-[10px] mobile:text-[11px] px-2 mobile:px-1.5 py-0.5 mobile:py-0.5 rounded font-semibold z-10">
+        <div className="absolute top-2 left-2 bg-customPurple text-white text-xs above-1000:text-[10px] mobile:text-[11px] px-2 mobile:px-1.5 py-0.5 mobile:py-0.5 rounded font-semibold z-10">
           {movie.thumbnailInfo}
         </div>
       )}
@@ -46,7 +46,7 @@ const Movie = memo(({ movie }) => {
         />
       </button>
 
-      <div className="absolute flex-btn gap-2 bottom-0 right-0 left-0 bg-main bg-opacity-60 text-white px-4 mobile:px-1 py-2 mobile:py-2 items-end">
+      <div className="absolute flex-btn gap-2 bottom-0 right-0 left-0 bg-main bg-opacity-60 text-white px-4 mobile:px-1 py-1 mobile:py-2 items-end">
         {/* Movie name - Updated with smaller mobile text */}
         <h3
           className="font-semibold text-white text-sm above-1000:text-xs mobile:text-[11px] line-clamp-2 flex-grow mr-2"
@@ -54,12 +54,12 @@ const Movie = memo(({ movie }) => {
         >
           {movie?.name}
         </h3>
-        {/* Like button – smaller on phones (20px), keeping current sizes for tablets/desktop */}
+        {/* Like button – hidden on mobiles (mobile:hidden), visible on ≥ 640 px (tablet / desktop) */}
         <button
           onClick={handleLikeClick}
           disabled={isLiked || isLoading}
           aria-label={isLiked ? `Remove ${movie?.name} from favorites` : `Add ${movie?.name} to favorites`}
-          className={`h-9 w-9 above-1000:h-7 above-1000:w-7 mobile:h-3 mobile:w-3 text-sm above-1000:text-xs mobile:text-[13px] flex-colo transitions ${
+          className={`mobile:hidden h-9 w-9 above-1000:h-7 above-1000:w-7 text-sm above-1000:text-xs flex-colo transitions ${
             isLiked ? 'bg-transparent' : 'bg-customPurple'
           } hover:bg-transparent border-2 border-customPurple rounded-md text-white flex-shrink-0`}
         >

@@ -100,17 +100,24 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
               />
             </Link>
             <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center gap-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 mobile:px-2">
-              {/* Like Button - UPDATED with 24x24px mobile size */}
+              {/* Like button – hidden on mobiles, kept on ≥ 640 px */}
               <button
                 onClick={(e) => {
                   LikeMovie(movie, dispatch, userInfo);
                 }}
                 disabled={isLiked(movie) || isLoading}
-                className={`absolute top-4 right-4 mobile:top-2 mobile:right-2 w-9 h-9 above-1000:h-7 above-1000:w-7 mobile:w-6 mobile:h-6 flex-colo transitions hover:bg-customPurple rounded-full ${
-                  isLiked(movie) ? "bg-customPurple" : "bg-white bg-opacity-30"
-                } text-white z-10`} 
+                className={`
+                  mobile:hidden
+                  absolute top-4 right-4
+                  w-9 h-9 above-1000:h-7 above-1000:w-7
+                  flex-colo rounded-full z-10 transitions
+                  ${isLiked(movie) 
+                    ? 'bg-customPurple' 
+                    : 'bg-white bg-opacity-30 hover:bg-customPurple'}
+                  text-white
+                `}
               >
-                <FaHeart className="mobile:text-[10px] above-1000:text-xs text-sm" />
+                <FaHeart className="above-1000:text-xs text-sm" />
               </button>
 
               {/* Movie Name - Link inside the overlay */}
