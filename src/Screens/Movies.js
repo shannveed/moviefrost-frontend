@@ -230,7 +230,7 @@ function MoviesPage() {
         ) : movies?.length > 0 ? (
           <>
             <div 
-              className="grid sm:mt-8 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-4 mobile:gap-0"
+              className="grid sm:mt-8 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2 mobile:px-4"
               onClick={saveNavigationState}
             >
               {movies.map((movie, index) => (

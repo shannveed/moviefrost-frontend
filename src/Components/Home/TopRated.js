@@ -58,13 +58,14 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
         nextEl: nextEl.current,
       }}
       breakpoints={{
+        /* ≤ 639 px (mobile) – always two cards */
         0: {
-          slidesPerView: 1,
-          spaceBetween: 0, // No space on mobile
+          slidesPerView: 2,
+          spaceBetween: 6,
         },
         300: {
-          slidesPerView: 1,
-          spaceBetween: 0, // No space on mobile
+          slidesPerView: 2,
+          spaceBetween: 8,
         },
         501: {
           slidesPerView: 2,
@@ -95,21 +96,21 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
               <img
                 src={movie?.titleImage ? movie.titleImage : "/images/c3.jpg"}
                 alt={movie?.name}
-                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw*1.519)] object-cover rounded-md mobile:rounded-none" 
+                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw/2*1.519)] object-cover rounded-md mobile:rounded-none" 
               />
             </Link>
             <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center gap-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 mobile:px-2">
-              {/* Like Button */}
+              {/* Like Button - UPDATED with 24x24px mobile size */}
               <button
                 onClick={(e) => {
                   LikeMovie(movie, dispatch, userInfo);
                 }}
                 disabled={isLiked(movie) || isLoading}
-                className={`absolute top-4 right-4 mobile:top-2 mobile:right-2 w-9 h-9 mobile:w-7 mobile:h-7 flex-colo transitions hover:bg-customPurple rounded-full ${
+                className={`absolute top-4 right-4 mobile:top-2 mobile:right-2 w-9 h-9 above-1000:h-7 above-1000:w-7 mobile:w-6 mobile:h-6 flex-colo transitions hover:bg-customPurple rounded-full ${
                   isLiked(movie) ? "bg-customPurple" : "bg-white bg-opacity-30"
                 } text-white z-10`} 
               >
-                <FaHeart className="mobile:text-sm" />
+                <FaHeart className="mobile:text-[10px] above-1000:text-xs text-sm" />
               </button>
 
               {/* Movie Name - Link inside the overlay */}

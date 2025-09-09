@@ -1,4 +1,4 @@
-// SingleMovie.js - Updated to remove Ezoic ads
+// SingleMovie.js - Updated with mobile grid optimization
 import { trackMovieView } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -97,9 +97,8 @@ function SingleMovie() {
             image={movie.titleImage || movie.image}
             url={`https://moviefrost.com/movie/${movie._id}`}
             type="video.movie"
-            published={movie.createdAt}
-            updated={movie.updatedAt}
           />
+          
           {movieStructuredData && (
             <script type="application/ld+json">
               {JSON.stringify(movieStructuredData)}
@@ -153,7 +152,8 @@ function SingleMovie() {
             {RelatedMovies?.length > 0 && (
               <div className="my-16">
                 <Titles title="Related Movies" Icon={BsCollectionFill} />
-                <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 grid-cols-1 gap-4 mobile:gap-0">
+                {/* Updated grid with mobile:grid-cols-2 */}
+                <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2">
                   {RelatedMovies?.slice(0, 10).map((relatedMovie) => (
                     <Movie key={relatedMovie?._id} movie={relatedMovie} />
                   ))}

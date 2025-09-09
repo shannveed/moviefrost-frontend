@@ -1,4 +1,4 @@
-// WatchPage.js
+// WatchPage.js - Updated with mobile grid optimization
 import { trackVideoPlay, trackGuestAction, trackLoginPrompt } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -21,7 +21,7 @@ function WatchPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [play, setPlay] = useState(false);
-   const [guestWatchTime, setGuestWatchTime] = useState(0);
+  const [guestWatchTime, setGuestWatchTime] = useState(0);
   const [hasShownLoginPrompt, setHasShownLoginPrompt] = useState(false);
 
   // For Movies with 2 servers:
@@ -51,15 +51,15 @@ function WatchPage() {
   };
 
   // Track guest watch time
- useEffect(() => {
+  useEffect(() => {
     let interval;
     if (play && !userInfo) {
       interval = setInterval(() => {
         setGuestWatchTime(prev => {
           const newTime = prev + 1;
           
-          // Show login prompt after 30 minutes of watching
-          if (newTime >= 1800 && !hasShownLoginPrompt) {
+          // Show login prompt after 2 minutes of watching
+          if (newTime >= 120 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
             
@@ -411,11 +411,12 @@ function WatchPage() {
           </div>
         )}
 
-        {/* Related Movies Section - Updated to match SingleMovie.js */}
+        {/* Related Movies Section - Updated with mobile:grid-cols-2 */}
         {RelatedMovies && RelatedMovies.length > 0 && (
           <div className="my-16">
             <Titles title="Related Movies" Icon={BsCollectionFill} />
-            <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 grid-cols-1 gap-4 mobile:gap-0">
+            {/* Updated grid with mobile:grid-cols-2 */}
+            <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2">
               {RelatedMovies?.slice(0, 10).map((relatedMovie) => (
                 <Movie key={relatedMovie?._id} movie={relatedMovie} />
               ))}
