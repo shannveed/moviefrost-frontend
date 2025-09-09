@@ -27,7 +27,7 @@ const Movie = memo(({ movie }) => {
     <article className="border border-border mobile:border-0 p-2 mobile:p-0 mobile:mb-0 hover:scale-95 transitions relative rounded mobile:rounded-none overflow-hidden group">
       {/* Thumbnail info - Updated with smaller mobile styles */}
       {movie?.thumbnailInfo && (
-        <div className="absolute top-2 left-2 bg-customPurple text-white text-xs above-1000:text-[10px] mobile:text-[11px] px-2 mobile:px-1.5 py-0.5 mobile:py-0.5 rounded font-semibold z-10">
+        <div className="absolute top-1 left-1 bg-customPurple text-white text-xs above-1000:text-[10px] mobile:text-[11px] px-2 mobile:px-1.5 py-0.5 mobile:py-0.5 rounded font-semibold z-10">
           {movie.thumbnailInfo}
         </div>
       )}
