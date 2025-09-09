@@ -42,7 +42,7 @@ const Movie = memo(({ movie }) => {
           alt={movie?.name || 'Movie poster'}
           width={300}
           height={450}
-          className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc((100vw-2rem-0.5rem)/2*1.54)] object-cover rounded-md "
+          className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc((100vw-2rem-0.5rem)/2*1.54)] object-cover rounded-sm "
         />
       </button>
 
