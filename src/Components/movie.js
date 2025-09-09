@@ -24,7 +24,7 @@ const Movie = memo(({ movie }) => {
   };
 
   return (
-    <article className="border border-border mobile:border-0 p-2 mobile:p-0 mobile:mb-0 hover:scale-95 transitions relative rounded mobile:rounded-none overflow-hidden group">
+    <article className="border border-border mobile:border-2 p-2 mobile:p-1 mobile:mb-0 hover:scale-95 transitions relative rounded mobile:rounded-md overflow-hidden group">
       {/* Thumbnail info - Updated with smaller mobile styles */}
       {movie?.thumbnailInfo && (
         <div className="absolute top-2 left-2 bg-customPurple text-white text-xs above-1000:text-[10px] mobile:text-[11px] px-2 mobile:px-1.5 py-0.5 mobile:py-0.5 rounded font-semibold z-10">
@@ -42,11 +42,11 @@ const Movie = memo(({ movie }) => {
           alt={movie?.name || 'Movie poster'}
           width={300}
           height={450}
-          className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc((100vw-2rem-0.5rem)/2*1.54)] object-cover rounded-md mobile:rounded-none"
+          className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc((100vw-2rem-0.5rem)/2*1.54)] object-cover rounded-md "
         />
       </button>
 
-      <div className="absolute flex-btn gap-2 bottom-0 right-0 left-0 bg-main bg-opacity-60 text-white px-4 mobile:px-1 py-1 mobile:py-2 items-end">
+      <div className="absolute flex-btn gap-2 bottom-0 right-0 left-0 bg-main bg-opacity-60 text-white px-4 mobile:px-1 py-2 mobile:py-2 items-end">
         {/* Movie name - Updated with smaller mobile text */}
         <h3
           className="font-semibold text-white text-sm above-1000:text-xs mobile:text-[11px] line-clamp-2 flex-grow mr-2"

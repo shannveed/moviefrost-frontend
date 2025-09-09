@@ -91,12 +91,12 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
     >
       {movies?.map((movie, index) => (
         <SwiperSlide key={index}>
-          <div className="border border-border mobile:border-0 p-2 mobile:p-0 hover:scale-95 transitions relative rounded mobile:rounded-none overflow-hidden group">
+          <div className="border border-border mobile:border-2 p-2 mobile:p-1 hover:scale-95 transitions relative rounded mobile:rounded-md overflow-hidden group">
             <Link to={`/movie/${movie?._id}`}>
               <img
                 src={movie?.titleImage ? movie.titleImage : "/images/c3.jpg"}
                 alt={movie?.name}
-                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw/2*1.519)] object-cover rounded-md mobile:rounded-none" 
+                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw/2*1.519)] object-cover rounded-md mobile:rounded" 
               />
             </Link>
             <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center gap-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 mobile:px-2">
