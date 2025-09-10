@@ -24,7 +24,7 @@ const Movie = memo(({ movie }) => {
   };
 
   return (
-    <article className="border border-border mobile:border-2 p-2 mobile:p-1 mobile:mb-0 hover:scale-95 transitions relative rounded mobile:rounded-md overflow-hidden group">
+    <article className="border border-border mobile:border-1 p-2 mobile:p-1 mobile:mb-0 hover:scale-95 transitions relative rounded mobile:rounded-md overflow-hidden group">
       {/* Thumbnail info - Updated with smaller mobile styles */}
       {movie?.thumbnailInfo && (
         <div className="absolute top-2 left-2 bg-customPurple text-white text-xs above-1000:text-[10px] mobile:text-[11px] px-2 mobile:px-1.5 py-0.5 mobile:py-0.5 rounded font-semibold z-10">
