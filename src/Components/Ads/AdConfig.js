@@ -36,7 +36,7 @@ export const AD_CONFIG = {
   
   // PopAds Configuration
   popAds: {
-    enabled: true,
+    enabled: false,
     websiteId: 5214524,
     popundersPerIP: '5',
     delayBetween: 0,
