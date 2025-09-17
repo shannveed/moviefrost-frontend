@@ -58,8 +58,8 @@ function WatchPage() {
         setGuestWatchTime(prev => {
           const newTime = prev + 1;
           
-          // Show login prompt after 2 minutes of watching
-          if (newTime >= 120 && !hasShownLoginPrompt) {
+          // Show login prompt after 20 minutes of watching
+          if (newTime >= 1200 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
             
