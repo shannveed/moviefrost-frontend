@@ -16,13 +16,13 @@ import OptimizedImage from '../OptimizedImage';
 /*  ──────────────────────────────────────────────────────────
     Mobile-friendly Banner  
     • Large screens keep the existing full-screen overlay  
-    • Mobile (&lt; 640 px) gets a compact bottom sheet with
-      better spacing / contrast / tap targets
+    • Mobile (< 640 px) now ALSO receives a dark overlay that
+      covers the whole poster – identical readability everywhere
    ────────────────────────────────────────────────────────── */
 const SwiperComponent = memo(({ sameClass, movies }) => {
   const { isLoading } = useSelector((state) => state.userLikeMovie);
-  const dispatch          = useDispatch();
-  const { userInfo }      = useSelector((state) => state.userLogin);
+  const dispatch      = useDispatch();
+  const { userInfo }  = useSelector((state) => state.userLogin);
 
   /* Helpers */
   const isLiked = useCallback((movie) => IfMovieLiked(movie), []);
@@ -61,6 +61,10 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             loading={index === 0 ? 'eager' : 'lazy'}
           />
 
+          {/* ───────── NEW MOBILE‐WIDE DARK OVERLAY ─────────  */}
+          {/* Covers the whole poster on phones to match desktop readability  */}
+          <div className="sm:hidden absolute inset-0 bg-black/50 pointer-events-none" />
+
           {/* ─────────────── DESKTOP/TABLET OVERLAY ─────────────── */}
           <div className="hidden sm:flex absolute linear-bg xl:pl-52 sm:pl-32 pl-8 top-0 bottom-0 right-0 left-0 flex-col justify-center lg:gap-8 md:gap-5 gap-4">
             <h1 className="xl:text-4xl truncate capitalize font-sans sm:text-xl text-lg font-bold">
@@ -97,8 +101,8 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             </div>
           </div>
 
-          {/* ─────────────── MOBILE OVERLAY ─────────────── */}
-          <div className="sm:hidden absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-4 py-3 flex flex-col gap-2">
+          {/* ─────────────── MOBILE OVERLAY (bottom sheet) ─────────────── */}
+          <div className="sm:hidden absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-4 py-3 flex flex-col gap-2 z-10">
             {/* title */}
             <h2 className="text-base font-semibold leading-5 line-clamp-2">
               {movie?.name}

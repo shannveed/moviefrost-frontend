@@ -1,4 +1,4 @@
-// WatchPage.js - Updated with mobile grid optimization
+// WatchPage.js - Updated with ads disabled
 import { trackVideoPlay, trackGuestAction, trackLoginPrompt } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -137,6 +137,7 @@ function WatchPage() {
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
+    /* ads disabled */
   }, [dispatch, id]);
 
   // For WebSeries, pick first episode by default

@@ -263,7 +263,7 @@ export const AdsterraPopunder = ({ atOptions }) => {
 
 // NEW PopAds Integration Component
 export const PopAdsPopunder = ({
-  enabled = false,
+  enabled = true,
   websiteId = process.env.REACT_APP_POPADS_WEBSITE_ID,
   popundersIP = '10:6,5:6',
   delay = 120,
@@ -309,7 +309,7 @@ export const PopAdsPopunder = ({
 };
 
 // PopAds Integration (Legacy compatibility)
-export const PopAdsIntegration = ({ websiteId, enabled = false }) => {
+export const PopAdsIntegration = ({ websiteId, enabled = true }) => {
   // This is now just a wrapper around PopAdsPopunder for backward compatibility
   return <PopAdsPopunder enabled={enabled} websiteId={websiteId} />;
 };
