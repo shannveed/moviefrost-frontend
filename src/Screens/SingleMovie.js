@@ -1,4 +1,4 @@
-// SingleMovie.js - Updated with ads disabled
+// SingleMovie.js - Updated with mobile grid optimization
 import { trackMovieView } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -20,7 +20,7 @@ import MetaTags from '../Components/SEO/MetaTags';
 
 function SingleMovie() {
   const [modalOpen, setModalOpen] = useState(false);
-  const adsEnabled = false;  // Ads disabled
+  const [adsEnabled, setAdsEnabled] = useState(false);
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -52,7 +52,11 @@ function SingleMovie() {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
     
-    // Ads disabled - no timer needed
+    const timer = setTimeout(() => {
+      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
+    }, 1500);
+    
+    return () => clearTimeout(timer);
   }, [dispatch, id]);
 
   useEffect(() => {
@@ -131,11 +135,19 @@ function SingleMovie() {
           />
 
           <div className="container mx-auto min-h-screen px-8 mobile:px-4 my-6">
-            {/* ads removed */}
+            {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
             
             <MovieRates movie={movie} />
             
-            {/* ads removed */}
+            {/* Monetag Banner after movie rates */}
+            {adsEnabled && AD_CONFIG.monetag.banner.enabled && (
+              <MonetagBanner 
+                zoneId={AD_CONFIG.monetag.banner.zoneId}
+                width={728}
+                height={90}
+                className="my-8"
+              />
+            )}
 
             {RelatedMovies?.length > 0 && (
               <div className="my-16">

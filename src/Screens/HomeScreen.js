@@ -1,5 +1,5 @@
-// HomeScreen.js - Updated with ads disabled
-import React, { useEffect, useRef } from 'react';
+// HomeScreen.js
+import React, { useEffect, useRef, useState } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
 import Promos from '../Components/Home/Promos';
@@ -10,7 +10,7 @@ import {
   getAllMoviesAction,
   getRandomMoviesAction,
   getTopRatedMovieAction,
-  getLatestMoviesAction,
+  getLatestMoviesAction,          // 🌟 UPDATED
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
 import {
@@ -23,8 +23,7 @@ import MetaTags from '../Components/SEO/MetaTags';
 
 function HomeScreen() {
   const dispatch = useDispatch();
-  /* Ads disabled */
-  const adsEnabled = false;
+  const [adsEnabled, setAdsEnabled] = useState(false);
   const adsInitRef = useRef(false);
 
   /* ---------------- REDUX SELECTORS ---------------- */
@@ -45,9 +44,9 @@ function HomeScreen() {
 
   // 🌟 LATEST (flagged) – for the banner
   const {
-    isLoading: latestLoading,
-    isError:   latestError,
-    movies:    latestMovies = [],
+    isLoading: latestLoading,      // 🌟
+    isError:   latestError,        // 🌟
+    movies:    latestMovies = [],  // 🌟
   } = useSelector((state) => state.moviesLatest || {});
 
   // Top rated
@@ -59,20 +58,25 @@ function HomeScreen() {
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    dispatch(getLatestMoviesAction());
+    dispatch(getLatestMoviesAction());           // 🌟 NEW
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
 
-    // no-op (ads disabled)
+    const timer = setTimeout(() => {
+      setAdsEnabled(process.env.REACT_APP_ADS_ENABLED !== 'false');
+      adsInitRef.current = true;
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [dispatch]);
 
   /* ---------------- ERROR HANDLING ---------------- */
   useEffect(() => {
-    if (isError || randomError || topError || latestError) {
+    if (isError || randomError || topError || latestError) {      // 🌟
       toast.error(isError || randomError || topError || latestError);
     }
-  }, [isError, randomError, topError, latestError]);
+  }, [isError, randomError, topError, latestError]);              // 🌟
 
   /* ---------------- BANNER FEED PRIORITY ----------------
         1) latestMovies (flagged)
@@ -108,15 +112,31 @@ function HomeScreen() {
         {/* ------------ BANNER (Latest-flag first) ------------ */}
         <Banner
           movies={bannerFeed}
-          isLoading={latestLoading || randomLoading}
+          isLoading={latestLoading || randomLoading}   // 🌟
         />
 
-        {/* Ads stripped on request */}
+        {/* Ads etc. stay the same */}
+        {adsEnabled && !adsInitRef.current && (
+          <PopAdsIntegration
+            enabled
+            websiteId={process.env.REACT_APP_POPADS_WEBSITE_ID}
+          />
+        )}
+        {adsEnabled && <AdsterraNative atOptions={AD_CONFIG.adsterra.native} />}
 
         {/* Latest grid (unchanged) */}
         <PopularMovies movies={movies} isLoading={isLoading} />
 
-        {/* Ads stripped on request */}
+        {adsEnabled && (
+          <>
+            <div className="hidden md:block">
+              <AdsterraBanner atOptions={AD_CONFIG.adsterra.banner.desktop} />
+            </div>
+            <div className="block md:hidden">
+              <AdsterraBanner atOptions={AD_CONFIG.adsterra.banner.mobile} />
+            </div>
+          </>
+        )}
 
         <Promos />
 
