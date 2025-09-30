@@ -1,4 +1,3 @@
-// WatchPage.js - Updated with mobile grid optimization
 import { trackVideoPlay, trackGuestAction, trackLoginPrompt } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -58,8 +57,8 @@ function WatchPage() {
         setGuestWatchTime(prev => {
           const newTime = prev + 1;
           
-          // Show login prompt after 20 minutes of watching
-          if (newTime >= 1200 && !hasShownLoginPrompt) {
+          // Show login prompt after 13 minutes of watching
+          if (newTime >= 780 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
             
@@ -137,6 +136,7 @@ function WatchPage() {
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
+    /* ads disabled */
   }, [dispatch, id]);
 
   // For WebSeries, pick first episode by default

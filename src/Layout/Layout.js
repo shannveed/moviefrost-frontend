@@ -1,4 +1,3 @@
-// Layout.js - Updated to disable ads on /login and /register
 import React, { useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import NavBar from './Navbar/Navbar';
@@ -32,23 +31,18 @@ function Layout({ children }) {
         <Footer />
         <MobileFooter />
         
-        {/* Only render ads if NOT on auth routes */}
+        {/* ---- ALL AD-COMPONENTS TEMPORARILY DISABLED ----
         {adsLoadedRef.current && !isAuthRoute && (
           <>
-            {/* Adsterra Social Bar - Single instance */}
             <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
-            
-            {/* Adsterra Popunder - Single instance */}
             <AdsterraPopunder atOptions={AD_CONFIG.adsterra.popunder} />
             
-            {/* Monetag Popunder - one global instance */}
             {AD_CONFIG.monetag.popunder.enabled && (
               <MonetagPopunder 
                 frequencyCap={AD_CONFIG.monetag.popunder.frequencyCap}
               />
             )}
             
-            {/* Optional 728×90 banner right above the footer */}
             {AD_CONFIG.monetag.banner.enabled && (
               <div className="container mx-auto px-4 mb-8">
                 <MonetagBanner
@@ -59,7 +53,6 @@ function Layout({ children }) {
               </div>
             )}
             
-            {/* PopAds Popunder - NEW (now also runs on iOS) */}
             {AD_CONFIG.popAds.enabled && (
               <PopAdsPopunder
                 enabled={AD_CONFIG.popAds.enabled}
@@ -71,6 +64,7 @@ function Layout({ children }) {
             )}
           </>
         )}
+        */}
       </ScrollOnTop>
     </div>
   );
