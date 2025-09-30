@@ -6,15 +6,16 @@ const MetaTags = ({
   description = 'Watch movies online free in HD quality. Stream latest movies, web series without registration.',
   keywords = 'watch movies online, free movies, stream movies, HD movies',
   image = 'https://moviefrost.com/og-image.jpg',
-  url = 'https://moviefrost.com',
+  url,
   type = 'website'
 }) => {
+  const canonical = url || 'https://www.moviefrost.com';
   const fullTitle = title.includes('MovieFrost') ? title : `${title} | MovieFrost`;
   
   return (
     <Helmet>
       {/* Canonical URL MUST be first for Google's canonicalization */}
-      <link rel="canonical" href={url} />
+      <link rel="canonical" href={canonical} />
       
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
@@ -24,8 +25,9 @@ const MetaTags = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
-      <meta property="og:url" content={url} />
+      <meta property="og:url" content={canonical} />
       <meta property="og:type" content={type} />
+      <meta property="og:site_name" content="MovieFrost" />
       
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
