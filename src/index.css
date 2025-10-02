@@ -419,3 +419,4 @@ button[type="submit"]:hover:not(:disabled) {
 button[type="submit"]:active:not(:disabled) {
   transform: translateY(0);
 }
+

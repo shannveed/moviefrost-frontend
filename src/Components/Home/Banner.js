@@ -115,7 +115,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             <div className="flex items-center gap-3 mt-1">
               <Link
                 to={`/movie/${movie?._id}`}
-                className="flex-1 bg-customPurple hover:bg-opacity-80 transition text-white text-sm py-2 rounded text-center"
+                className="flex-[0.5] bg-customPurple  hover:bg-opacity-80 transition text-white text-sm py-3 rounded text-center"
               >
                 Watch
               </Link>
@@ -129,7 +129,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
                     : `Add ${movie?.name} to favorites`
                 }
                 className={`w-10 h-10 flex-colo rounded ${
-                  isLiked(movie) ? 'bg-customPurple' : 'bg-white bg-opacity-30'
+                  isLiked(movie) ? 'bg-customPurple ' : 'bg-white bg-opacity-30'
                 } text-white`}
               >
                 <FaHeart className="text-sm" aria-hidden="true" />

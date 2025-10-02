@@ -13,21 +13,41 @@ import { store } from './Redux/store';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { HelmetProvider } from 'react-helmet-async';
 
-// Register service worker
+// Register service worker with build stamp
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
-        console.log('ServiceWorker registration successful');
+    const swUrl = `/service-worker.js?ts=${process.env.REACT_APP_BUILD_STAMP || Date.now()}`;
+    
+    navigator.serviceWorker.register(swUrl).then(
+      registration => {
+        console.log('ServiceWorker registration successful with scope:', registration.scope);
         
-        // Check for updates every hour
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000);
-      })
-      .catch(err => {
-        console.log('ServiceWorker registration failed: ', err);
-      });
+        // When a new sw is installed, reload the page once
+        registration.onupdatefound = () => {
+          const installing = registration.installing;
+          if (installing == null) {
+            return;
+          }
+          
+          installing.onstatechange = () => {
+            if (installing.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // New update available - reload the page
+                console.log('New content is available; please refresh.');
+                // Force reload to get the new version
+                window.location.reload(true);
+              } else {
+                // Content is cached for offline use
+                console.log('Content is cached for offline use.');
+              }
+            }
+          };
+        };
+      },
+      err => {
+        console.error('ServiceWorker registration failed:', err);
+      }
+    );
   });
 }
 
