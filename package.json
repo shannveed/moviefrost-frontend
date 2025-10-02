@@ -46,7 +46,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && npm run brotli",
-    "brotli": "npx brotli -q 11 build/**/*.{js,css,svg,html} || exit 0",
+    "brotli": "brotli -q 11 build/**/*.{js,css,svg,html} || true",
     "build:ci": "CI=false react-scripts build && npm run brotli",
     "vercel-build": "npm run build:ci",
     "build:production": "GENERATE_SOURCEMAP=false react-scripts build && npm run brotli",
@@ -74,6 +74,7 @@
     ]
   },
   "devDependencies": {
+    "brotli-cli": "^2.0.0",
     "@testing-library/dom": "^10.4.0",
     "csstype": "^3.1.3",
     "react-scripts": "^5.0.1",

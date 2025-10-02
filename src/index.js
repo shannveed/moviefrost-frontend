@@ -13,21 +13,41 @@ import { store } from './Redux/store';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { HelmetProvider } from 'react-helmet-async';
 
-// Register service worker
+// Register service worker with auto-reload functionality
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
-        console.log('ServiceWorker registration successful');
-        
-        // Check for updates every hour
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000);
-      })
-      .catch(err => {
-        console.log('ServiceWorker registration failed: ', err);
+    navigator.serviceWorker.register('/service-worker.js').then(reg => {
+      console.log('SW registered', reg);
+      
+      // 🔄 auto-reload when a new SW has taken control
+      const refresh = () => window.location.reload();
+      
+      // 1) if there is already a waiting worker, force-activate it
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        return;
+      }
+      
+      // 2) otherwise listen for new installs
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (
+              newWorker.state === 'installed' &&
+              navigator.serviceWorker.controller
+            ) {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        }
       });
+      
+      // 3) once the controlling worker changes → reload
+      navigator.serviceWorker.addEventListener('controllerchange', refresh);
+    }).catch(err => {
+      console.log('ServiceWorker registration failed: ', err);
+    });
   });
 }
 
