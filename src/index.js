@@ -13,21 +13,35 @@ import { store } from './Redux/store';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { HelmetProvider } from 'react-helmet-async';
 
-// Register service worker
+// Register service worker with cache busting
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
+    const swUrl = `/service-worker.js?ts=${process.env.REACT_APP_BUILD_STAMP || Date.now()}`;
+    
+    navigator.serviceWorker.register(swUrl).then(
+      registration => {
         console.log('ServiceWorker registration successful');
         
-        // Check for updates every hour
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000);
-      })
-      .catch(err => {
+        // When a new sw is installed, reload the page once
+        registration.onupdatefound = () => {
+          const installing = registration.installing;
+          if (installing) {
+            installing.onstatechange = () => {
+              if (
+                installing.state === 'installed' &&
+                navigator.serviceWorker.controller // old one still controlling
+              ) {
+                console.log('New service worker installed, reloading page...');
+                window.location.reload(true);
+              }
+            };
+          }
+        };
+      },
+      err => {
         console.log('ServiceWorker registration failed: ', err);
-      });
+      }
+    );
   });
 }
 
