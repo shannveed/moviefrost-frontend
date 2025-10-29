@@ -14,6 +14,17 @@ import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analyti
 import Loader from './Components/Loader';
 
 // Lazy load ALL components
+const JaneaseHindi = lazy(() => import('./Screens/JaneaseHindi'));
+const Turkish = lazy(() => import('./Screens/Turkish'));
+const SouthIndian = lazy(() => import('./Screens/SouthIndian'));
+const Wrestling = lazy(() => import('./Screens/Wrestling'));
+const Punjabi = lazy(() => import('./Screens/Punjabi'));
+const Hollywood = lazy(() => import('./Screens/Hollywood'));
+const Korean = lazy(() => import('./Screens/Korean'));
+const Bollywood = lazy(() => import('./Screens/Bollywood'));
+const HollywoodHindi = lazy(() => import('./Screens/HollywoodHindi'));
+const KoreanHindi = lazy(() => import('./Screens/KoreanHindi'));
+const Japanease = lazy(() => import('./Screens/Japanease'));
 const HomeScreen = lazy(() => import('./Screens/HomeScreen'));
 const MoviesPage = lazy(() => import('./Screens/Movies'));
 const SingleMovie = lazy(() => import('./Screens/SingleMovie'));
@@ -241,6 +252,19 @@ function App() {
               <Route path="/watch/:id" element={<WatchPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              {/* NEW */}
+              <Route path="/Hollywood" element={<Hollywood />} />
+              <Route path="/Korean" element={<Korean />} />
+              <Route path="/Bollywood" element={<Bollywood />} />
+              <Route path="/Hollywood-Hindi" element={<HollywoodHindi />} />
+              <Route path="/Korean-Hindi" element={<KoreanHindi />} />
+              <Route path="/Japanease" element={<Japanease />} />
+              
+              <Route path="/Janease-Hindi" element={<JaneaseHindi />} />
+              <Route path="/Turkish" element={<Turkish />} />
+              <Route path="/South-Indian" element={<SouthIndian />} />
+              <Route path="/Wrestling" element={<Wrestling />} />
+              <Route path="/Punjabi" element={<Punjabi />} />
               <Route path="*" element={<NotFound />} />
 
               {/* PRIVATE ROUTES */}

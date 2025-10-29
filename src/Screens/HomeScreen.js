@@ -1,3 +1,4 @@
+// src/Screens/HomeScreen.js
 import React, { useEffect, useRef } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
@@ -12,23 +13,17 @@ import {
   getLatestMoviesAction,
 } from '../Redux/Actions/MoviesActions';
 import toast from 'react-hot-toast';
-import {
-  AdsterraBanner,
-  AdsterraNative,
-  PopAdsIntegration,
-} from '../Components/Ads/AdWrapper';
-import { AD_CONFIG } from '../Components/Ads/AdConfig';
 import MetaTags from '../Components/SEO/MetaTags';
+
+import HollywoodSection from '../Components/Home/HollywoodSection';
+import BrowseSection from '../Components/Home/BrowseSection';
 
 function HomeScreen() {
   const dispatch = useDispatch();
-  /* Ads disabled */
   const adsEnabled = false;
   const adsInitRef = useRef(false);
 
-  /* ---------------- REDUX SELECTORS ---------------- */
-
-  // Popular-movies list (page 1 of /movies)
+  // Popular movies for the grid/carousel
   const {
     isLoading,
     isError,
@@ -42,7 +37,7 @@ function HomeScreen() {
     movies:   randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
-  // 🌟 LATEST (flagged) – for the banner
+  // LATEST (flagged) – banner
   const {
     isLoading: latestLoading,
     isError:   latestError,
@@ -56,27 +51,19 @@ function HomeScreen() {
     movies:    topMovies = [],
   } = useSelector((state) => state.getTopRatedMovie || {});
 
-  /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
     dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
-
-    // no-op (ads disabled)
   }, [dispatch]);
 
-  /* ---------------- ERROR HANDLING ---------------- */
   useEffect(() => {
     if (isError || randomError || topError || latestError) {
       toast.error(isError || randomError || topError || latestError);
     }
   }, [isError, randomError, topError, latestError]);
 
-  /* ---------------- BANNER FEED PRIORITY ----------------
-        1) latestMovies (flagged)
-        2) random sample
-        3) generic list                                          */
   const bannerFeed =
     latestMovies.length > 0
       ? latestMovies
@@ -84,7 +71,6 @@ function HomeScreen() {
       ? randomMovies
       : movies;
 
-  /* ---------------- SEO META ---------------- */
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -92,6 +78,61 @@ function HomeScreen() {
     description: "Watch thousands of movies and web series online for free in HD quality",
     url:   "https://moviefrost.com",
   };
+
+  // Existing sections
+  const HOLLYWOOD_BROWSE_VALUES = [
+    'British (English)',
+    'Hollywood (English)',
+    'Hollywood Web Series (English)',
+  ];
+
+  const KOREAN_BROWSE_VALUES = [
+    'Korean (English)',
+    'Korean Drama (Korean)',
+  ];
+
+  const BOLLYWOOD_BROWSE_VALUES = [
+    'Bollywood (Hindi)',
+    'Bollywood Web Series (Hindi)',
+    'Bollywood Web Series',
+  ];
+
+  const HOLLYWOOD_HINDI_BROWSE_VALUES = [
+    'Hollywood (Hindi Dubbed)',
+    'Hollywood Web Series (Hindi Dubbed)',
+    'Hollywood( Hindi Dubbed)',
+  ];
+
+  const KOREAN_HINDI_BROWSE_VALUES = [
+    'Korean (Hindi Dubbed)',
+  ];
+
+  const JAPAN_BROWSE_VALUES = [
+    'Japanese (Movies)',
+    'Japanese Web Series',
+    'Japanese Web Series (Hindi)',
+  ];
+
+  // NEW: five sections requested
+  const JANEASE_HINDI_VALUES = [
+    'Japanese Web Series (Hindi)',
+  ];
+
+  const TURKISH_VALUES = [
+    'Turkish',
+  ];
+
+  const SOUTH_INDIAN_VALUES = [
+    'South Indian (Hindi Dubbed)',
+  ];
+
+  const WRESTLING_VALUES = [
+    'WWE Wrestling',
+  ];
+
+  const PUNJABI_VALUES = [
+    'Indian Punjabi Movies',
+  ];
 
   return (
     <Layout>
@@ -104,21 +145,81 @@ function HomeScreen() {
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        {/* ------------ BANNER (Latest-flag first) ------------ */}
+        {/* Banner */}
         <Banner
           movies={bannerFeed}
           isLoading={latestLoading || randomLoading}
         />
 
-        {/* Ads stripped on request */}
-
-        {/* Latest grid (unchanged) */}
+        {/* Latest carousel (up to 20) */}
         <PopularMovies movies={movies} isLoading={isLoading} />
 
-        {/* Ads stripped on request */}
+        {/* Hollywood (English) section */}
+        <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
+
+        {/* More sections */}
+        <BrowseSection
+          title="Korean"
+          browseList={KOREAN_BROWSE_VALUES}
+          link="/Korean"
+        />
+
+        <BrowseSection
+          title="Bollywood"
+          browseList={BOLLYWOOD_BROWSE_VALUES}
+          link="/Bollywood"
+        />
+
+        <BrowseSection
+          title="Hollywood Hindi"
+          browseList={HOLLYWOOD_HINDI_BROWSE_VALUES}
+          link="/Hollywood-Hindi"
+        />
+
+        <BrowseSection
+          title="Korean Hindi"
+          browseList={KOREAN_HINDI_BROWSE_VALUES}
+          link="/Korean-Hindi"
+        />
+
+        <BrowseSection
+          title="Japanese"
+          browseList={JAPAN_BROWSE_VALUES}
+          link="/Japanease"
+        />
+
+        {/* NEW SECTIONS BELOW JAPAN */}
+        <BrowseSection
+          title="Japanese Hindi"
+          browseList={JANEASE_HINDI_VALUES}
+          link="/Janease-Hindi"
+        />
+
+        <BrowseSection
+          title="Turkish"
+          browseList={TURKISH_VALUES}
+          link="/Turkish"
+        />
+
+        <BrowseSection
+          title="South Indian"
+          browseList={SOUTH_INDIAN_VALUES}
+          link="/South-Indian"
+        />
+
+        <BrowseSection
+          title="Wrestling"
+          browseList={WRESTLING_VALUES}
+          link="/Wrestling"
+        />
+
+        <BrowseSection
+          title="Punjabi"
+          browseList={PUNJABI_VALUES}
+          link="/Punjabi"
+        />
 
         <Promos />
-
         <TopRated movies={topMovies} isLoading={topLoading} />
       </div>
     </Layout>

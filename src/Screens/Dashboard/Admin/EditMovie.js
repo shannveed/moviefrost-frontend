@@ -61,7 +61,8 @@ function EditMovie() {
     "Blockbuster Movies",
     "Hollywood Web Series (English)",
     "Hollywood Web Series (Hindi Dubbed)",
-    "Bollywood Web Series"
+    "Bollywood Web Series",
+    "WWE Wrestling"
   ];
 
   // Merge distinct with predefined
@@ -86,7 +87,8 @@ const browseByOptions = React.useMemo(() => {
     "Blockbuster Movies",
     "Hollywood Web Series (English)",
     "Hollywood Web Series (Hindi Dubbed)",
-    "Bollywood Web Series"
+    "Bollywood Web Series",
+    "WWE Wrestling"
   ];
 
   const merged = Array.from(new Set([...distinctNonEmpty, ...predefinedOptions]));

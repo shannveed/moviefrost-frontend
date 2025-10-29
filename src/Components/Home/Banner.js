@@ -115,7 +115,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             <div className="flex items-center gap-3 mt-1">
               <Link
                 to={`/movie/${movie?._id}`}
-                className="flex-[0.5] bg-customPurple  hover:bg-opacity-80 transition text-white text-sm py-3 rounded text-center"
+                className="flex-[0.5] bg-customPurple hover:bg-opacity-80 transition text-white text-sm py-3 rounded text-center"
               >
                 Watch
               </Link>

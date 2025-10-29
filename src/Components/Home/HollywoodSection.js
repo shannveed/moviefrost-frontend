@@ -1,42 +1,88 @@
-// PopularMovies.js  ⟶  Carousel showing up to 20 latest movies with header “Show More” on the right
-import React, { useRef } from 'react';
+// src/Components/Home/HollywoodSection.js
+import React, { useEffect, useRef, useState } from 'react';
 import Titles from '../Titles';
 import { BsCollectionFill, BsCaretLeftFill, BsCaretRightFill } from 'react-icons/bs';
-import Movie from '../movie';
-import { Empty } from '../Notifications/Empty';
-import Loader from '../Loader';
 import { Link } from 'react-router-dom';
-
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import Loader from '../Loader';
+import Movie from '../movie';
+import { getAllMoviesService } from '../../Redux/APIs/MoviesServices';
 
-function PopularMovies({ isLoading, movies = [] }) {
-  // Swiper navigation refs
+function HollywoodSection({ browseList = [] }) {
+  const [movies, setMovies]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+
+  // Swiper nav refs
   const prevEl = useRef(null);
   const nextEl = useRef(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // fetch page 1 for each browseBy and merge
+        const responses = await Promise.all(
+          browseList.map((b) =>
+            getAllMoviesService(
+              '',   // category
+              '',   // time
+              '',   // language
+              '',   // rate
+              '',   // year
+              b,    // browseBy
+              '',   // search
+              1     // pageNumber
+            )
+          )
+        );
+
+        const map = new Map();
+        responses.forEach((res) => {
+          res.movies.forEach((m) => map.set(m._id, m));
+        });
+
+        if (!cancelled) {
+          setMovies(Array.from(map.values()));
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e?.message || 'Failed to load Hollywood section');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => (cancelled = true);
+  }, [browseList]);
+
   return (
     <div className="my-8 mobile:my-4">
-      {/* Header: “Latest” left, “Show More” right */}
+      {/* Header with Show More on the right */}
       <div className="flex items-center justify-between mb-6 mobile:mb-4 mobile:px-4">
-        <Titles title="Latest" Icon={BsCollectionFill} />
-        {movies.length > 0 && (
-          <Link
-            to="/movies"
-            className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
-            aria-label="Show more latest movies"
-          >
-            Show&nbsp;More
-            <BsCaretRightFill className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        )}
+        <Titles title="Hollywood" Icon={BsCollectionFill} />
+        <Link
+          to="/Hollywood"
+          className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
+          aria-label="Show more Hollywood titles"
+        >
+          Show&nbsp;More
+          <BsCaretRightFill className="group-hover:translate-x-1 transition-transform" />
+        </Link>
       </div>
 
       {/* Content */}
-      {isLoading ? (
+      {loading ? (
         <Loader />
+      ) : error ? (
+        <p className="text-border my-6">{error}</p>
       ) : movies.length > 0 ? (
         <div className="relative">
           <Swiper
@@ -63,9 +109,9 @@ function PopularMovies({ isLoading, movies = [] }) {
               1280: { slidesPerView: 5, spaceBetween: 20 },
             }}
           >
-            {movies.slice(0, 20).map((movie) => (
-              <SwiperSlide key={movie._id}>
-                <Movie movie={movie} />
+            {movies.slice(0, 20).map((m) => (
+              <SwiperSlide key={m._id}>
+                <Movie movie={m} />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -89,10 +135,10 @@ function PopularMovies({ isLoading, movies = [] }) {
           </button>
         </div>
       ) : (
-        <Empty message="It seems like we don't have any movies." />
+        <p className="text-border my-6">No titles found in Hollywood</p>
       )}
     </div>
   );
 }
 
-export default PopularMovies;
+export default HollywoodSection;

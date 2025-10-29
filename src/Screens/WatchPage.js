@@ -1,9 +1,9 @@
 import { trackVideoPlay, trackGuestAction, trackLoginPrompt } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../Layout/Layout';
 import { BiArrowBack } from 'react-icons/bi';
-import { FaCloudDownloadAlt, FaHeart, FaPlay } from 'react-icons/fa';
+import { FaCloudDownloadAlt, FaHeart, FaPlay, FaLock } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMovieByIdAction, getAllMoviesAction } from '../Redux/Actions/MoviesActions';
 import Loader from '../Components/Loader';
@@ -21,7 +21,10 @@ function WatchPage() {
   const location = useLocation();
   const [play, setPlay] = useState(false);
   const [guestWatchTime, setGuestWatchTime] = useState(0);
+
+  // Guard flag to avoid repeated prompts
   const [hasShownLoginPrompt, setHasShownLoginPrompt] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // For Movies with 2 servers:
   const [currentServerIndex, setCurrentServerIndex] = useState(0);
@@ -49,19 +52,19 @@ function WatchPage() {
     }
   };
 
-  // Track guest watch time
+  // Track guest watch time + show modal (login prompt)
   useEffect(() => {
     let interval;
     if (play && !userInfo) {
       interval = setInterval(() => {
         setGuestWatchTime(prev => {
           const newTime = prev + 1;
-          
-          // Show login prompt after 13 minutes of watching
+
+          // Show login prompt after 13 minutes
           if (newTime >= 780 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
-            
+
             // Save current state before redirecting
             const redirectState = {
               pathname: location.pathname,
@@ -70,21 +73,23 @@ function WatchPage() {
               scrollY: window.scrollY
             };
             localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
-            
+
             trackLoginPrompt('watch_time_limit', `/watch/${id}`);
             trackGuestAction('watch_limit_reached', {
               movie_name: movie?.name,
               movie_id: movie?._id,
               watch_time: newTime
             });
-            toast.error('Please login to continue watching');
+
+            // Show forced login modal
+            setShowLoginModal(true);
           }
-          
+
           return newTime;
         });
       }, 1000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -92,11 +97,9 @@ function WatchPage() {
 
   // Add this to use guestWatchTime for analytics if needed
   useEffect(() => {
-    // Log watch time when component unmounts or user navigates away
     return () => {
       if (guestWatchTime > 0 && !userInfo) {
-        console.log(`Guest watched for ${guestWatchTime} seconds`);
-        // You can send this data to analytics here if needed
+        // Optional analytics on unmount
       }
     };
   }, [guestWatchTime, userInfo]);
@@ -112,7 +115,7 @@ function WatchPage() {
         scrollY: window.scrollY
       };
       localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
-      
+
       trackGuestAction('download_attempt', {
         movie_name: movie?.name,
         movie_id: movie?._id
@@ -121,7 +124,7 @@ function WatchPage() {
       navigate('/login');
       return;
     }
-    
+
     if (movie && movie.type === 'Movie') {
       DownloadVideo(movie?.downloadUrl, userInfo);
     }
@@ -136,7 +139,6 @@ function WatchPage() {
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
-    /* ads disabled */
   }, [dispatch, id]);
 
   // For WebSeries, pick first episode by default
@@ -158,7 +160,7 @@ function WatchPage() {
         movie_id: movie?._id,
         episode: currentEpisode?.episodeNumber || null
       });
-      
+
       // Allow limited preview for guests
       setPlay(true);
       trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
@@ -167,6 +169,17 @@ function WatchPage() {
       trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
     }
   };
+
+  // Only action in modal now: Login Now
+  const handleLoginNow = () => {
+    navigate('/login');
+  };
+
+  // If it's a Movie, we have 2 possible servers to watch:
+  const servers = [
+    { label: 'Server 1', url: movie?.video },
+    { label: 'Server 2', url: movie?.videoUrl2 },
+  ];
 
   if (isLoading || !movie) {
     return (
@@ -191,16 +204,71 @@ function WatchPage() {
     );
   }
 
-  // If it's a Movie, we have 2 possible servers to watch:
-  const servers = [
-    { label: 'Server 1', url: movie.video },
-    { label: 'Server 2', url: movie.videoUrl2 },
-  ];
-
   return (
     <Layout>
+      {/* Forced Login Prompt Modal (no "Maybe later", no "Create account") */}
+      {!userInfo && showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          {/* Modal card */}
+          <div className="relative z-10 w-[95%] sm:w-[540px] max-w-[95%] bg-main border border-customPurple rounded-xl shadow-xl animate-slide-up">
+            {/* Top bar */}
+            <div className="flex items-center gap-3 p-4 border-b border-customPurple/50">
+              <div className="w-10 h-10 rounded-full bg-customPurple text-white flex items-center justify-center shadow">
+                <FaLock className="text-base" />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold">Continue watching - please log in</h3>
+                <p className="text-xs text-text">Sign in for free to keep watching in HD and access downloads.</p>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 sm:p-6 space-y-4">
+              <div className="bg-dry rounded-lg p-4 border border-customPurple/30">
+                <p className="text-sm text-text">
+                  You’ve reached the preview limit for guests. Log in for free to continue watching without interruptions,
+                  save favorites, and more.
+                </p>
+              </div>
+
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  HD streaming
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  Watch from where you left
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  Download available
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  Add to favorites
+                </li>
+              </ul>
+
+              {/* Single action: Login now */}
+              <div className="flex items-center justify-end pt-2">
+                <button
+                  onClick={handleLoginNow}
+                  className="w-full sm:w-auto px-5 py-2 rounded-md bg-customPurple text-white hover:bg-opacity-90 border-2 border-customPurple transitions flex items-center justify-center gap-2"
+                >
+                  <FaLock className="text-sm" />
+                  Login now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-8 mobile:px-2 my-5">
-        {/* Updated header section with improved mobile layout */}
+        {/* Header section */}
         <div className="bg-main rounded-lg border border-gray-800 p-4 mobile:p-3 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mobile:gap-2">
             {/* Left side - Back button and movie title with like button on mobile */}
@@ -212,21 +280,21 @@ function WatchPage() {
                 <BiArrowBack className="text-xl mobile:text-lg flex-shrink-0" />
                 <h1 className="text-xl sm:text-2xl mobile:text-base font-bold mobile:line-clamp-1">{movie?.name}</h1>
               </button>
-              
+
               {/* Like button - visible on mobile next to title */}
               <button
                 onClick={() => LikeMovie(movie, dispatch, userInfo)}
                 disabled={isLiked || likeLoading}
                 className={`sm:hidden w-10 h-10 mobile:w-9 mobile:h-9 flex-colo rounded-md transitions ml-auto flex-shrink-0
-                  ${isLiked 
-                    ? 'bg-customPurple text-white' 
+                  ${isLiked
+                    ? 'bg-customPurple text-white'
                     : 'bg-dry border border-border text-white hover:bg-customPurple'
                   }`}
               >
                 <FaHeart className="text-base mobile:text-sm" />
               </button>
             </div>
-            
+
             {/* Right side - Actions (hidden on mobile for like button, visible for download) */}
             <div className="hidden sm:flex items-center gap-3">
               {/* Like button - desktop only */}
@@ -234,14 +302,14 @@ function WatchPage() {
                 onClick={() => LikeMovie(movie, dispatch, userInfo)}
                 disabled={isLiked || likeLoading}
                 className={`w-12 h-12 flex-colo rounded-md transitions
-                  ${isLiked 
-                    ? 'bg-customPurple text-white' 
+                  ${isLiked
+                    ? 'bg-customPurple text-white'
                     : 'bg-dry border border-border text-white hover:bg-customPurple'
                   }`}
               >
                 <FaHeart className="text-lg" />
               </button>
-              
+
               {/* Download button - only for movies */}
               {movie.type === 'Movie' && movie.downloadUrl && (
                 <button
@@ -253,7 +321,7 @@ function WatchPage() {
                 </button>
               )}
             </div>
-            
+
             {/* Download button on mobile - shown separately */}
             {movie.type === 'Movie' && movie.downloadUrl && (
               <button
@@ -267,18 +335,10 @@ function WatchPage() {
           </div>
         </div>
 
-        {/* Guest watch limit notification */}
-        {!userInfo && hasShownLoginPrompt && (
-          <div className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 mb-6 rounded-md">
-            <p className="font-bold">Preview Limit Reached</p>
-            <p>Please <Link to="/login" className="underline font-semibold">login</Link> to continue watching this content.</p>
-          </div>
-        )}
-
         {movie.type === 'Movie' ? (
           // Handling Movie with 2 servers
           <div>
-            {/* Server Selector - Improved layout */}
+            {/* Server Selector */}
             <div className="flex flex-wrap gap-3 mb-5">
               {servers.map((server, idx) => (
                 <button
@@ -341,7 +401,7 @@ function WatchPage() {
         ) : (
           // Handling Web Series
           <div>
-            {/* Episode Selector - Improved layout */}
+            {/* Episode Selector */}
             {movie.episodes && movie.episodes.length > 0 ? (
               <div className="flex flex-wrap gap-3 mb-6">
                 {movie.episodes.map((ep) => (
@@ -370,7 +430,7 @@ function WatchPage() {
             ) : (
               <p className="text-border">No episodes available.</p>
             )}
-            
+
             {currentEpisode && (
               <div>
                 {play ? (
@@ -411,11 +471,10 @@ function WatchPage() {
           </div>
         )}
 
-        {/* Related Movies Section - Updated with mobile:grid-cols-2 */}
+        {/* Related Movies Section */}
         {RelatedMovies && RelatedMovies.length > 0 && (
           <div className="my-16">
             <Titles title="Related Movies" Icon={BsCollectionFill} />
-            {/* Updated grid with mobile:grid-cols-2 */}
             <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2">
               {RelatedMovies?.slice(0, 10).map((relatedMovie) => (
                 <Movie key={relatedMovie?._id} movie={relatedMovie} />

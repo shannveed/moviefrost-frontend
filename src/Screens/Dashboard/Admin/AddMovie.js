@@ -47,7 +47,8 @@ function AddMovie() {
     "Blockbuster Movies",
     "Hollywood Web Series (English)",
     "Hollywood Web Series (Hindi Dubbed)",
-    "Bollywood Web Series"
+    "Bollywood Web Series",
+    "WWE Wrestling"
   ];
 
   // Format browseBy options for the Select component
@@ -74,7 +75,8 @@ const browseByOptions = React.useMemo(() => {
     "Blockbuster Movies",
     "Hollywood Web Series (English)",
     "Hollywood Web Series (Hindi Dubbed)",
-    "Bollywood Web Series"
+    "Bollywood Web Series",
+    "WWE Wrestling"
   ];
 
   // Merge distinct from server with our predefined list
