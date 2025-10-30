@@ -1,96 +1,71 @@
-// Uploader.js
-import React, { useState, useMemo } from 'react';
-import { Client, Storage, Permission, Role } from 'appwrite';
+// Frontend/src/Components/Uploader.js
+import React, { useState } from 'react';
+import Axios from '../Redux/APIs/Axios';
 
 function Uploader({ setImageUrl }) {
   const [file, setFile] = useState(null);
-  const [error, setError] = useState(null);
-
-  // Initialize Appwrite client and storage using useMemo
-  const { storage, configError } = useMemo(() => {
-    const endpoint = process.env.REACT_APP_APPWRITE_ENDPOINT;
-    const projectId = process.env.REACT_APP_APPWRITE_PROJECT_ID;
-
-    // Check if required environment variables are defined
-    if (!endpoint || !projectId) {
-      return {
-        configError: 'Appwrite configuration is missing in environment variables.',
-        client: null,
-        storage: null,
-      };
-    }
-
-    const clientInstance = new Client();
-    clientInstance.setEndpoint(endpoint).setProject(projectId);
-    const storageInstance = new Storage(clientInstance);
-
-    return {
-      client: clientInstance,
-      storage: storageInstance,
-      configError: null,
-    };
-  }, []); // Empty dependency array since env variables won't change during runtime
-
-  // If there's a configuration error, show it
-  if (configError) {
-    return <div className="text-red-500">{configError}</div>;
-  }
+  const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const handleUpload = async () => {
+    setError('');
+
     if (!file) {
-      alert('Please select a file first.');
+      setError('Please select a file first.');
       return;
     }
-
-    // Check if the file size exceeds 1MB (1,048,576 bytes)
+    // 1 MB client-side guard (server also limits to 10 MB)
     if (file.size > 1024 * 1024) {
-      setError('You can only upload image under 1MB.');
+      setError('You can only upload an image under 1MB.');
       return;
     }
 
-    const bucketId = process.env.REACT_APP_APPWRITE_BUCKET_ID;
-    if (!bucketId) {
-      setError('Bucket ID is missing in environment variables.');
-      return;
-    }
+    const formData = new FormData();
+    formData.append('file', file);
 
     try {
-      // Upload the file to Appwrite with public read permissions
-      const response = await storage.createFile(
-        bucketId,
-        'unique()',
-        file,
-        [Permission.read(Role.any())] // Set public read permissions
-      );
+      setUploading(true);
+      const { data } = await Axios.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
-      // Get the image URL using the getFileView method
-      const imageUrl = storage.getFileView(bucketId, response.$id);
-
-      setImageUrl(imageUrl);
-    } catch (error) {
-      console.error('Upload failed:', error);
-      setError('Failed to upload image.');
+      if (data?.success && data?.url) {
+        // url is now our backend proxy: https://moviefrost-backend.vercel.app/api/upload/file/<id>/view
+        setImageUrl(data.url);
+        setFile(null);
+      } else {
+        setError(data?.message || 'Upload failed. Try again.');
+      }
+    } catch (e) {
+      console.error('[Uploader] upload error:', e);
+      setError(e?.response?.data?.message || e?.message || 'Failed to upload image.');
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
     <div>
       {error && <div className="text-red-500 mb-2">{error}</div>}
-      <div className="uploader flex gap-2">
+
+      <div className="uploader flex items-center gap-2">
         <input
           type="file"
           accept="image/*"
+          disabled={uploading}
           onChange={(e) => {
-            setFile(e.target.files[0]);
-            setError(null); // Clear previous errors when a new file is selected
+            setFile(e.target.files?.[0] || null);
+            setError('');
           }}
-          className="border border-gray-300 p-2 rounded"
+          className="border border-gray-300 p-2 rounded flex-1"
         />
+
         <button
           onClick={handleUpload}
-          className="bg-customPurple text-white px-4 py-2 rounded"
+          disabled={uploading || !file}
+          className={`bg-customPurple text-white px-4 py-2 rounded ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
-          Upload
+          {uploading ? 'Uploading...' : 'Upload'}
         </button>
       </div>
     </div>
