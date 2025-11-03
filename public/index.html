@@ -8,7 +8,7 @@
     <meta name="6a97888e-site-verification" content="befef8a475b6927aa629a6d934aaf0c4">
     <meta name="03655eb334dfbf9f6208db64040330859c54dd67" content="03655eb334dfbf9f6208db64040330859c54dd67" />
     
-    <!-- Google Search Console Verification - REPLACE YOUR-TOKEN-HERE with actual token -->
+    <!-- Google Search Console Verification -->
     <meta name="google-site-verification" content="XeNYWYg_l2GgfwxrryKzwTCyFrTDICqfKlrMu9_cCOg" />
     
     <!-- Monetag verification meta tag -->
@@ -17,7 +17,8 @@
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cloud.appwrite.io">
+    <!-- Add your R2 CDN -->
+    <link rel="preconnect" href="https://cdn.moviefrost.com">
     <link rel="preconnect" href="https://moviefrost-backend.vercel.app">
     <link rel="preconnect" href="https://c1.popads.net">
     <link rel="preconnect" href="https://a.monetag.com">
@@ -85,14 +86,12 @@
     }
     </script>
     
-    <!-- Updated Google Analytics 4 - Official snippet with immediate load -->
+    <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-J06332VTF2"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      
-      /* Do NOT send an automatic page_view – SPA will do it manually */
       gtag('config', 'G-J06332VTF2', { send_page_view: false });
     </script>
 

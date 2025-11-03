@@ -14,7 +14,6 @@ function Uploader({ setImageUrl }) {
       setError('Please select a file first.');
       return;
     }
-    // 1 MB client-side guard (server also limits to 10 MB)
     if (file.size > 1024 * 1024) {
       setError('You can only upload an image under 1MB.');
       return;
@@ -30,7 +29,7 @@ function Uploader({ setImageUrl }) {
       });
 
       if (data?.success && data?.url) {
-        // url is now our backend proxy: https://moviefrost-backend.vercel.app/api/upload/file/<id>/view
+        // url is now your R2+CDN public URL
         setImageUrl(data.url);
         setFile(null);
       } else {
