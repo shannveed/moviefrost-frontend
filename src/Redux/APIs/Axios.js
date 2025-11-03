@@ -1,27 +1,27 @@
-import axios from "axios";
+import axios from 'axios';
 
-// Create axios instance with dynamic base URL
-const Axios = axios.create({
-  baseURL: getApiBaseUrl(),
-});
+/*
+ * ONE single place decides where requests go:
+ *   • local dev            →  http://localhost:5000/api
+ *   • Vercel production    →  /api   (handled by the rewrite above)
+ *   • explicit env-var     →  whatever REACT_APP_API_URL says
+ */
+const API_BASE = (() => {
+  /* 1️⃣ explicit env-var (e.g. CI preview deployments) */
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+  
+  /* 2️⃣ production build served by Vercel – the /api proxy is active */
+  if (process.env.NODE_ENV === 'production') return '/api';
+  
+  /* 3️⃣ local development – Express runs on :5000 */
+  return 'http://localhost:5000/api';
+})();
 
-// Decide API base URL with safe fallbacks
-function getApiBaseUrl() {
-  // 1) Prefer environment variable (set at build time on Vercel)
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
+const Axios = axios.create({ baseURL: API_BASE });
 
-  // 2) Local dev
-  if (process.env.NODE_ENV === 'development') {
-    return "http://localhost:5000/api";
-  }
-
-  // 3) Production fallback (match your Vercel project domain)
-  return "https://moviefrost-backend-pi.vercel.app/api";
-}
-
-// Interceptors
+/* ------------------------------------------------------------------ */
+/* Interceptors                                                       */
+/* ------------------------------------------------------------------ */
 Axios.interceptors.request.use(
   (config) => {
     config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
