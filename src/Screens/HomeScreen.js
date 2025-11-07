@@ -1,5 +1,5 @@
 // src/Screens/HomeScreen.js
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
 import Promos from '../Components/Home/Promos';
@@ -37,7 +37,7 @@ function HomeScreen() {
     movies:   randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
-  // LATEST (flagged) – banner
+  // LATEST – banner feed
   const {
     isLoading: latestLoading,
     isError:   latestError,
@@ -52,6 +52,7 @@ function HomeScreen() {
   } = useSelector((state) => state.getTopRatedMovie || {});
 
   useEffect(() => {
+    // Initial lightweight requests; other sections lazy-fetch when visible
     dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
@@ -64,12 +65,11 @@ function HomeScreen() {
     }
   }, [isError, randomError, topError, latestError]);
 
-  const bannerFeed =
-    latestMovies.length > 0
-      ? latestMovies
-      : randomMovies.length > 0
-      ? randomMovies
-      : movies;
+  const bannerFeed = useMemo(() => {
+    if (latestMovies.length > 0) return latestMovies;
+    if (randomMovies.length > 0) return randomMovies;
+    return movies;
+  }, [latestMovies, randomMovies, movies]);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -118,9 +118,7 @@ function HomeScreen() {
     'Japanese Web Series (Hindi)',
   ];
 
-  const TURKISH_VALUES = [
-    'Turkish',
-  ];
+  // REMOVED: Turkish (per request)
 
   const SOUTH_INDIAN_VALUES = [
     'South Indian (Hindi Dubbed)',
@@ -157,7 +155,7 @@ function HomeScreen() {
         {/* Hollywood (English) section */}
         <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
 
-        {/* More sections */}
+        {/* More sections (all lazy-fetched on visibility) */}
         <BrowseSection
           title="Korean"
           browseList={KOREAN_BROWSE_VALUES}
@@ -183,23 +181,19 @@ function HomeScreen() {
         />
 
         <BrowseSection
-          title="Japanese"
+          title="Japanease"
           browseList={JAPAN_BROWSE_VALUES}
           link="/Japanease"
         />
 
         {/* NEW SECTIONS BELOW JAPAN */}
         <BrowseSection
-          title="Japanese Hindi"
+          title="Janease Hindi"
           browseList={JANEASE_HINDI_VALUES}
           link="/Janease-Hindi"
         />
 
-        <BrowseSection
-          title="Turkish"
-          browseList={TURKISH_VALUES}
-          link="/Turkish"
-        />
+        {/* Turkish section removed */}
 
         <BrowseSection
           title="South Indian"
