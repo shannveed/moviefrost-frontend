@@ -1,5 +1,5 @@
 // PopularMovies.js  ⟶  Carousel showing up to 20 latest movies with header “Show More” on the right
-import React, { useRef } from 'react';
+import React from 'react';
 import Titles from '../Titles';
 import { BsCollectionFill, BsCaretLeftFill, BsCaretRightFill } from 'react-icons/bs';
 import Movie from '../movie';
@@ -13,9 +13,9 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 
 function PopularMovies({ isLoading, movies = [] }) {
-  // Swiper navigation refs
-  const prevEl = useRef(null);
-  const nextEl = useRef(null);
+  // Use fixed class selectors for navigation (reliable across renders)
+  const prevClass = 'nav-prev-latest';
+  const nextClass = 'nav-next-latest';
 
   return (
     <div className="my-8 mobile:my-4">
@@ -40,22 +40,21 @@ function PopularMovies({ isLoading, movies = [] }) {
       ) : movies.length > 0 ? (
         <div className="relative">
           <Swiper
+            key="latest-section"
             modules={[Navigation, Autoplay]}
-            navigation={{
-              prevEl: prevEl.current,
-              nextEl: nextEl.current,
-            }}
-            onBeforeInit={(swiper) => {
-              // eslint-disable-next-line no-param-reassign
-              swiper.params.navigation.prevEl = prevEl.current;
-              // eslint-disable-next-line no-param-reassign
-              swiper.params.navigation.nextEl = nextEl.current;
-            }}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             loop
             speed={800}
             spaceBetween={15}
             slidesPerView={2}
+            navigation={{
+              prevEl: `.${prevClass}`,
+              nextEl: `.${nextClass}`,
+            }}
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = `.${prevClass}`;
+              swiper.params.navigation.nextEl = `.${nextClass}`;
+            }}
             breakpoints={{
               640:  { slidesPerView: 2, spaceBetween: 10 },
               768:  { slidesPerView: 3, spaceBetween: 15 },
@@ -70,20 +69,18 @@ function PopularMovies({ isLoading, movies = [] }) {
             ))}
           </Swiper>
 
-          {/* Swiper arrows */}
+          {/* Swiper arrows using CLASS selectors (reliable) */}
           <button
-            ref={prevEl}
             aria-label="Previous"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 mobile:w-6 mobile:h-6 flex-colo
-                       bg-customPurple/70 hover:bg-customPurple text-white rounded-full"
+            className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 mobile:w-6 mobile:h-6 flex-colo
+                       bg-customPurple/70 hover:bg-customPurple text-white rounded-full ${prevClass}`}
           >
             <BsCaretLeftFill />
           </button>
           <button
-            ref={nextEl}
             aria-label="Next"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 mobile:w-6 mobile:h-6 flex-colo
-                       bg-customPurple/70 hover:bg-customPurple text-white rounded-full"
+            className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 mobile:w-6 mobile:h-6 flex-colo
+                       bg-customPurple/70 hover:bg-customPurple text-white rounded-full ${nextClass}`}
           >
             <BsCaretRightFill />
           </button>
