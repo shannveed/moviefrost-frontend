@@ -23,28 +23,24 @@ function HomeScreen() {
   const adsEnabled = false;
   const adsInitRef = useRef(false);
 
-  // Popular movies for the grid/carousel
   const {
     isLoading,
     isError,
     movies = [],
   } = useSelector((state) => state.getAllMovies || {});
 
-  // Random 8
   const {
     isLoading: randomLoading,
     isError:  randomError,
     movies:   randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
-  // LATEST – banner feed
   const {
     isLoading: latestLoading,
     isError:   latestError,
     movies:    latestMovies = [],
   } = useSelector((state) => state.moviesLatest || {});
 
-  // Top rated
   const {
     isLoading: topLoading,
     isError:   topError,
@@ -52,7 +48,6 @@ function HomeScreen() {
   } = useSelector((state) => state.getTopRatedMovie || {});
 
   useEffect(() => {
-    // Initial lightweight requests; other sections lazy-fetch when visible
     dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
     dispatch(getRandomMoviesAction());
@@ -79,7 +74,6 @@ function HomeScreen() {
     url:   "https://moviefrost.com",
   };
 
-  // Existing sections
   const HOLLYWOOD_BROWSE_VALUES = [
     'British (English)',
     'Hollywood (English)',
@@ -113,19 +107,12 @@ function HomeScreen() {
     'Japanese Web Series (Hindi)',
   ];
 
-  // NEW: five sections requested
   const JANEASE_HINDI_VALUES = [
     'Japanese Web Series (Hindi)',
   ];
 
-  // REMOVED: Turkish (per request)
-
   const SOUTH_INDIAN_VALUES = [
     'South Indian (Hindi Dubbed)',
-  ];
-
-  const WRESTLING_VALUES = [
-    'WWE Wrestling',
   ];
 
   const PUNJABI_VALUES = [
@@ -149,64 +136,71 @@ function HomeScreen() {
           isLoading={latestLoading || randomLoading}
         />
 
-        {/* Latest carousel (up to 20) */}
+        {/* Latest carousel */}
         <PopularMovies movies={movies} isLoading={isLoading} />
 
-        {/* Hollywood (English) section */}
+        {/* Hollywood (English) */}
         <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
 
-        {/* More sections (all lazy-fetched on visibility) */}
+        {/* Korean */}
         <BrowseSection
           title="Korean"
           browseList={KOREAN_BROWSE_VALUES}
           link="/Korean"
+          excludeList={['Korean (Hindi Dubbed)']}
         />
 
+        {/* NEW: Chinese (Chinease Drama) – placed directly below Korean */}
+        <BrowseSection
+          title="Chinese"
+          browseList={['Chinease Drama']}
+          link="/Chinese"
+        />
+
+        {/* Bollywood */}
         <BrowseSection
           title="Bollywood"
           browseList={BOLLYWOOD_BROWSE_VALUES}
           link="/Bollywood"
         />
 
+        {/* Hollywood Hindi */}
         <BrowseSection
           title="Hollywood Hindi"
           browseList={HOLLYWOOD_HINDI_BROWSE_VALUES}
           link="/Hollywood-Hindi"
         />
 
+        {/* Korean Hindi */}
         <BrowseSection
           title="Korean Hindi"
           browseList={KOREAN_HINDI_BROWSE_VALUES}
           link="/Korean-Hindi"
         />
 
+        {/* Japanease */}
         <BrowseSection
           title="Japanease"
           browseList={JAPAN_BROWSE_VALUES}
           link="/Japanease"
+          excludeList={['Japanese Web Series (Hindi)']}
         />
 
-        {/* NEW SECTIONS BELOW JAPAN */}
+        {/* Janease Hindi */}
         <BrowseSection
           title="Janease Hindi"
           browseList={JANEASE_HINDI_VALUES}
           link="/Janease-Hindi"
         />
 
-        {/* Turkish section removed */}
-
+        {/* South Indian */}
         <BrowseSection
           title="South Indian"
           browseList={SOUTH_INDIAN_VALUES}
           link="/South-Indian"
         />
 
-        <BrowseSection
-          title="Wrestling"
-          browseList={WRESTLING_VALUES}
-          link="/Wrestling"
-        />
-
+        {/* Punjabi */}
         <BrowseSection
           title="Punjabi"
           browseList={PUNJABI_VALUES}

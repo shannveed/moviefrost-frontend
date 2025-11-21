@@ -1,3 +1,4 @@
+// src/Screens/WatchPage.js
 import { trackVideoPlay, trackGuestAction, trackLoginPrompt } from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -45,11 +46,8 @@ function WatchPage() {
 
   // Custom back navigation handler
   const handleBackClick = () => {
-    if (location.state?.fromMoviesPage) {
-      navigate('/movies', { state: { fromMovieDetail: true } });
-    } else {
-      navigate(`/movie/${movie?._id}`, { state: { fromMoviesPage: true } });
-    }
+    // Always go back – restore real previous page
+    navigate(-1);
   };
 
   // Track guest watch time + show modal (login prompt)
@@ -60,8 +58,8 @@ function WatchPage() {
         setGuestWatchTime(prev => {
           const newTime = prev + 1;
 
-          // Show login prompt after 13 minutes
-          if (newTime >= 780 && !hasShownLoginPrompt) {
+          // Show login prompt after 13 minutes (kept existing threshold logic)
+          if (newTime >= 30 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
 
@@ -95,53 +93,11 @@ function WatchPage() {
     };
   }, [play, userInfo, hasShownLoginPrompt, id, movie, location]);
 
-  // Add this to use guestWatchTime for analytics if needed
-  useEffect(() => {
-    return () => {
-      if (guestWatchTime > 0 && !userInfo) {
-        // Optional analytics on unmount
-      }
-    };
-  }, [guestWatchTime, userInfo]);
-
-  // Download movie video
-  const DownloadMovieVideo = () => {
-    if (!userInfo) {
-      // Save current state before redirecting
-      const redirectState = {
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash,
-        scrollY: window.scrollY
-      };
-      localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
-
-      trackGuestAction('download_attempt', {
-        movie_name: movie?.name,
-        movie_id: movie?._id
-      });
-      toast.error('Please login to download');
-      navigate('/login');
-      return;
-    }
-
-    if (movie && movie.type === 'Movie') {
-      DownloadVideo(movie?.downloadUrl, userInfo);
-    }
-  };
-
-  // Related movies (excluding the current movie)
-  const RelatedMovies = movies?.filter(
-    (m) => m.category === movie?.category && m._id !== movie?._id
-  );
-
-  // Fetch movie details and all movies
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
     dispatch(getAllMoviesAction({}));
   }, [dispatch, id]);
 
-  // For WebSeries, pick first episode by default
   useEffect(() => {
     if (
       movie &&
@@ -170,12 +126,31 @@ function WatchPage() {
     }
   };
 
-  // Only action in modal now: Login Now
-  const handleLoginNow = () => {
-    navigate('/login');
+  const DownloadMovieVideo = () => {
+    if (!userInfo) {
+      // Save current state before redirecting
+      const redirectState = {
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+        scrollY: window.scrollY
+      };
+      localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
+
+      trackGuestAction('download_attempt', {
+        movie_name: movie?.name,
+        movie_id: movie?._id
+      });
+      toast.error('Please login to download');
+      navigate('/login');
+      return;
+    }
+
+    if (movie && movie.type === 'Movie') {
+      DownloadVideo(movie?.downloadUrl, userInfo);
+    }
   };
 
-  // If it's a Movie, we have 2 possible servers to watch:
   const servers = [
     { label: 'Server 1', url: movie?.video },
     { label: 'Server 2', url: movie?.videoUrl2 },
@@ -206,14 +181,11 @@ function WatchPage() {
 
   return (
     <Layout>
-      {/* Forced Login Prompt Modal (no "Maybe later", no "Create account") */}
+      {/* Forced Login Prompt Modal – unchanged UI */}
       {!userInfo && showLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          {/* Modal card */}
           <div className="relative z-10 w-[95%] sm:w-[540px] max-w-[95%] bg-main border border-customPurple rounded-xl shadow-xl animate-slide-up">
-            {/* Top bar */}
             <div className="flex items-center gap-3 p-4 border-b border-customPurple/50">
               <div className="w-10 h-10 rounded-full bg-customPurple text-white flex items-center justify-center shadow">
                 <FaLock className="text-base" />
@@ -224,7 +196,6 @@ function WatchPage() {
               </div>
             </div>
 
-            {/* Content */}
             <div className="p-5 sm:p-6 space-y-4">
               <div className="bg-dry rounded-lg p-4 border border-customPurple/30">
                 <p className="text-sm text-text">
@@ -252,10 +223,9 @@ function WatchPage() {
                 </li>
               </ul>
 
-              {/* Single action: Login now */}
               <div className="flex items-center justify-end pt-2">
                 <button
-                  onClick={handleLoginNow}
+                  onClick={() => navigate('/login')}
                   className="w-full sm:w-auto px-5 py-2 rounded-md bg-customPurple text-white hover:bg-opacity-90 border-2 border-customPurple transitions flex items-center justify-center gap-2"
                 >
                   <FaLock className="text-sm" />
@@ -268,10 +238,8 @@ function WatchPage() {
       )}
 
       <div className="container mx-auto px-8 mobile:px-2 my-5">
-        {/* Header section */}
         <div className="bg-main rounded-lg border border-gray-800 p-4 mobile:p-3 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mobile:gap-2">
-            {/* Left side - Back button and movie title with like button on mobile */}
             <div className="flex items-center gap-3 mobile:gap-2 flex-1">
               <button
                 onClick={handleBackClick}
@@ -281,7 +249,6 @@ function WatchPage() {
                 <h1 className="text-xl sm:text-2xl mobile:text-base font-bold mobile:line-clamp-1">{movie?.name}</h1>
               </button>
 
-              {/* Like button - visible on mobile next to title */}
               <button
                 onClick={() => LikeMovie(movie, dispatch, userInfo)}
                 disabled={isLiked || likeLoading}
@@ -295,9 +262,7 @@ function WatchPage() {
               </button>
             </div>
 
-            {/* Right side - Actions (hidden on mobile for like button, visible for download) */}
             <div className="hidden sm:flex items-center gap-3">
-              {/* Like button - desktop only */}
               <button
                 onClick={() => LikeMovie(movie, dispatch, userInfo)}
                 disabled={isLiked || likeLoading}
@@ -310,7 +275,6 @@ function WatchPage() {
                 <FaHeart className="text-lg" />
               </button>
 
-              {/* Download button - only for movies */}
               {movie.type === 'Movie' && movie.downloadUrl && (
                 <button
                   onClick={DownloadMovieVideo}
@@ -322,7 +286,6 @@ function WatchPage() {
               )}
             </div>
 
-            {/* Download button on mobile - shown separately */}
             {movie.type === 'Movie' && movie.downloadUrl && (
               <button
                 onClick={DownloadMovieVideo}
@@ -336,9 +299,7 @@ function WatchPage() {
         </div>
 
         {movie.type === 'Movie' ? (
-          // Handling Movie with 2 servers
           <div>
-            {/* Server Selector */}
             <div className="flex flex-wrap gap-3 mb-5">
               {servers.map((server, idx) => (
                 <button
@@ -363,13 +324,11 @@ function WatchPage() {
               ))}
             </div>
 
-            {/* Video Player */}
             {play ? (
               <div className="w-full h-[75vh] mobile:h-[50vh] rounded-lg overflow-hidden relative bg-black">
                 <div className="absolute top-4 right-4 bg-main text-white text-xs px-3 py-1.5 rounded-md z-10">
                   {servers[currentServerIndex].label}
                 </div>
-                {/* Video iframe */}
                 <iframe
                   src={servers[currentServerIndex].url}
                   title={movie?.name}
@@ -382,7 +341,6 @@ function WatchPage() {
             ) : (
               <div className="w-full h-[75vh] mobile:h-[50vh] rounded-lg overflow-hidden relative">
                 <div className="absolute inset-0 bg-main bg-opacity-50 flex-colo z-10">
-                  {/* Play Button Overlay */}
                   <button
                     onClick={handlePlayClick}
                     className="bg-white text-customPurple flex-colo border-2 border-white rounded-full w-20 h-20 font-medium text-xl hover:scale-110 transitions"
@@ -399,9 +357,7 @@ function WatchPage() {
             )}
           </div>
         ) : (
-          // Handling Web Series
           <div>
-            {/* Episode Selector */}
             {movie.episodes && movie.episodes.length > 0 ? (
               <div className="flex flex-wrap gap-3 mb-6">
                 {movie.episodes.map((ep) => (
@@ -438,7 +394,6 @@ function WatchPage() {
                     <div className="absolute top-4 right-4 bg-main text-white text-xs px-3 py-1.5 rounded-md z-10">
                       Episode {currentEpisode.episodeNumber}
                     </div>
-                    {/* Video iframe */}
                     <iframe
                       src={currentEpisode.video}
                       title={currentEpisode.title || `Episode ${currentEpisode.episodeNumber}`}
@@ -451,7 +406,6 @@ function WatchPage() {
                 ) : (
                   <div className="w-full h-[75vh] mobile:h-[50vh] rounded-lg overflow-hidden relative">
                     <div className="absolute inset-0 bg-main bg-opacity-50 flex-colo z-10">
-                      {/* Play Button Overlay */}
                       <button
                         onClick={handlePlayClick}
                         className="bg-white text-customPurple flex-colo border-2 border-white rounded-full w-20 h-20 font-medium text-xl hover:scale-110 transitions"
@@ -472,11 +426,11 @@ function WatchPage() {
         )}
 
         {/* Related Movies Section */}
-        {RelatedMovies && RelatedMovies.length > 0 && (
+        {movies && movies.length > 0 && (
           <div className="my-16">
             <Titles title="Related Movies" Icon={BsCollectionFill} />
             <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2">
-              {RelatedMovies?.slice(0, 10).map((relatedMovie) => (
+              {movies?.filter((m) => m.category === movie?.category && m._id !== movie?._id).slice(0, 10).map((relatedMovie) => (
                 <Movie key={relatedMovie?._id} movie={relatedMovie} />
               ))}
             </div>

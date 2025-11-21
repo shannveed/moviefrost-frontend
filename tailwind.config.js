@@ -9,6 +9,12 @@ module.exports = {
       height: {
         header: '560px',
         rate: '400px',
+        // Q2: mobile arrow height for 4:15 aspect ratio
+        'mobile-arrow': '60px',
+      },
+      width: {
+        // Q2: mobile arrow width for 4:15 aspect ratio
+        'mobile-arrow': '16px',
       },
       fontSize: {
         h1: '2.6rem',

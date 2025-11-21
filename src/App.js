@@ -1,3 +1,4 @@
+// src/App.js
 // App.js
 import React, { useEffect, useRef, Suspense, lazy } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
@@ -14,11 +15,6 @@ import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analyti
 import Loader from './Components/Loader';
 
 // Lazy load ALL components
-const JaneaseHindi = lazy(() => import('./Screens/JaneaseHindi'));
-const Turkish = lazy(() => import('./Screens/Turkish'));
-const SouthIndian = lazy(() => import('./Screens/SouthIndian'));
-const Wrestling = lazy(() => import('./Screens/Wrestling'));
-const Punjabi = lazy(() => import('./Screens/Punjabi'));
 const Hollywood = lazy(() => import('./Screens/Hollywood'));
 const Korean = lazy(() => import('./Screens/Korean'));
 const Bollywood = lazy(() => import('./Screens/Bollywood'));
@@ -45,13 +41,19 @@ const Users = lazy(() => import('./Screens/Dashboard/Admin/Users'));
 const NotFound = lazy(() => import('./Screens/NotFound'));
 const GoogleAnalytics = lazy(() => import('./Components/GoogleAnalytics'));
 
+// NEW pages
+const JaneaseHindi = lazy(() => import('./Screens/JaneaseHindi'));
+const Turkish = lazy(() => import('./Screens/Turkish'));
+const SouthIndian = lazy(() => import('./Screens/SouthIndian'));
+const Punjabi = lazy(() => import('./Screens/Punjabi'));
+const Chinese = lazy(() => import('./Screens/Chinese'));
+
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
   }
-
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
@@ -98,33 +100,30 @@ function App() {
   const hasShownPrompt = useRef(false);
   const aosInitialized = useRef(false);
 
-  // NEW: Force a clean reload once on /login or /register
+  // Force a clean reload on /login or /register once
   useEffect(() => {
     const path = location.pathname;
     const isAuth = path === '/login' || path === '/register';
     if (isAuth) {
       const key = 'reloaded:' + path;
-      // Only reload once per path per session
       if (!sessionStorage.getItem(key)) {
         sessionStorage.setItem(key, '1');
-        // Replace to avoid additional history entry
         window.location.replace(path + location.search + location.hash);
       }
     } else {
-      // When leaving auth pages, clear flags so a future click will reload once again
       sessionStorage.removeItem('reloaded:/login');
       sessionStorage.removeItem('reloaded:/register');
     }
   }, [location.pathname, location.search, location.hash]);
 
-  // Initialize AOS only once after component mount
+  // Initialize AOS once
   useEffect(() => {
     if (!aosInitialized.current) {
       import('aos').then((AOS) => {
         AOS.init({
           duration: 800,
           once: true,
-          disable: 'mobile' // Disable on mobile for better performance
+          disable: 'mobile'
         });
         aosInitialized.current = true;
       });
@@ -135,12 +134,11 @@ function App() {
   const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
   const { isError: catError } = useSelector((state) => state.categoryGetAll || {});
 
-  // Track user type on mount and when userInfo changes
   useEffect(() => {
     trackUserType(!!userInfo);
   }, [userInfo]);
 
-  // Track guest user exit
+  // Track guest exit
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (!userInfo) {
@@ -148,12 +146,10 @@ function App() {
         trackGuestExit(location.pathname, timeSpent);
       }
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [userInfo, location.pathname]);
 
-  // Reset page entry time on route change
   useEffect(() => {
     pageEntryTime.current = Date.now();
   }, [location.pathname]);
@@ -169,7 +165,7 @@ function App() {
     };
   }, []);
 
-  // Load initial data with request idle callback
+  // Initial data
   useEffect(() => {
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => {
@@ -185,7 +181,6 @@ function App() {
         }
       });
     } else {
-      // Fallback for browsers that don't support requestIdleCallback
       setTimeout(() => {
         try {
           dispatch(getAllCategoriesAction());
@@ -201,7 +196,6 @@ function App() {
     }
   }, [dispatch, userInfo]);
 
-  // Handle errors
   useEffect(() => {
     if (isError || catError) {
       toast.error(isError || catError);
@@ -212,19 +206,16 @@ function App() {
     }
   }, [dispatch, isError, catError, isSuccess]);
 
-  // Alert every 30 minutes if not logged in
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!userInfo && !hasShownPrompt.current) {
         hasShownPrompt.current = true;
-        
         const redirectState = {
           pathname: location.pathname,
           search: location.search,
           hash: location.hash,
           scrollY: window.scrollY
         };
-        
         localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
         trackLoginPrompt('30_minute_timer', location.pathname);
         alert('Please log in now for free to continue');
@@ -252,19 +243,22 @@ function App() {
               <Route path="/watch/:id" element={<WatchPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              {/* NEW */}
+
+              {/* existing new content routes */}
               <Route path="/Hollywood" element={<Hollywood />} />
               <Route path="/Korean" element={<Korean />} />
               <Route path="/Bollywood" element={<Bollywood />} />
               <Route path="/Hollywood-Hindi" element={<HollywoodHindi />} />
               <Route path="/Korean-Hindi" element={<KoreanHindi />} />
               <Route path="/Japanease" element={<Japanease />} />
-              
+
+              {/* NEW */}
               <Route path="/Janease-Hindi" element={<JaneaseHindi />} />
               <Route path="/Turkish" element={<Turkish />} />
               <Route path="/South-Indian" element={<SouthIndian />} />
-              <Route path="/Wrestling" element={<Wrestling />} />
+              {/* Wrestling route removed */}
               <Route path="/Punjabi" element={<Punjabi />} />
+              <Route path="/Chinese" element={<Chinese />} />
               <Route path="*" element={<NotFound />} />
 
               {/* PRIVATE ROUTES */}

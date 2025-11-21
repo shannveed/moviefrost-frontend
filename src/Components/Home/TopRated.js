@@ -1,3 +1,4 @@
+// src/Components/Home/TopRated.js
 import React, { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Titles from "../Titles";
@@ -91,33 +92,26 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
     >
       {movies?.map((movie, index) => (
         <SwiperSlide key={index}>
-          <div className="border border-border mobile:border-1 p-2 mobile:p-1 hover:scale-95 transitions relative rounded mobile:rounded-md overflow-hidden group">
+          <div className="border border-border mobile:border-0 p-2 mobile:p-0 hover:scale-95 transitions relative rounded mobile:rounded-none overflow-hidden group">
             <Link to={`/movie/${movie?._id}`}>
               <img
                 src={movie?.titleImage ? movie.titleImage : "/images/c3.jpg"}
                 alt={movie?.name}
-                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw/2*1.519)] object-cover rounded-md mobile:rounded" 
+                className="w-full h-80 above-1000:h-[calc(100vw/5*1.3)] mobile:h-[calc(100vw/2*1.519)] object-cover rounded-md mobile:rounded-none" 
               />
             </Link>
             <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center gap-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 mobile:px-2">
-              {/* Like button – hidden on mobiles, kept on ≥ 640 px */}
+              {/* Like Button - Updated with smaller mobile size (20px) */}
               <button
                 onClick={(e) => {
                   LikeMovie(movie, dispatch, userInfo);
                 }}
                 disabled={isLiked(movie) || isLoading}
-                className={`
-                  mobile:hidden
-                  absolute top-4 right-4
-                  w-9 h-9 above-1000:h-7 above-1000:w-7
-                  flex-colo rounded-full z-10 transitions
-                  ${isLiked(movie) 
-                    ? 'bg-customPurple' 
-                    : 'bg-white bg-opacity-30 hover:bg-customPurple'}
-                  text-white
-                `}
+                className={`absolute top-4 right-4 mobile:top-2 mobile:right-2 w-9 h-9 above-1000:h-7 above-1000:w-7 mobile:w-5 mobile:h-5 flex-colo transitions hover:bg-customPurple rounded-full ${
+                  isLiked(movie) ? "bg-customPurple" : "bg-white bg-opacity-30"
+                } text-white z-10`} 
               >
-                <FaHeart className="above-1000:text-xs text-sm" />
+                <FaHeart className="mobile:text-[10px] above-1000:text-xs text-sm" />
               </button>
 
               {/* Movie Name - Link inside the overlay */}
@@ -142,11 +136,16 @@ function TopRated({ movies, isLoading }) {
   const nextEl = useRef(null);
   const prevEl = useRef(null);
 
-  const arrowButtonClasses =
-    "absolute top-1/2 -translate-y-1/2 z-20 hover:bg-dry transition text-sm rounded w-8 h-14 mobile:w-6 mobile:h-10 flex items-center justify-center bg-customPurple text-white opacity-70 hover:opacity-100";
+  // Unified arrow style with responsive sizes
+  const baseArrow =
+    "absolute top-1/2 -translate-y-1/2 z-20 transition rounded-md flex items-center justify-center text-white bg-customPurple/70 hover:bg-customPurple";
+  const leftPos = "left-1";
+  const rightPos = "right-1";
+  // Tall on mobile (h-16), standard height on ≥ sm (h-14)
+  const sizeClasses = "w-8 h-16 sm:h-14";
 
   return (
-    <div className="my-12 mobile:my-6">
+    <div className="my-12 mobile:my-6 relative">
       <div className="mobile:px-0">
         <Titles title="Top Rated" Icon={BsBookmarkStarFill} />
       </div>
@@ -164,10 +163,19 @@ function TopRated({ movies, isLoading }) {
 
         {movies?.length > 0 && !isLoading && (
           <>
-            <button className={`${arrowButtonClasses} left-0 ml-1 mobile:ml-0`} ref={prevEl}>
+            {/* One set of buttons with responsive sizes – tall rectangular on mobile */}
+            <button
+              className={`${baseArrow} ${sizeClasses} ${leftPos}`}
+              ref={prevEl}
+              aria-label="Previous"
+            >
               <BsCaretLeftFill size={20} className="mobile:text-base"/>
             </button>
-            <button className={`${arrowButtonClasses} right-0 mr-1 mobile:mr-0`} ref={nextEl}>
+            <button
+              className={`${baseArrow} ${sizeClasses} ${rightPos}`}
+              ref={nextEl}
+              aria-label="Next"
+            >
               <BsCaretRightFill size={20} className="mobile:text-base"/>
             </button>
           </>

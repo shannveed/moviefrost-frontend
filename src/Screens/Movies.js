@@ -1,3 +1,4 @@
+// src/Screens/Movies.js
 import { trackGuestAction } from '../utils/analytics';
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import Filters from '../Components/Filters';
@@ -16,13 +17,14 @@ import {
   YearData,
   browseByData,
 } from '../Data/FilterData';
-import { useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { useParams, useSearchParams, useLocation, useNavigationType } from 'react-router-dom';
 import MetaTags from '../Components/SEO/MetaTags';
 
 function MoviesPage() {
   const { search } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const browseByParam = searchParams.get('browseBy') || '';
+  const navigationType = useNavigationType(); // NEW: detect POP for "Back"
   
   const location = useLocation();
   const scrollPositionRef = useRef(0);
@@ -62,7 +64,10 @@ function MoviesPage() {
 
   useEffect(() => {
     const savedState = sessionStorage.getItem('moviesPageState');
-    if (savedState && location.state?.fromMovieDetail) {
+    // Restore on:
+    // 1) returning from details with legacy flag (kept),
+    // 2) OR browser back (POP) and we have saved state
+    if (savedState && (location.state?.fromMovieDetail || navigationType === 'POP')) {
       const state = JSON.parse(savedState);
       if (Date.now() - state.timestamp < 30 * 60 * 1000) {
         setCategory(state.category);
@@ -71,11 +76,12 @@ function MoviesPage() {
         setRates(state.rates);
         setLanguage(state.language);
         setBrowseBy(state.browseBy);
-        scrollPositionRef.current = state.scrollPosition;
+        scrollPositionRef.current = state.scrollPosition || 0;
       }
+      // Clean possible noise
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location, navigationType]);
 
   const queries = useMemo(() => {
     const query = {
@@ -91,7 +97,8 @@ function MoviesPage() {
   }, [category, times, language, rates, year, browseBy, browseByParam, search]);
 
   const getPageNumber = useCallback(() => {
-    if (location.state?.fromMovieDetail) {
+    // If returning via back, use saved page
+    if (navigationType === 'POP') {
       const savedState = sessionStorage.getItem('moviesPageState');
       if (savedState) {
         const state = JSON.parse(savedState);
@@ -99,7 +106,7 @@ function MoviesPage() {
       }
     }
     return searchParams.get('page') ? Number(searchParams.get('page')) : 1;
-  }, [location.state, searchParams]);
+  }, [navigationType, searchParams]);
 
   useEffect(() => {
     if (isError) {
@@ -115,7 +122,7 @@ function MoviesPage() {
     
     const pageNumber = getPageNumber();
     dispatch(getAllMoviesAction({ ...queries, pageNumber }));
-  }, [dispatch, isError, queries, userInfo, getPageNumber]);;
+  }, [dispatch, isError, queries, userInfo, getPageNumber]);
 
   useEffect(() => {
     if (!isLoading && movies.length > 0 && scrollPositionRef.current > 0) {
@@ -183,7 +190,6 @@ function MoviesPage() {
     setBrowseBy: setBrowseBy,
   };
 
-  // Generate SEO title and description based on filters
   const generateSEOTitle = () => {
     let title = 'Watch Movies Online Free';
     if (search) title = `Search Results for "${search}"`;
