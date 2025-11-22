@@ -42,11 +42,12 @@ const NotFound = lazy(() => import('./Screens/NotFound'));
 const GoogleAnalytics = lazy(() => import('./Components/GoogleAnalytics'));
 
 // NEW pages
-const JaneaseHindi = lazy(() => import('./Screens/JaneaseHindi'));
 const Turkish = lazy(() => import('./Screens/Turkish'));
 const SouthIndian = lazy(() => import('./Screens/SouthIndian'));
 const Punjabi = lazy(() => import('./Screens/Punjabi'));
 const Chinese = lazy(() => import('./Screens/Chinese'));
+const KoreanDrama = lazy(() => import('./Screens/KoreanDrama'));
+const JapaneseAnime = lazy(() => import('./Screens/JapaneseAnime'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -253,12 +254,14 @@ function App() {
               <Route path="/Japanease" element={<Japanease />} />
 
               {/* NEW */}
-              <Route path="/Janease-Hindi" element={<JaneaseHindi />} />
+
               <Route path="/Turkish" element={<Turkish />} />
               <Route path="/South-Indian" element={<SouthIndian />} />
               {/* Wrestling route removed */}
               <Route path="/Punjabi" element={<Punjabi />} />
               <Route path="/Chinese" element={<Chinese />} />
+              <Route path="/korean-drama" element={<KoreanDrama />} />
+             <Route path="/japanese-anime" element={<JapaneseAnime />} />
               <Route path="*" element={<NotFound />} />
 
               {/* PRIVATE ROUTES */}

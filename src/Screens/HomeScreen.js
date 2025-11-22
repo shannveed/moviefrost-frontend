@@ -1,5 +1,5 @@
 // src/Screens/HomeScreen.js
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
 import Promos from '../Components/Home/Promos';
@@ -17,12 +17,12 @@ import MetaTags from '../Components/SEO/MetaTags';
 
 import HollywoodSection from '../Components/Home/HollywoodSection';
 import BrowseSection from '../Components/Home/BrowseSection';
+import LazyLoadSection from '../Components/LazyLoadSection'; // Import the new component
 
 function HomeScreen() {
   const dispatch = useDispatch();
-  const adsEnabled = false;
-  const adsInitRef = useRef(false);
 
+  // Redux State
   const {
     isLoading,
     isError,
@@ -47,19 +47,25 @@ function HomeScreen() {
     movies:    topMovies = [],
   } = useSelector((state) => state.getTopRatedMovie || {});
 
+  // Initial Fetch - Critical Data Only (Banner, Latest)
   useEffect(() => {
     dispatch(getLatestMoviesAction());
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
+    
+    // Optional: You can move these to LazyLoadSection logic if you want even faster initial load,
+    // but keeping them here ensures data is ready for the bottom section if the user scrolls fast.
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
   }, [dispatch]);
 
+  // Error Handling
   useEffect(() => {
     if (isError || randomError || topError || latestError) {
       toast.error(isError || randomError || topError || latestError);
     }
   }, [isError, randomError, topError, latestError]);
 
+  // Banner Data Logic
   const bannerFeed = useMemo(() => {
     if (latestMovies.length > 0) return latestMovies;
     if (randomMovies.length > 0) return randomMovies;
@@ -74,6 +80,7 @@ function HomeScreen() {
     url:   "https://moviefrost.com",
   };
 
+  // Browse Values
   const HOLLYWOOD_BROWSE_VALUES = [
     'British (English)',
     'Hollywood (English)',
@@ -130,6 +137,9 @@ function HomeScreen() {
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
+        
+        {/* --- ABOVE THE FOLD (Load Immediately) --- */}
+        
         {/* Banner */}
         <Banner
           movies={bannerFeed}
@@ -139,76 +149,106 @@ function HomeScreen() {
         {/* Latest carousel */}
         <PopularMovies movies={movies} isLoading={isLoading} />
 
+
+        {/* --- BELOW THE FOLD (Lazy Load) --- */}
+
         {/* Hollywood (English) */}
-        <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
+        <LazyLoadSection>
+          <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
+        </LazyLoadSection>
 
         {/* Korean */}
-        <BrowseSection
-          title="Korean"
-          browseList={KOREAN_BROWSE_VALUES}
-          link="/Korean"
-          excludeList={['Korean (Hindi Dubbed)']}
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="Korean"
+            browseList={KOREAN_BROWSE_VALUES}
+            link="/Korean"
+            excludeList={['Korean (Hindi Dubbed)']}
+          />
+        </LazyLoadSection>
 
-        {/* NEW: Chinese (Chinease Drama) – placed directly below Korean */}
-        <BrowseSection
-          title="Chinese"
-          browseList={['Chinease Drama']}
-          link="/Chinese"
-        />
+        {/* Chinese */}
+        <LazyLoadSection>
+          <BrowseSection
+            title="Chinese"
+            browseList={['Chinease Drama']}
+            link="/Chinese"
+          />
+        </LazyLoadSection>
 
         {/* Bollywood */}
-        <BrowseSection
-          title="Bollywood"
-          browseList={BOLLYWOOD_BROWSE_VALUES}
-          link="/Bollywood"
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="Bollywood"
+            browseList={BOLLYWOOD_BROWSE_VALUES}
+            link="/Bollywood"
+          />
+        </LazyLoadSection>
 
         {/* Hollywood Hindi */}
-        <BrowseSection
-          title="Hollywood Hindi"
-          browseList={HOLLYWOOD_HINDI_BROWSE_VALUES}
-          link="/Hollywood-Hindi"
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="Hollywood Hindi"
+            browseList={HOLLYWOOD_HINDI_BROWSE_VALUES}
+            link="/Hollywood-Hindi"
+          />
+        </LazyLoadSection>
 
         {/* Korean Hindi */}
-        <BrowseSection
-          title="Korean Hindi"
-          browseList={KOREAN_HINDI_BROWSE_VALUES}
-          link="/Korean-Hindi"
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="Korean Hindi"
+            browseList={KOREAN_HINDI_BROWSE_VALUES}
+            link="/Korean-Hindi"
+          />
+        </LazyLoadSection>
 
         {/* Japanease */}
-        <BrowseSection
-          title="Japanease"
-          browseList={JAPAN_BROWSE_VALUES}
-          link="/Japanease"
-          excludeList={['Japanese Web Series (Hindi)']}
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="Japanease"
+            browseList={JAPAN_BROWSE_VALUES}
+            link="/Japanease"
+            excludeList={['Japanese Web Series (Hindi)']}
+          />
+        </LazyLoadSection>
 
         {/* Janease Hindi */}
-        <BrowseSection
-          title="Janease Hindi"
-          browseList={JANEASE_HINDI_VALUES}
-          link="/Janease-Hindi"
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="Janease Hindi"
+            browseList={JANEASE_HINDI_VALUES}
+            link="/Janease-Hindi"
+          />
+        </LazyLoadSection>
 
         {/* South Indian */}
-        <BrowseSection
-          title="South Indian"
-          browseList={SOUTH_INDIAN_VALUES}
-          link="/South-Indian"
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="South Indian"
+            browseList={SOUTH_INDIAN_VALUES}
+            link="/South-Indian"
+          />
+        </LazyLoadSection>
 
         {/* Punjabi */}
-        <BrowseSection
-          title="Punjabi"
-          browseList={PUNJABI_VALUES}
-          link="/Punjabi"
-        />
+        <LazyLoadSection>
+          <BrowseSection
+            title="Punjabi"
+            browseList={PUNJABI_VALUES}
+            link="/Punjabi"
+          />
+        </LazyLoadSection>
 
-        <Promos />
-        <TopRated movies={topMovies} isLoading={topLoading} />
+        {/* Promos & Top Rated */}
+        <LazyLoadSection height="400px">
+          <Promos />
+        </LazyLoadSection>
+
+        <LazyLoadSection>
+          <TopRated movies={topMovies} isLoading={topLoading} />
+        </LazyLoadSection>
+
       </div>
     </Layout>
   );

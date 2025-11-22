@@ -53,24 +53,44 @@ export default function MobileGridSwiper({ movies = [] }) {
         ))}
       </Swiper>
 
-      {/* Q2: 4:15 aspect on mobile */}
+      {/* NEW: Small, circular mobile-only arrows */}
       {slides.length > 1 && (
         <>
           <button
             ref={prevEl}
             aria-label="Previous"
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-6 h-16 mobile:w-mobile-arrow mobile:h-mobile-arrow flex items-center justify-center 
-                       bg-customPurple/70 hover:bg-customPurple text-white rounded-md sm:hidden"
+            className="
+              sm:hidden
+              absolute left-2 top-1/2 -translate-y-1/2 z-20
+              w-7 h-7 rounded-full
+              bg-customPurple/70 text-white
+              border border-customPurple/80
+              shadow-md backdrop-blur-sm
+              flex items-center justify-center
+              hover:bg-customPurple hover:text-white
+              active:scale-95
+              transition
+            "
           >
-            <BsCaretLeftFill size={18} />
+            <BsCaretLeftFill size={16} />
           </button>
           <button
             ref={nextEl}
             aria-label="Next"
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-6 h-16 mobile:w-mobile-arrow mobile:h-mobile-arrow flex items-center justify-center 
-                       bg-customPurple/70 hover:bg-customPurple text-white rounded-md sm:hidden"
+            className="
+              sm:hidden
+              absolute right-2 top-1/2 -translate-y-1/2 z-20
+              w-7 h-7 rounded-full
+             bg-customPurple/70 text-white
+              border border-customPurple/80
+              shadow-md backdrop-blur-sm
+              flex items-center justify-center
+              hover:bg-customPurple hover:text-white
+              active:scale-95
+              transition
+            "
           >
-            <BsCaretRightFill size={18} />
+            <BsCaretRightFill size={16} />
           </button>
         </>
       )}
