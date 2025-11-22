@@ -80,51 +80,39 @@ function HomeScreen() {
     url:   "https://moviefrost.com",
   };
 
-  // Browse Values
+  // ================= DEFINED CONSTANTS =================
   const HOLLYWOOD_BROWSE_VALUES = [
     'British (English)',
     'Hollywood (English)',
     'Hollywood Web Series (English)',
   ];
 
-  const KOREAN_BROWSE_VALUES = [
-    'Korean (English)',
-    'Korean Drama (Korean)',
-  ];
+  const KOREAN_BROWSE_VALUES = ['Korean (English)']; 
 
-  const BOLLYWOOD_BROWSE_VALUES = [
-    'Bollywood (Hindi)',
-    'Bollywood Web Series (Hindi)',
-    'Bollywood Web Series',
+  const KOREAN_HINDI_VALUES = ['Korean (Hindi Dubbed)'];
+  const JAPANESE_ANIME_VALUES = ['Japanese Anime'];
+  const KOREAN_DRAMA_VALUES = ['Korean Drama (Korean)'];
+  
+  const BOLLYWOOD_VALUES = [
+    'Bollywood (Hindi)', 
+    'Bollywood Web Series (Hindi)', 
+    'Bollywood Web Series'
   ];
-
-  const HOLLYWOOD_HINDI_BROWSE_VALUES = [
+  
+  const HOLLYWOOD_HINDI_VALUES = [
     'Hollywood (Hindi Dubbed)',
     'Hollywood Web Series (Hindi Dubbed)',
     'Hollywood( Hindi Dubbed)',
   ];
-
-  const KOREAN_HINDI_BROWSE_VALUES = [
-    'Korean (Hindi Dubbed)',
-  ];
-
-  const JAPAN_BROWSE_VALUES = [
+  
+  const JAPAN_VALUES = [
     'Japanese (Movies)',
     'Japanese Web Series',
     'Japanese Web Series (Hindi)',
   ];
-
-  const JANEASE_HINDI_VALUES = [
-    'Japanese Web Series (Hindi)',
-  ];
-
-  const SOUTH_INDIAN_VALUES = [
-    'South Indian (Hindi Dubbed)',
-  ];
-
-  const PUNJABI_VALUES = [
-    'Indian Punjabi Movies',
-  ];
+  
+  const SOUTH_INDIAN_VALUES = ['South Indian (Hindi Dubbed)'];
+  const PUNJABI_VALUES = ['Indian Punjabi Movies'];
 
   return (
     <Layout>
@@ -157,69 +145,78 @@ function HomeScreen() {
           <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
         </LazyLoadSection>
 
-        {/* Korean */}
+        {/* Hollywood Hindi - FIXED VARIABLE NAME */}
         <LazyLoadSection>
           <BrowseSection
-            title="Korean"
-            browseList={KOREAN_BROWSE_VALUES}
-            link="/Korean"
-            excludeList={['Korean (Hindi Dubbed)']}
+            title="Hollywood Hindi"
+            browseList={HOLLYWOOD_HINDI_VALUES} 
+            link="/Hollywood-Hindi"
+          />
+        </LazyLoadSection>
+
+        {/* Bollywood - FIXED VARIABLE NAME */}
+        <LazyLoadSection>
+          <BrowseSection
+            title="Bollywood"
+            browseList={BOLLYWOOD_VALUES} 
+            link="/Bollywood"
+          />
+        </LazyLoadSection>
+
+        {/* Korean Drama */}
+        <LazyLoadSection>
+          <BrowseSection
+          title="Korean Drama"
+          browseList={KOREAN_DRAMA_VALUES}
+          link="/korean-drama"
+        />
+        </LazyLoadSection>
+
+
+        {/* Korean Movies/Webseries */}
+        <LazyLoadSection>
+          <BrowseSection
+          title="Korean"
+          browseList={KOREAN_BROWSE_VALUES}
+          link="/Korean"
+        />
+        </LazyLoadSection>
+
+        {/* Korean Hindi - FIXED VARIABLE NAME */}
+        <LazyLoadSection>
+          <BrowseSection
+            title="Korean Hindi"
+            browseList={KOREAN_HINDI_VALUES} 
+            link="/Korean-Hindi"
           />
         </LazyLoadSection>
 
         {/* Chinese */}
         <LazyLoadSection>
           <BrowseSection
-            title="Chinese"
+            title="Chinese Drama"
             browseList={['Chinease Drama']}
             link="/Chinese"
           />
         </LazyLoadSection>
 
-        {/* Bollywood */}
+        {/* Japanease - FIXED VARIABLE NAME */}
         <LazyLoadSection>
           <BrowseSection
-            title="Bollywood"
-            browseList={BOLLYWOOD_BROWSE_VALUES}
-            link="/Bollywood"
-          />
-        </LazyLoadSection>
-
-        {/* Hollywood Hindi */}
-        <LazyLoadSection>
-          <BrowseSection
-            title="Hollywood Hindi"
-            browseList={HOLLYWOOD_HINDI_BROWSE_VALUES}
-            link="/Hollywood-Hindi"
-          />
-        </LazyLoadSection>
-
-        {/* Korean Hindi */}
-        <LazyLoadSection>
-          <BrowseSection
-            title="Korean Hindi"
-            browseList={KOREAN_HINDI_BROWSE_VALUES}
-            link="/Korean-Hindi"
-          />
-        </LazyLoadSection>
-
-        {/* Japanease */}
-        <LazyLoadSection>
-          <BrowseSection
-            title="Japanease"
-            browseList={JAPAN_BROWSE_VALUES}
+            title="Japanese"
+            browseList={JAPAN_VALUES} 
             link="/Japanease"
             excludeList={['Japanese Web Series (Hindi)']}
           />
         </LazyLoadSection>
 
-        {/* Janease Hindi */}
+        {/* Japanease Anime*/}
         <LazyLoadSection>
-          <BrowseSection
-            title="Janease Hindi"
-            browseList={JANEASE_HINDI_VALUES}
-            link="/Janease-Hindi"
-          />
+                <BrowseSection
+                  title="Japanese Anime "
+                  browseList={JAPANESE_ANIME_VALUES}
+                  link="/japanese-anime"
+                />
         </LazyLoadSection>
 
         {/* South Indian */}
