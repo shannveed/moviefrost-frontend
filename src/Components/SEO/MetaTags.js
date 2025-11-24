@@ -1,39 +1,46 @@
+// Frontend/src/Components/SEO/MetaTags.js
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
-const MetaTags = ({ 
+const MetaTags = ({
   title = 'MovieFrost - Watch Free Movies & Web Series Online',
-  description = 'Watch movies online free in HD quality. Stream latest movies, web series without registration.',
-  keywords = 'watch movies online, free movies, stream movies, HD movies',
-  image = 'https://moviefrost.com/og-image.jpg',
+  description = 'Watch movies online free in HD quality. Stream latest movies and web series without registration.',
+  keywords = 'watch movies online, free movies, stream movies, HD movies, web series, MovieFrost',
+  image = 'https://www.moviefrost.com/og-image.jpg',
   url,
-  type = 'website'
+  type = 'website',
 }) => {
-  const canonical = url || 'https://www.moviefrost.com';
-  const fullTitle = title.includes('MovieFrost') ? title : `${title} | MovieFrost`;
-  
+  const siteName = 'MovieFrost';
+  const baseUrl = 'https://www.moviefrost.com';
+  const canonical = url || baseUrl;
+  const fullTitle = title.includes(siteName)
+    ? title
+    : `${title} | ${siteName}`;
+  const ogImage = image || `${baseUrl}/og-image.jpg`;
+
   return (
     <Helmet>
-      {/* Canonical URL MUST be first for Google's canonicalization */}
-      <link rel="canonical" href={canonical} />
-      
+      {/* Canonical & title */}
       <title>{fullTitle}</title>
+      <link rel="canonical" href={canonical} />
+
+      {/* Basic meta */}
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
-      
+
       {/* Open Graph */}
+      <meta property="og:type" content={type} />
+      <meta property="og:site_name" content={siteName} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
+      <meta property="og:image" content={ogImage} />
       <meta property="og:url" content={canonical} />
-      <meta property="og:type" content={type} />
-      <meta property="og:site_name" content="MovieFrost" />
-      
+
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
+      <meta name="twitter:image" content={ogImage} />
     </Helmet>
   );
 };

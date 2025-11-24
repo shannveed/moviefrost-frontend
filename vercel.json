@@ -12,24 +12,30 @@
   "outputDirectory": "build",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://moviefrost-backend-pi.vercel.app/api/$1"
-    },
-    {
       "source": "/sitemap.xml",
       "destination": "https://moviefrost-backend-pi.vercel.app/sitemap.xml"
+    },
+    {
+      "source": "/sitemap-videos.xml",
+      "destination": "https://moviefrost-backend-pi.vercel.app/sitemap-videos.xml"
     },
     {
       "source": "/robots.txt",
       "destination": "/robots.txt"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     },
     {
@@ -40,11 +46,18 @@
       ]
     },
     {
+      "source": "/sitemap-videos.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
       "source": "/static/(.*)",
       "headers": [
-        { 
+        {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable" 
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },

@@ -9,46 +9,44 @@ module.exports = {
       height: {
         header: '560px',
         rate: '400px',
-        // Q2: mobile arrow height for 4:15 aspect ratio
-        'mobile-arrow': '60px',
+        'mobile-arrow': '60px'
       },
       width: {
-        // Q2: mobile arrow width for 4:15 aspect ratio
-        'mobile-arrow': '16px',
+        'mobile-arrow': '16px'
       },
       fontSize: {
-        h1: '2.6rem',
+        h1: '2.6rem'
       },
       screens: {
         xs: '475px',
         'above-1000': '1000px',
-        'mobile': {'max': '639px'},
-      },        
+        mobile: { max: '639px' }
+      },
       colors: {
-        customPurple:"#1B82FF",
+        customPurple: "#1B82FF",
         main: '#080A1A',
         subMain: '#F20000',
         dry: '#0B0F29',
         star: '#FFB000',
         text: '#C0C0C0',
         border: '#4b5563',
-        dryGray: '#E0D5D5',
+        dryGray: '#E0D5D5'
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.3s ease-out',
+        'slide-up': 'slideUp 0.3s ease-out'
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+          '100%': { opacity: '1' }
         },
         slideUp: {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-      },
-    },
+          '100%': { transform: 'translateY(0)', opacity: '1' }
+        }
+      }
+    }
   },
-  plugins: [],
-}
+  plugins: []
+};

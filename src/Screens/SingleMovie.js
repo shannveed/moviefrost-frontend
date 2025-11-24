@@ -1,7 +1,8 @@
+// Frontend/src/Screens/SingleMovie.js
 // src/Screens/SingleMovie.js
 import { trackMovieView } from '../utils/analytics';
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../Layout/Layout';
 import MovieInfo from '../Components/Single/MovieInfo';
 import MovieRates from '../Components/Single/MovieRates';
@@ -9,11 +10,13 @@ import Titles from '../Components/Titles';
 import { BsCollectionFill } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
 import Loader from '../Components/Loader';
-import { RiMovie2Line } from 'react-icons/ri';
-import ShareMovieModal from '../Components/Modals/ShareModal';
-import { getMovieByIdAction, getAllMoviesAction } from '../Redux/Actions/MoviesActions';
-import { DownloadVideo } from '../Context/Functionalities';
 import Movie from '../Components/movie';
+import ShareMovieModal from '../Components/Modals/ShareModal';
+import {
+  getMovieByIdAction,
+  getAllMoviesAction,
+} from '../Redux/Actions/MoviesActions';
+import { DownloadVideo } from '../Context/Functionalities';
 import MetaTags from '../Components/SEO/MetaTags';
 
 function SingleMovie() {
@@ -21,28 +24,40 @@ function SingleMovie() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const sameClass = 'w-full gap-6 flex-colo min-h-screen';
 
-  const { isLoading, isError, movie } = useSelector((state) => state.getMovieById || {});
-  const { movies = [] } = useSelector((state) => state.getAllMovies || {});
+  const {
+    isLoading,
+    isError,
+    movie,
+  } = useSelector((state) => state.getMovieById || {});
 
-  const RelatedMovies = movies?.filter(
-    (m) => m.category === movie?.category && m._id !== movie?._id
+  const { movies = [] } = useSelector(
+    (state) => state.getAllMovies || { movies: [] }
   );
 
-  const DownloadMovieVideo = () => {
+  const relatedMovies = useMemo(
+    () =>
+      Array.isArray(movies)
+        ? movies.filter(
+            (m) => m.category === movie?.category && m._id !== movie?._id
+          )
+        : [],
+    [movies, movie]
+  );
+
+  const handleBackClick = () => {
+    navigate(-1);
+  };
+
+  const handleDownloadMovieVideo = () => {
     if (movie?.downloadUrl) {
       DownloadVideo(movie.downloadUrl);
     }
   };
 
-  const handleBackClick = () => {
-    // Always go back to real previous location
-    navigate(-1);
-  };
-
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
+    // You were previously fetching all movies here to compute related movies
     dispatch(getAllMoviesAction({}));
   }, [dispatch, id]);
 
@@ -52,90 +67,147 @@ function SingleMovie() {
     }
   }, [movie]);
 
-  const movieStructuredData = movie ? {
-    "@context": "https://schema.org",
-    "@type": "Movie",
-    "name": movie.name,
-    "description": movie.desc,
-    "image": movie.titleImage,
-    "datePublished": movie.year,
-    "genre": movie.category,
-    "duration": `PT${movie.time}M`,
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": movie.rate,
-      "reviewCount": movie.numberOfReviews,
-      "bestRating": "5",
-      "worstRating": "0"
-    },
-    "inLanguage": movie.language,
-    "url": `https://moviefrost.com/movie/${movie._id}`
-  } : null;
+  // ---------- Structured data for SEO ----------
+  const hasRating =
+    movie &&
+    typeof movie.numberOfReviews === 'number' &&
+    movie.numberOfReviews > 0 &&
+    typeof movie.rate === 'number' &&
+    movie.rate > 0;
+
+  const movieStructuredData = movie
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Movie',
+        name: movie.name,
+        description: movie.seoDescription || movie.desc,
+        image: movie.titleImage || movie.image,
+        datePublished: movie.year ? String(movie.year) : undefined,
+        genre: movie.category,
+        duration: movie.time ? `PT${movie.time}M` : undefined,
+        inLanguage: movie.language,
+        url: `https://www.moviefrost.com/movie/${movie._id}`,
+        ...(hasRating
+          ? {
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: movie.rate,
+                reviewCount: movie.numberOfReviews,
+                bestRating: '5',
+                worstRating: '0',
+              },
+            }
+          : {}),
+        ...(movie.type === 'Movie'
+          ? {
+              // Add VideoObject so Google can index video
+              video: {
+                '@type': 'VideoObject',
+                name: `${movie.name} | MovieFrost`,
+                description: movie.seoDescription || movie.desc,
+                thumbnailUrl: movie.image || movie.titleImage,
+                uploadDate: movie.createdAt || movie.updatedAt || undefined,
+                duration: movie.time ? `PT${movie.time}M` : undefined,
+                contentUrl: movie.downloadUrl || movie.video || undefined,
+                embedUrl: `https://www.moviefrost.com/watch/${movie._id}`,
+              },
+            }
+          : {}),
+      }
+    : null;
+
+  const pageUrl = `https://www.moviefrost.com/movie/${id}`;
+
+  const seoTitle = movie
+    ? `${movie.name} (${movie.year}) – Watch Online Free`
+    : 'Watch Movie Online Free';
+
+  const seoDescription = movie
+    ? movie.seoDescription ||
+      `${movie.desc?.substring(0, 150) || ''} Watch in HD for free on MovieFrost.`
+    : 'Watch free movies and web series online in HD on MovieFrost.';
 
   return (
     <Layout>
-      {movie && (
-        <>
-          <MetaTags 
-            title={`Watch ${movie.name} (${movie.year}) Free Online HD | MovieFrost`}
-            description={`${movie.desc?.substring(0, 155)}... Watch ${movie.name} online free in HD quality. ${movie.category} movie available for streaming and download.`}
-            keywords={`${movie.name}, watch ${movie.name} online, ${movie.name} free, ${movie.category} movies, ${movie.language} movies, ${movie.year} movies`}
-            image={movie.titleImage || movie.image}
-            url={`https://moviefrost.com/movie/${movie._id}`}
-            type="video.movie"
-          />
-          
-          {movieStructuredData && (
-            <script type="application/ld+json">
-              {JSON.stringify(movieStructuredData)}
-            </script>
-          )}
-        </>
+      <MetaTags
+        title={seoTitle}
+        description={seoDescription}
+        keywords={
+          movie?.seoKeywords ||
+          `${movie?.name || 'movie'}, ${movie?.category || ''}, ${
+            movie?.language || ''
+          } movies, watch online`
+        }
+        image={movie?.titleImage || movie?.image}
+        url={pageUrl}
+        type="movie"
+      />
+
+      {movieStructuredData && (
+        <script type="application/ld+json">
+          {JSON.stringify(movieStructuredData)}
+        </script>
       )}
-      
-      {isLoading ? (
-        <div className={sameClass}>
-          <Loader />
-        </div>
-      ) : isError ? (
-        <div className={sameClass}>
-          <div className="flex-colo w-24 h-24 p-5 mb-4 rounded-full bg-dry text-customPurple text-4xl">
-            <RiMovie2Line />
+
+      <div className="container mx-auto px-4 mobile:px-2 py-6 min-h-screen">
+        {isLoading ? (
+          <div className="flex-colo min-h-[60vh]">
+            <Loader />
           </div>
-          <p className="text-border text-sm">Something went wrong</p>
-        </div>
-      ) : (
-        <>
-          <ShareMovieModal
-            modalOpen={modalOpen}
-            setModalOpen={setModalOpen}
-            movie={movie}
-          />
+        ) : isError ? (
+          <div className="flex-colo min-h-[60vh] text-center text-white">
+            <p className="text-lg font-semibold mb-4">
+              Something went wrong while loading this movie.
+            </p>
+            <button
+              onClick={() => dispatch(getMovieByIdAction(id))}
+              className="px-4 py-2 rounded bg-customPurple hover:bg-opacity-80 transitions"
+            >
+              Retry
+            </button>
+          </div>
+        ) : movie ? (
+          <>
+            <MovieInfo
+              movie={movie}
+              setModalOpen={setModalOpen}
+              DownloadVideo={handleDownloadMovieVideo}
+              onBackClick={handleBackClick}
+            />
 
-          <MovieInfo
-            movie={movie}
-            setModalOpen={setModalOpen}
-            DownloadVideo={DownloadMovieVideo}
-            progress={0}
-            onBackClick={handleBackClick}
-          />
+            <div className="my-10">
+              <MovieRates movie={movie} />
+            </div>
 
-          <div className="container mx-auto min-h-screen px-8 mobile:px-4 my-6">
-            <MovieRates movie={movie} />
-
-            {RelatedMovies?.length > 0 && (
-              <div className="my-16">
+            {relatedMovies?.length > 0 && (
+              <div className="my-10">
                 <Titles title="Related Movies" Icon={BsCollectionFill} />
-                <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2">
-                  {RelatedMovies?.slice(0, 10).map((relatedMovie) => (
-                    <Movie key={relatedMovie?._id} movie={relatedMovie} />
+                <div className="grid md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-4 mt-6">
+                  {relatedMovies.slice(0, 10).map((relatedMovie) => (
+                    <Movie key={relatedMovie._id} movie={relatedMovie} />
                   ))}
                 </div>
               </div>
             )}
+          </>
+        ) : (
+          <div className="flex-colo min-h-[60vh] text-center text-white">
+            <p className="text-lg font-semibold mb-2">Movie not found</p>
+            <button
+              onClick={() => navigate('/movies')}
+              className="px-4 py-2 rounded bg-customPurple hover:bg-opacity-80 transitions"
+            >
+              Go to Movies
+            </button>
           </div>
-        </>
-      )}
+        )}
+      </div>
+
+      <ShareMovieModal
+        modalOpen={modalOpen}
+        setModalOpen={setModalOpen}
+        movie={movie}
+      />
     </Layout>
   );
 }
