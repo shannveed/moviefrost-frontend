@@ -58,3 +58,4 @@ export const MOVIES_LATEST_FAIL = "MOVIES_LATEST_FAIL";
 // Add these new constants for navigation state
 export const SET_MOVIES_PAGE_STATE = "SET_MOVIES_PAGE_STATE";
 export const CLEAR_MOVIES_PAGE_STATE = "CLEAR_MOVIES_PAGE_STATE";
+

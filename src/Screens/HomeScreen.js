@@ -47,13 +47,13 @@ function HomeScreen() {
     movies:    topMovies = [],
   } = useSelector((state) => state.getTopRatedMovie || {});
 
-  // Initial Fetch - Critical Data Only (Banner, Latest)
+  // Initial Fetch - Critical Data Only (Banner, page 1 movies, etc.)
   useEffect(() => {
-    dispatch(getLatestMoviesAction());
+    // Page 1 of /movies → same dataset as Movies.js page 1
     dispatch(getAllMoviesAction({ pageNumber: 1 }));
-    
-    // Optional: You can move these to LazyLoadSection logic if you want even faster initial load,
-    // but keeping them here ensures data is ready for the bottom section if the user scrolls fast.
+
+    // Keep existing functionality: we still fetch latest, random, and top rated
+    dispatch(getLatestMoviesAction());
     dispatch(getRandomMoviesAction());
     dispatch(getTopRatedMovieAction());
   }, [dispatch]);
@@ -66,11 +66,11 @@ function HomeScreen() {
   }, [isError, randomError, topError, latestError]);
 
   // Banner Data Logic
-  const bannerFeed = useMemo(() => {
-    if (latestMovies.length > 0) return latestMovies;
-    if (randomMovies.length > 0) return randomMovies;
-    return movies;
-  }, [latestMovies, randomMovies, movies]);
+  // ✅ Now Banner uses the SAME movies list as Movies.js page 1
+  const bannerFeed = useMemo(
+    () => (Array.isArray(movies) ? movies : []),
+    [movies]
+  );
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -128,13 +128,13 @@ function HomeScreen() {
         
         {/* --- ABOVE THE FOLD (Load Immediately) --- */}
         
-        {/* Banner */}
+        {/* Banner – now shows /movies page 1 data (latest/ordered like Movies.js) */}
         <Banner
           movies={bannerFeed}
-          isLoading={latestLoading || randomLoading}
+          isLoading={isLoading}
         />
 
-        {/* Latest carousel */}
+        {/* Page 1 carousel (same movies list) */}
         <PopularMovies movies={movies} isLoading={isLoading} />
 
 
@@ -145,7 +145,7 @@ function HomeScreen() {
           <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
         </LazyLoadSection>
 
-        {/* Hollywood Hindi - FIXED VARIABLE NAME */}
+        {/* Hollywood Hindi */}
         <LazyLoadSection>
           <BrowseSection
             title="Hollywood Hindi"
@@ -154,7 +154,7 @@ function HomeScreen() {
           />
         </LazyLoadSection>
 
-        {/* Bollywood - FIXED VARIABLE NAME */}
+        {/* Bollywood */}
         <LazyLoadSection>
           <BrowseSection
             title="Bollywood"
@@ -166,23 +166,22 @@ function HomeScreen() {
         {/* Korean Drama */}
         <LazyLoadSection>
           <BrowseSection
-          title="Korean Drama"
-          browseList={KOREAN_DRAMA_VALUES}
-          link="/korean-drama"
-        />
+            title="Korean Drama"
+            browseList={KOREAN_DRAMA_VALUES}
+            link="/korean-drama"
+          />
         </LazyLoadSection>
-
 
         {/* Korean Movies/Webseries */}
         <LazyLoadSection>
           <BrowseSection
-          title="Korean"
-          browseList={KOREAN_BROWSE_VALUES}
-          link="/Korean"
-        />
+            title="Korean"
+            browseList={KOREAN_BROWSE_VALUES}
+            link="/Korean"
+          />
         </LazyLoadSection>
 
-        {/* Korean Hindi - FIXED VARIABLE NAME */}
+        {/* Korean Hindi */}
         <LazyLoadSection>
           <BrowseSection
             title="Korean Hindi"
@@ -200,7 +199,7 @@ function HomeScreen() {
           />
         </LazyLoadSection>
 
-        {/* Japanease - FIXED VARIABLE NAME */}
+        {/* Japanese */}
         <LazyLoadSection>
           <BrowseSection
             title="Japanese"
@@ -210,13 +209,13 @@ function HomeScreen() {
           />
         </LazyLoadSection>
 
-        {/* Japanease Anime*/}
+        {/* Japanese Anime */}
         <LazyLoadSection>
-                <BrowseSection
-                  title="Japanese Anime "
-                  browseList={JAPANESE_ANIME_VALUES}
-                  link="/japanese-anime"
-                />
+          <BrowseSection
+            title="Japanese Anime "
+            browseList={JAPANESE_ANIME_VALUES}
+            link="/japanese-anime"
+          />
         </LazyLoadSection>
 
         {/* South Indian */}
