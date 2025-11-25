@@ -13,14 +13,20 @@ import { getFavoriteMoviesAction } from './Redux/Actions/userActions';
 import toast from 'react-hot-toast';
 import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analytics';
 import Loader from './Components/Loader';
+import HollywoodSection from './Components/Home/HollywoodSection';
+import KoreanSection from './Components/Home/KoreanSection';
+import BollywoodSection from './Components/Home/BollywoodSection';
+import HollywoodHindiSection from './Components/Home/HollywoodHindiSection';
+import KoreanHindiSection from './Components/Home/KoreanHindiSection';
+import JapaneseSection from './Components/Home/JapaneseSection';
+import SouthIndianSection from './Components/Home/SouthIndianSection';
+import PunjabiSection from './Components/Home/PunjabiSection';
+import ChineseDramaSection from './Components/Home/ChineseDramaSection';
+import KoreanDramaSection from './Components/Home/KoreanDramaSection';
+import JapaneseAnimeSection from './Components/Home/JapaneseAnimeSection';
 
 // Lazy load ALL components
-const Hollywood = lazy(() => import('./Screens/Hollywood'));
-const Korean = lazy(() => import('./Screens/Korean'));
-const Bollywood = lazy(() => import('./Screens/Bollywood'));
-const HollywoodHindi = lazy(() => import('./Screens/HollywoodHindi'));
-const KoreanHindi = lazy(() => import('./Screens/KoreanHindi'));
-const Japanease = lazy(() => import('./Screens/Japanease'));
+
 const HomeScreen = lazy(() => import('./Screens/HomeScreen'));
 const MoviesPage = lazy(() => import('./Screens/Movies'));
 const SingleMovie = lazy(() => import('./Screens/SingleMovie'));
@@ -42,12 +48,6 @@ const NotFound = lazy(() => import('./Screens/NotFound'));
 const GoogleAnalytics = lazy(() => import('./Components/GoogleAnalytics'));
 
 // NEW pages
-const Turkish = lazy(() => import('./Screens/Turkish'));
-const SouthIndian = lazy(() => import('./Screens/SouthIndian'));
-const Punjabi = lazy(() => import('./Screens/Punjabi'));
-const Chinese = lazy(() => import('./Screens/Chinese'));
-const KoreanDrama = lazy(() => import('./Screens/KoreanDrama'));
-const JapaneseAnime = lazy(() => import('./Screens/JapaneseAnime'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -246,22 +246,21 @@ function App() {
               <Route path="/register" element={<Register />} />
 
               {/* existing new content routes */}
-              <Route path="/Hollywood" element={<Hollywood />} />
-              <Route path="/Korean" element={<Korean />} />
-              <Route path="/Bollywood" element={<Bollywood />} />
-              <Route path="/Hollywood-Hindi" element={<HollywoodHindi />} />
-              <Route path="/Korean-Hindi" element={<KoreanHindi />} />
-              <Route path="/Japanease" element={<Japanease />} />
+              <Route path="/Hollywood" element={<HollywoodSection />} />
+              <Route path="/Korean" element={<KoreanSection />} />
+              <Route path="/Bollywood" element={<BollywoodSection />} />
+              <Route path="/Hollywood-Hindi" element={<HollywoodHindiSection />} />
+              <Route path="/Korean-Hindi" element={<KoreanHindiSection />} />
+              <Route path="/Japanease" element={<JapaneseSection />} />
 
               {/* NEW */}
 
-              <Route path="/Turkish" element={<Turkish />} />
-              <Route path="/South-Indian" element={<SouthIndian />} />
+              <Route path="/South-Indian" element={<SouthIndianSection />} />
               {/* Wrestling route removed */}
-              <Route path="/Punjabi" element={<Punjabi />} />
-              <Route path="/Chinese" element={<Chinese />} />
-              <Route path="/korean-drama" element={<KoreanDrama />} />
-             <Route path="/japanese-anime" element={<JapaneseAnime />} />
+              <Route path="/Punjabi" element={<PunjabiSection />} />
+              <Route path="/Chinese" element={<ChineseDramaSection />} />
+              <Route path="/korean-drama" element={<KoreanDramaSection />} />
+             <Route path="/japanese-anime" element={<JapaneseAnimeSection />} />
               <Route path="*" element={<NotFound />} />
 
               {/* PRIVATE ROUTES */}

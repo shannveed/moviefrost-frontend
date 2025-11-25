@@ -20,7 +20,26 @@ export const getAllMoviesAction =
   }) =>
   async (dispatch) => {
     try {
-      dispatch({ type: moviesConstants.MOVIES_LIST_REQUEST });
+      const normalizedPageNumber =
+        pageNumber && Number(pageNumber) > 0 ? Number(pageNumber) : 1;
+
+      // Stable key for this exact query
+      const queryKey = JSON.stringify({
+        category,
+        time,
+        language,
+        rate,
+        year,
+        browseBy,
+        search,
+        pageNumber: normalizedPageNumber,
+      });
+
+      dispatch({
+        type: moviesConstants.MOVIES_LIST_REQUEST,
+        payload: { queryKey },
+      });
+
       const response = await moviesAPIs.getAllMoviesService(
         category,
         time,
@@ -29,11 +48,15 @@ export const getAllMoviesAction =
         year,
         browseBy,
         search,
-        pageNumber
+        normalizedPageNumber
       );
+
       dispatch({
         type: moviesConstants.MOVIES_LIST_SUCCESS,
-        payload: response,
+        payload: {
+          ...response,
+          queryKey,
+        },
       });
     } catch (error) {
       ErrorsAction(error, dispatch, moviesConstants.MOVIES_LIST_FAIL);

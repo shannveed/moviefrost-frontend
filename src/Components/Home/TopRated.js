@@ -53,7 +53,7 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
       modules={[Navigation, Autoplay]}
       spaceBetween={40}
       autoplay={{ delay: 3000, disableOnInteraction: false }}
-      speed={1000}
+      speed={200}
       navigation={{
         prevEl: prevEl.current,
         nextEl: nextEl.current,

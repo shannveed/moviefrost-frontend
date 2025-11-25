@@ -1,4 +1,4 @@
-// Banner.js
+// Frontend/src/Components/Home/Banner.js
 import React, { memo, useCallback } from 'react';
 import 'swiper/css';
 import 'swiper/css/autoplay';
@@ -13,18 +13,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { IfMovieLiked, LikeMovie } from '../../Context/Functionalities';
 import OptimizedImage from '../OptimizedImage';
 
-/*  ──────────────────────────────────────────────────────────
-    Mobile-friendly Banner  
-    • Large screens keep the existing full-screen overlay  
-    • Mobile (< 640 px) now ALSO receives a dark overlay that
-      covers the whole poster – identical readability everywhere
-   ────────────────────────────────────────────────────────── */
 const SwiperComponent = memo(({ sameClass, movies }) => {
   const { isLoading } = useSelector((state) => state.userLikeMovie);
-  const dispatch      = useDispatch();
-  const { userInfo }  = useSelector((state) => state.userLogin);
+  const dispatch = useDispatch();
+  const { userInfo } = useSelector((state) => state.userLogin);
 
-  /* Helpers */
   const isLiked = useCallback((movie) => IfMovieLiked(movie), []);
   const handleLikeMovie = useCallback(
     (movie) => {
@@ -38,7 +31,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
       direction="vertical"
       slidesPerView={1}
       loop
-      speed={1000}
+      speed={400}
       autoplay={{
         delay: 4000,
         disableOnInteraction: false,
@@ -46,12 +39,11 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
       modules={[Autoplay]}
       className={sameClass}
     >
-      {movies?.slice(0, 8).map((movie, index) => (
+      {movies?.slice(0, 20).map((movie, index) => (
         <SwiperSlide
           key={movie._id || index}
           className="relative rounded overflow-hidden"
         >
-          {/* Poster */}
           <OptimizedImage
             src={movie?.image || '/images/c1.jpg'}
             alt={movie?.name || 'Movie banner'}
@@ -61,11 +53,8 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             loading={index === 0 ? 'eager' : 'lazy'}
           />
 
-          {/* ───────── NEW MOBILE‐WIDE DARK OVERLAY ─────────  */}
-          {/* Covers the whole poster on phones to match desktop readability  */}
           <div className="sm:hidden absolute inset-0 bg-black/50 pointer-events-none" />
 
-          {/* ─────────────── DESKTOP/TABLET OVERLAY ─────────────── */}
           <div className="hidden sm:flex absolute linear-bg xl:pl-52 sm:pl-32 pl-8 top-0 bottom-0 right-0 left-0 flex-col justify-center lg:gap-8 md:gap-5 gap-4">
             <h1 className="xl:text-4xl truncate capitalize font-sans sm:text-xl text-lg font-bold">
               {movie?.name}
@@ -101,17 +90,13 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             </div>
           </div>
 
-          {/* ─────────────── MOBILE OVERLAY (bottom sheet) ─────────────── */}
           <div className="sm:hidden absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-4 py-3 flex flex-col gap-2 z-10">
-            {/* title */}
             <h2 className="text-base font-semibold leading-5 line-clamp-2">
               {movie?.name}
             </h2>
 
-            {/* meta */}
             <FlexMovieItems movie={movie} className="gap-3 !text-xs" />
 
-            {/* actions */}
             <div className="flex items-center gap-3 mt-1">
               <Link
                 to={`/movie/${movie?._id}`}
@@ -144,17 +129,19 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
 SwiperComponent.displayName = 'SwiperComponent';
 
 function Banner({ movies = [], isLoading = false }) {
-  /* 16 : 7 on ≥ 640 px,  16 : 10 on mobile for better aspect  */
   const sameClass =
     'w-full flex-colo xl:h-[530px] bg-dry lg:h-96 h-80 mobile:h-[calc(100vw*0.645)]';
 
+  const hasMovies = movies && movies.length > 0;
+  const showLoader = isLoading && !hasMovies;
+
   return (
     <section className="relative w-full" aria-label="Featured movies">
-      {isLoading ? (
+      {showLoader ? (
         <div className={sameClass}>
           <Loader />
         </div>
-      ) : movies?.length > 0 ? (
+      ) : hasMovies ? (
         <SwiperComponent sameClass={sameClass} movies={movies} />
       ) : (
         <div className={sameClass}>

@@ -1,4 +1,4 @@
-// Frontend/src/Components/Home/HollywoodSection.js
+// Frontend/src/Components/Home/JapaneseAnimeSection.js
 import React, { useEffect, useRef, useState } from 'react';
 import Titles from '../Titles';
 import {
@@ -17,31 +17,25 @@ import { getAllMoviesService } from '../../Redux/APIs/MoviesServices';
 import MobileGridSwiper from '../MobileGridSwiper';
 import { Empty } from '../Notifications/Empty';
 
-const BROWSE_VALUES = [
-  'British (English)',
-  'Hollywood (English)',
-  'Hollywood Web Series (English)',
-];
+const BROWSE_VALUES = ['Japanese Anime'];
 
-// Simple in-memory cache so this section stays filled when user
-// opens a movie and comes back.
-const hollywoodCache = {
+// Simple in-memory cache
+const japaneseAnimeCache = {
   movies: [],
   error: null,
   loaded: false,
 };
 
-function HollywoodSection() {
-  const [movies, setMovies] = useState(hollywoodCache.movies || []);
-  const [loading, setLoading] = useState(!hollywoodCache.loaded);
-  const [error, setError] = useState(hollywoodCache.error || null);
+function JapaneseAnimeSection() {
+  const [movies, setMovies] = useState(japaneseAnimeCache.movies || []);
+  const [loading, setLoading] = useState(!japaneseAnimeCache.loaded);
+  const [error, setError] = useState(japaneseAnimeCache.error || null);
 
   const prevEl = useRef(null);
   const nextEl = useRef(null);
 
   useEffect(() => {
-    // Already loaded in this session → reuse cached data.
-    if (hollywoodCache.loaded) {
+    if (japaneseAnimeCache.loaded) {
       return;
     }
 
@@ -70,17 +64,17 @@ function HollywoodSection() {
           setLoading(false);
         }
 
-        hollywoodCache.movies = merged;
-        hollywoodCache.error = null;
-        hollywoodCache.loaded = true;
+        japaneseAnimeCache.movies = merged;
+        japaneseAnimeCache.error = null;
+        japaneseAnimeCache.loaded = true;
       } catch (e) {
-        const message = e?.message || 'Failed to load Hollywood section';
+        const message = e?.message || 'Failed to load Japanese Anime section';
         if (!cancelled) {
           setError(message);
           setLoading(false);
         }
-        hollywoodCache.error = message;
-        hollywoodCache.loaded = false;
+        japaneseAnimeCache.error = message;
+        japaneseAnimeCache.loaded = false;
       }
     })();
 
@@ -95,12 +89,12 @@ function HollywoodSection() {
   return (
     <div className="my-8 mobile:my-4">
       <div className="flex items-center justify-between mb-6 mobile:mb-4 mobile:px-4">
-        <Titles title="Hollywood" Icon={BsCollectionFill} />
+        <Titles title="Japanese Anime" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Hollywood"
+            to="/japanese-anime"
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
-            aria-label="Show more Hollywood titles"
+            aria-label="Show more Japanese Anime titles"
           >
             Show&nbsp;More
             <BsCaretRightFill className="group-hover:translate-x-1 transition-transform" />
@@ -167,10 +161,10 @@ function HollywoodSection() {
           </div>
         </>
       ) : (
-        <Empty message="No titles found in Hollywood" />
+        <Empty message="No titles found in Japanese Anime" />
       )}
     </div>
   );
 }
 
-export default HollywoodSection;
+export default JapaneseAnimeSection;

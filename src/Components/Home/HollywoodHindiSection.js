@@ -1,4 +1,4 @@
-// Frontend/src/Components/Home/HollywoodSection.js
+// Frontend/src/Components/Home/HollywoodHindiSection.js
 import React, { useEffect, useRef, useState } from 'react';
 import Titles from '../Titles';
 import {
@@ -18,30 +18,28 @@ import MobileGridSwiper from '../MobileGridSwiper';
 import { Empty } from '../Notifications/Empty';
 
 const BROWSE_VALUES = [
-  'British (English)',
-  'Hollywood (English)',
-  'Hollywood Web Series (English)',
+  'Hollywood (Hindi Dubbed)',
+  'Hollywood Web Series (Hindi Dubbed)',
+  'Hollywood( Hindi Dubbed)',
 ];
 
-// Simple in-memory cache so this section stays filled when user
-// opens a movie and comes back.
-const hollywoodCache = {
+// Simple in-memory cache
+const hollywoodHindiCache = {
   movies: [],
   error: null,
   loaded: false,
 };
 
-function HollywoodSection() {
-  const [movies, setMovies] = useState(hollywoodCache.movies || []);
-  const [loading, setLoading] = useState(!hollywoodCache.loaded);
-  const [error, setError] = useState(hollywoodCache.error || null);
+function HollywoodHindiSection() {
+  const [movies, setMovies] = useState(hollywoodHindiCache.movies || []);
+  const [loading, setLoading] = useState(!hollywoodHindiCache.loaded);
+  const [error, setError] = useState(hollywoodHindiCache.error || null);
 
   const prevEl = useRef(null);
   const nextEl = useRef(null);
 
   useEffect(() => {
-    // Already loaded in this session → reuse cached data.
-    if (hollywoodCache.loaded) {
+    if (hollywoodHindiCache.loaded) {
       return;
     }
 
@@ -70,17 +68,17 @@ function HollywoodSection() {
           setLoading(false);
         }
 
-        hollywoodCache.movies = merged;
-        hollywoodCache.error = null;
-        hollywoodCache.loaded = true;
+        hollywoodHindiCache.movies = merged;
+        hollywoodHindiCache.error = null;
+        hollywoodHindiCache.loaded = true;
       } catch (e) {
-        const message = e?.message || 'Failed to load Hollywood section';
+        const message = e?.message || 'Failed to load Hollywood Hindi section';
         if (!cancelled) {
           setError(message);
           setLoading(false);
         }
-        hollywoodCache.error = message;
-        hollywoodCache.loaded = false;
+        hollywoodHindiCache.error = message;
+        hollywoodHindiCache.loaded = false;
       }
     })();
 
@@ -95,12 +93,12 @@ function HollywoodSection() {
   return (
     <div className="my-8 mobile:my-4">
       <div className="flex items-center justify-between mb-6 mobile:mb-4 mobile:px-4">
-        <Titles title="Hollywood" Icon={BsCollectionFill} />
+        <Titles title="Hollywood Hindi" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Hollywood"
+            to="/Hollywood-Hindi"
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
-            aria-label="Show more Hollywood titles"
+            aria-label="Show more Hollywood Hindi titles"
           >
             Show&nbsp;More
             <BsCaretRightFill className="group-hover:translate-x-1 transition-transform" />
@@ -167,10 +165,10 @@ function HollywoodSection() {
           </div>
         </>
       ) : (
-        <Empty message="No titles found in Hollywood" />
+        <Empty message="No titles found in Hollywood Hindi" />
       )}
     </div>
   );
 }
 
-export default HollywoodSection;
+export default HollywoodHindiSection;

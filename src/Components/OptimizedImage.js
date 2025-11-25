@@ -1,47 +1,81 @@
+// Frontend/src/Components/OptimizedImage.js
 import React, { useState, useEffect } from 'react';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
-const OptimizedImage = ({ 
-  src, 
-  alt, 
-  className = '', 
-  width, 
-  height, 
+// Remember which image URLs were already loaded in this session.
+// Once an image URL is loaded, we never show the placeholder for it again.
+const loadedImages = new Set();
+
+const OptimizedImage = ({
+  src,
+  alt,
+  className = '',
+  width,
+  height,
   loading = 'lazy',
   placeholder = '/images/placeholder.jpg',
   onLoad,
-  ...props 
+  ...props
 }) => {
-  const [imageSrc, setImageSrc] = useState(placeholder);
   const [imageRef, isVisible] = useIntersectionObserver({
     threshold: 0.1,
-    rootMargin: '50px'
+    rootMargin: '50px',
   });
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  // If we've already loaded this src before, start directly with it.
+  const [imageSrc, setImageSrc] = useState(
+    src && loadedImages.has(src) ? src : placeholder
+  );
+  const [isLoaded, setIsLoaded] = useState(
+    !!src && loadedImages.has(src)
+  );
 
   useEffect(() => {
-    if (isVisible && src) {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        setImageSrc(src);
-        setIsLoaded(true);
-        if (onLoad) onLoad();
-      };
+    if (!src) return;
+
+    // Already known as loaded → sync state & skip placeholder.
+    if (loadedImages.has(src)) {
+      setImageSrc(src);
+      setIsLoaded(true);
+      if (onLoad) onLoad();
+      return;
     }
+
+    // Otherwise, lazy‑load when visible.
+    if (!isVisible) return;
+
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      loadedImages.add(src);
+      setImageSrc(src);
+      setIsLoaded(true);
+      if (onLoad) onLoad();
+    };
   }, [isVisible, src, onLoad]);
 
   return (
-    <img
+    <div
       ref={imageRef}
-      src={imageSrc}
-      alt={alt}
-      className={`${className} ${!isLoaded ? 'blur-sm' : ''} transition-all duration-300`}
-      width={width}
-      height={height}
-      loading={loading}
-      {...props}
-    />
+      className={className}
+      style={
+        width && height
+          ? { aspectRatio: `${width}/${height}`, overflow: 'hidden' }
+          : { overflow: 'hidden' }
+      }
+    >
+      <img
+        src={imageSrc}
+        alt={alt}
+        loading={loading}
+        width={width}
+        height={height}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        {...props}
+      />
+    </div>
   );
 };
 

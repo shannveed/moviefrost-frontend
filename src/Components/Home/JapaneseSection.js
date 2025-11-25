@@ -1,4 +1,4 @@
-// Frontend/src/Components/Home/HollywoodSection.js
+// Frontend/src/Components/Home/JapaneseSection.js
 import React, { useEffect, useRef, useState } from 'react';
 import Titles from '../Titles';
 import {
@@ -18,30 +18,30 @@ import MobileGridSwiper from '../MobileGridSwiper';
 import { Empty } from '../Notifications/Empty';
 
 const BROWSE_VALUES = [
-  'British (English)',
-  'Hollywood (English)',
-  'Hollywood Web Series (English)',
+  'Japanese (Movies)',
+  'Japanese Web Series',
+  'Japanese Web Series (Hindi)',
 ];
 
-// Simple in-memory cache so this section stays filled when user
-// opens a movie and comes back.
-const hollywoodCache = {
+const EXCLUDE_BROWSE = ['Japanese Web Series (Hindi)'];
+
+// Simple in-memory cache
+const japaneseCache = {
   movies: [],
   error: null,
   loaded: false,
 };
 
-function HollywoodSection() {
-  const [movies, setMovies] = useState(hollywoodCache.movies || []);
-  const [loading, setLoading] = useState(!hollywoodCache.loaded);
-  const [error, setError] = useState(hollywoodCache.error || null);
+function JapaneseSection() {
+  const [movies, setMovies] = useState(japaneseCache.movies || []);
+  const [loading, setLoading] = useState(!japaneseCache.loaded);
+  const [error, setError] = useState(japaneseCache.error || null);
 
   const prevEl = useRef(null);
   const nextEl = useRef(null);
 
   useEffect(() => {
-    // Already loaded in this session → reuse cached data.
-    if (hollywoodCache.loaded) {
+    if (japaneseCache.loaded) {
       return;
     }
 
@@ -63,24 +63,32 @@ function HollywoodSection() {
           (res.movies || []).forEach((m) => map.set(m._id, m));
         });
 
-        const merged = Array.from(map.values());
+        const allMovies = Array.from(map.values());
+
+        // Apply same exclude logic as old BrowseSection (exclude Japanese Web Series (Hindi))
+        const excludeSet = new Set(
+          EXCLUDE_BROWSE.map((v) => v.toLowerCase())
+        );
+        const filteredMovies = allMovies.filter(
+          (m) => !excludeSet.has((m?.browseBy || '').toLowerCase())
+        );
 
         if (!cancelled) {
-          setMovies(merged);
+          setMovies(filteredMovies);
           setLoading(false);
         }
 
-        hollywoodCache.movies = merged;
-        hollywoodCache.error = null;
-        hollywoodCache.loaded = true;
+        japaneseCache.movies = filteredMovies;
+        japaneseCache.error = null;
+        japaneseCache.loaded = true;
       } catch (e) {
-        const message = e?.message || 'Failed to load Hollywood section';
+        const message = e?.message || 'Failed to load Japanese section';
         if (!cancelled) {
           setError(message);
           setLoading(false);
         }
-        hollywoodCache.error = message;
-        hollywoodCache.loaded = false;
+        japaneseCache.error = message;
+        japaneseCache.loaded = false;
       }
     })();
 
@@ -95,12 +103,12 @@ function HollywoodSection() {
   return (
     <div className="my-8 mobile:my-4">
       <div className="flex items-center justify-between mb-6 mobile:mb-4 mobile:px-4">
-        <Titles title="Hollywood" Icon={BsCollectionFill} />
+        <Titles title="Japanese" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Hollywood"
+            to="/Japanease"
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
-            aria-label="Show more Hollywood titles"
+            aria-label="Show more Japanese titles"
           >
             Show&nbsp;More
             <BsCaretRightFill className="group-hover:translate-x-1 transition-transform" />
@@ -167,10 +175,10 @@ function HollywoodSection() {
           </div>
         </>
       ) : (
-        <Empty message="No titles found in Hollywood" />
+        <Empty message="No titles found in Japanese" />
       )}
     </div>
   );
 }
 
-export default HollywoodSection;
+export default JapaneseSection;

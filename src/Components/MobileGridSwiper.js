@@ -37,7 +37,7 @@ export default function MobileGridSwiper({ movies = [] }) {
           swiper.params.navigation.prevEl = prevEl.current;
           swiper.params.navigation.nextEl = nextEl.current;
         }}
-        speed={700}
+        speed={200}
         loop={slides.length > 1}
       >
         {slides.map((group, idx) => (

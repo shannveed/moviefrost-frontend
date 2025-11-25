@@ -1,5 +1,5 @@
-// src/Screens/HomeScreen.js
-import React, { useEffect, useMemo } from 'react';
+// Frontend/src/Screens/HomeScreen.js
+import React, { useEffect, useMemo, useRef } from 'react';
 import Layout from '../Layout/Layout';
 import PopularMovies from '../Components/Home/PopularMovies';
 import Promos from '../Components/Home/Promos';
@@ -16,11 +16,23 @@ import toast from 'react-hot-toast';
 import MetaTags from '../Components/SEO/MetaTags';
 
 import HollywoodSection from '../Components/Home/HollywoodSection';
-import BrowseSection from '../Components/Home/BrowseSection';
-import LazyLoadSection from '../Components/LazyLoadSection'; // Import the new component
+import HollywoodHindiSection from '../Components/Home/HollywoodHindiSection';
+import BollywoodSection from '../Components/Home/BollywoodSection';
+import KoreanDramaSection from '../Components/Home/KoreanDramaSection';
+import KoreanSection from '../Components/Home/KoreanSection';
+import KoreanHindiSection from '../Components/Home/KoreanHindiSection';
+import ChineseDramaSection from '../Components/Home/ChineseDramaSection';
+import JapaneseSection from '../Components/Home/JapaneseSection';
+import JapaneseAnimeSection from '../Components/Home/JapaneseAnimeSection';
+import SouthIndianSection from '../Components/Home/SouthIndianSection';
+import PunjabiSection from '../Components/Home/PunjabiSection';
+
+import LazyLoadSection from '../Components/LazyLoadSection';
+import { useNavigationType } from 'react-router-dom';
 
 function HomeScreen() {
   const dispatch = useDispatch();
+  const navigationType = useNavigationType();
 
   // Redux State
   const {
@@ -31,32 +43,61 @@ function HomeScreen() {
 
   const {
     isLoading: randomLoading,
-    isError:  randomError,
-    movies:   randomMovies = [],
+    isError: randomError,
+    movies: randomMovies = [],
   } = useSelector((state) => state.getRandomMovies || {});
 
   const {
     isLoading: latestLoading,
-    isError:   latestError,
-    movies:    latestMovies = [],
+    isError: latestError,
+    movies: latestMovies = [],
   } = useSelector((state) => state.moviesLatest || {});
 
   const {
     isLoading: topLoading,
-    isError:   topError,
-    movies:    topMovies = [],
+    isError: topError,
+    movies: topMovies = [],
   } = useSelector((state) => state.getTopRatedMovie || {});
 
-  // Initial Fetch - Critical Data Only (Banner, page 1 movies, etc.)
-  useEffect(() => {
-    // Page 1 of /movies → same dataset as Movies.js page 1
-    dispatch(getAllMoviesAction({ pageNumber: 1 }));
+  // Ensure we only trigger the initial loads once per app lifetime
+  const initializedRef = useRef(false);
 
-    // Keep existing functionality: we still fetch latest, random, and top rated
-    dispatch(getLatestMoviesAction());
-    dispatch(getRandomMoviesAction());
-    dispatch(getTopRatedMovieAction());
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    try {
+      dispatch(getAllMoviesAction({ pageNumber: 1 }));
+      dispatch(getLatestMoviesAction());
+      dispatch(getRandomMoviesAction());
+      dispatch(getTopRatedMovieAction());
+    } catch (error) {
+      console.error('Error loading initial home data:', error);
+      toast.error('Error loading data. Please refresh the page.');
+    }
   }, [dispatch]);
+
+  // Restore scroll position when returning to Home via browser back
+  useEffect(() => {
+    if (navigationType === 'POP') {
+      const saved = sessionStorage.getItem('homeScrollY');
+      if (saved) {
+        setTimeout(() => {
+          window.scrollTo(0, Number(saved) || 0);
+        }, 50);
+      }
+    } else {
+      // New navigation to "/" → reset any old scroll
+      sessionStorage.removeItem('homeScrollY');
+    }
+  }, [navigationType]);
+
+  // Save scroll position whenever HomeScreen unmounts
+  useEffect(() => {
+    return () => {
+      sessionStorage.setItem('homeScrollY', String(window.scrollY || 0));
+    };
+  }, []);
 
   // Error Handling
   useEffect(() => {
@@ -65,54 +106,20 @@ function HomeScreen() {
     }
   }, [isError, randomError, topError, latestError]);
 
-  // Banner Data Logic
-  // ✅ Now Banner uses the SAME movies list as Movies.js page 1
+  // Banner Data Logic: now Banner uses the SAME movies list as Movies.js page 1
   const bannerFeed = useMemo(
     () => (Array.isArray(movies) ? movies : []),
     [movies]
   );
 
   const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name:  "MovieFrost - Free Movie Streaming",
-    description: "Watch thousands of movies and web series online for free in HD quality",
-    url:   "https://moviefrost.com",
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'MovieFrost - Free Movie Streaming',
+    description:
+      'Watch thousands of movies and web series online for free in HD quality',
+    url: 'https://moviefrost.com',
   };
-
-  // ================= DEFINED CONSTANTS =================
-  const HOLLYWOOD_BROWSE_VALUES = [
-    'British (English)',
-    'Hollywood (English)',
-    'Hollywood Web Series (English)',
-  ];
-
-  const KOREAN_BROWSE_VALUES = ['Korean (English)']; 
-
-  const KOREAN_HINDI_VALUES = ['Korean (Hindi Dubbed)'];
-  const JAPANESE_ANIME_VALUES = ['Japanese Anime'];
-  const KOREAN_DRAMA_VALUES = ['Korean Drama (Korean)'];
-  
-  const BOLLYWOOD_VALUES = [
-    'Bollywood (Hindi)', 
-    'Bollywood Web Series (Hindi)', 
-    'Bollywood Web Series'
-  ];
-  
-  const HOLLYWOOD_HINDI_VALUES = [
-    'Hollywood (Hindi Dubbed)',
-    'Hollywood Web Series (Hindi Dubbed)',
-    'Hollywood( Hindi Dubbed)',
-  ];
-  
-  const JAPAN_VALUES = [
-    'Japanese (Movies)',
-    'Japanese Web Series',
-    'Japanese Web Series (Hindi)',
-  ];
-  
-  const SOUTH_INDIAN_VALUES = ['South Indian (Hindi Dubbed)'];
-  const PUNJABI_VALUES = ['Indian Punjabi Movies'];
 
   return (
     <Layout>
@@ -122,118 +129,74 @@ function HomeScreen() {
         keywords="moviefrost, free movies, watch movies online, movie streaming, web series, HD movies, online cinema, latest movies"
         url="https://www.moviefrost.com"
       />
-      <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+      <script type="application/ld+json">
+        {JSON.stringify(structuredData)}
+      </script>
 
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        
         {/* --- ABOVE THE FOLD (Load Immediately) --- */}
-        
+
         {/* Banner – now shows /movies page 1 data (latest/ordered like Movies.js) */}
-        <Banner
-          movies={bannerFeed}
-          isLoading={isLoading}
-        />
+        <Banner movies={bannerFeed} isLoading={isLoading} />
 
         {/* Page 1 carousel (same movies list) */}
         <PopularMovies movies={movies} isLoading={isLoading} />
-
 
         {/* --- BELOW THE FOLD (Lazy Load) --- */}
 
         {/* Hollywood (English) */}
         <LazyLoadSection>
-          <HollywoodSection browseList={HOLLYWOOD_BROWSE_VALUES} />
+          <HollywoodSection />
         </LazyLoadSection>
 
         {/* Hollywood Hindi */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Hollywood Hindi"
-            browseList={HOLLYWOOD_HINDI_VALUES} 
-            link="/Hollywood-Hindi"
-          />
+          <HollywoodHindiSection />
         </LazyLoadSection>
 
         {/* Bollywood */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Bollywood"
-            browseList={BOLLYWOOD_VALUES} 
-            link="/Bollywood"
-          />
+          <BollywoodSection />
         </LazyLoadSection>
 
         {/* Korean Drama */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Korean Drama"
-            browseList={KOREAN_DRAMA_VALUES}
-            link="/korean-drama"
-          />
+          <KoreanDramaSection />
         </LazyLoadSection>
 
         {/* Korean Movies/Webseries */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Korean"
-            browseList={KOREAN_BROWSE_VALUES}
-            link="/Korean"
-          />
+          <KoreanSection />
         </LazyLoadSection>
 
         {/* Korean Hindi */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Korean Hindi"
-            browseList={KOREAN_HINDI_VALUES} 
-            link="/Korean-Hindi"
-          />
+          <KoreanHindiSection />
         </LazyLoadSection>
 
         {/* Chinese */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Chinese Drama"
-            browseList={['Chinease Drama']}
-            link="/Chinese"
-          />
+          <ChineseDramaSection />
         </LazyLoadSection>
 
         {/* Japanese */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Japanese"
-            browseList={JAPAN_VALUES} 
-            link="/Japanease"
-            excludeList={['Japanese Web Series (Hindi)']}
-          />
+          <JapaneseSection />
         </LazyLoadSection>
 
         {/* Japanese Anime */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Japanese Anime "
-            browseList={JAPANESE_ANIME_VALUES}
-            link="/japanese-anime"
-          />
+          <JapaneseAnimeSection />
         </LazyLoadSection>
 
         {/* South Indian */}
         <LazyLoadSection>
-          <BrowseSection
-            title="South Indian"
-            browseList={SOUTH_INDIAN_VALUES}
-            link="/South-Indian"
-          />
+          <SouthIndianSection />
         </LazyLoadSection>
 
         {/* Punjabi */}
         <LazyLoadSection>
-          <BrowseSection
-            title="Punjabi"
-            browseList={PUNJABI_VALUES}
-            link="/Punjabi"
-          />
+          <PunjabiSection />
         </LazyLoadSection>
 
         {/* Promos & Top Rated */}
@@ -244,7 +207,6 @@ function HomeScreen() {
         <LazyLoadSection>
           <TopRated movies={topMovies} isLoading={topLoading} />
         </LazyLoadSection>
-
       </div>
     </Layout>
   );

@@ -1,4 +1,4 @@
-// Frontend/src/Components/Home/HollywoodSection.js
+// Frontend/src/Components/Home/KoreanSection.js
 import React, { useEffect, useRef, useState } from 'react';
 import Titles from '../Titles';
 import {
@@ -17,31 +17,25 @@ import { getAllMoviesService } from '../../Redux/APIs/MoviesServices';
 import MobileGridSwiper from '../MobileGridSwiper';
 import { Empty } from '../Notifications/Empty';
 
-const BROWSE_VALUES = [
-  'British (English)',
-  'Hollywood (English)',
-  'Hollywood Web Series (English)',
-];
+const BROWSE_VALUES = ['Korean (English)'];
 
-// Simple in-memory cache so this section stays filled when user
-// opens a movie and comes back.
-const hollywoodCache = {
+// Simple in-memory cache
+const koreanCache = {
   movies: [],
   error: null,
   loaded: false,
 };
 
-function HollywoodSection() {
-  const [movies, setMovies] = useState(hollywoodCache.movies || []);
-  const [loading, setLoading] = useState(!hollywoodCache.loaded);
-  const [error, setError] = useState(hollywoodCache.error || null);
+function KoreanSection() {
+  const [movies, setMovies] = useState(koreanCache.movies || []);
+  const [loading, setLoading] = useState(!koreanCache.loaded);
+  const [error, setError] = useState(koreanCache.error || null);
 
   const prevEl = useRef(null);
   const nextEl = useRef(null);
 
   useEffect(() => {
-    // Already loaded in this session → reuse cached data.
-    if (hollywoodCache.loaded) {
+    if (koreanCache.loaded) {
       return;
     }
 
@@ -70,17 +64,17 @@ function HollywoodSection() {
           setLoading(false);
         }
 
-        hollywoodCache.movies = merged;
-        hollywoodCache.error = null;
-        hollywoodCache.loaded = true;
+        koreanCache.movies = merged;
+        koreanCache.error = null;
+        koreanCache.loaded = true;
       } catch (e) {
-        const message = e?.message || 'Failed to load Hollywood section';
+        const message = e?.message || 'Failed to load Korean section';
         if (!cancelled) {
           setError(message);
           setLoading(false);
         }
-        hollywoodCache.error = message;
-        hollywoodCache.loaded = false;
+        koreanCache.error = message;
+        koreanCache.loaded = false;
       }
     })();
 
@@ -95,12 +89,12 @@ function HollywoodSection() {
   return (
     <div className="my-8 mobile:my-4">
       <div className="flex items-center justify-between mb-6 mobile:mb-4 mobile:px-4">
-        <Titles title="Hollywood" Icon={BsCollectionFill} />
+        <Titles title="Korean" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Hollywood"
+            to="/Korean"
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
-            aria-label="Show more Hollywood titles"
+            aria-label="Show more Korean titles"
           >
             Show&nbsp;More
             <BsCaretRightFill className="group-hover:translate-x-1 transition-transform" />
@@ -167,10 +161,10 @@ function HollywoodSection() {
           </div>
         </>
       ) : (
-        <Empty message="No titles found in Hollywood" />
+        <Empty message="No titles found in Korean" />
       )}
     </div>
   );
 }
 
-export default HollywoodSection;
+export default KoreanSection;
