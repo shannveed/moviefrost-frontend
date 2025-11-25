@@ -1,5 +1,4 @@
 // Frontend/src/Screens/SingleMovie.js
-// src/Screens/SingleMovie.js
 import { trackMovieView } from '../utils/analytics';
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -27,7 +26,7 @@ function SingleMovie() {
 
   const {
     isLoading,
-    isError,
+    isError, // string message when API fails
     movie,
   } = useSelector((state) => state.getMovieById || {});
 
@@ -35,6 +34,7 @@ function SingleMovie() {
     (state) => state.getAllMovies || { movies: [] }
   );
 
+  // Related movies: same category, different id
   const relatedMovies = useMemo(
     () =>
       Array.isArray(movies)
@@ -44,6 +44,19 @@ function SingleMovie() {
         : [],
     [movies, movie]
   );
+
+  // Load movie + base list for related
+  useEffect(() => {
+    dispatch(getMovieByIdAction(id));
+    dispatch(getAllMoviesAction({}));
+  }, [dispatch, id]);
+
+  // Track movie view for analytics
+  useEffect(() => {
+    if (movie && movie._id) {
+      trackMovieView(movie.name, movie._id);
+    }
+  }, [movie]);
 
   const handleBackClick = () => {
     navigate(-1);
@@ -55,17 +68,26 @@ function SingleMovie() {
     }
   };
 
-  useEffect(() => {
-    dispatch(getMovieByIdAction(id));
-    // You were previously fetching all movies here to compute related movies
-    dispatch(getAllMoviesAction({}));
-  }, [dispatch, id]);
+  const pageUrl = `https://www.moviefrost.com/movie/${id}`;
+  const isNotFound = isError === 'Movie not found';
+  const hasError = Boolean(isError);
 
-  useEffect(() => {
-    if (movie && movie._id) {
-      trackMovieView(movie.name, movie._id);
-    }
-  }, [movie]);
+  // ---------- SEO title / description ----------
+  const seoTitle = movie
+    ? `${movie.name} (${movie.year}) – Watch Online Free`
+    : isNotFound
+    ? 'Movie not found – MovieFrost'
+    : 'Watch Movie Online Free – MovieFrost';
+
+  const seoDescription = movie
+    ? movie.seoDescription ||
+      `${movie.desc?.substring(0, 150) || ''} Watch in HD for free on MovieFrost.`
+    : isNotFound
+    ? 'This movie is no longer available on MovieFrost.'
+    : 'We were unable to load this movie right now. Please try again later.';
+
+  // When there is no movie data or an error, tell Google not to index this URL
+  const shouldNoIndex = !movie || hasError;
 
   // ---------- Structured data for SEO ----------
   const hasRating =
@@ -75,60 +97,50 @@ function SingleMovie() {
     typeof movie.rate === 'number' &&
     movie.rate > 0;
 
-  const movieStructuredData = movie
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'Movie',
-        name: movie.name,
-        description: movie.seoDescription || movie.desc,
-        image: movie.titleImage || movie.image,
-        datePublished: movie.year ? String(movie.year) : undefined,
-        genre: movie.category,
-        duration: movie.time ? `PT${movie.time}M` : undefined,
-        inLanguage: movie.language,
-        url: `https://www.moviefrost.com/movie/${movie._id}`,
-        ...(hasRating
-          ? {
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: movie.rate,
-                reviewCount: movie.numberOfReviews,
-                bestRating: '5',
-                worstRating: '0',
-              },
-            }
-          : {}),
-        ...(movie.type === 'Movie'
-          ? {
-              // Add VideoObject so Google can index video
-              video: {
-                '@type': 'VideoObject',
-                name: `${movie.name} | MovieFrost`,
-                description: movie.seoDescription || movie.desc,
-                thumbnailUrl: movie.image || movie.titleImage,
-                uploadDate: movie.createdAt || movie.updatedAt || undefined,
-                duration: movie.time ? `PT${movie.time}M` : undefined,
-                contentUrl: movie.downloadUrl || movie.video || undefined,
-                embedUrl: `https://www.moviefrost.com/watch/${movie._id}`,
-              },
-            }
-          : {}),
-      }
-    : null;
-
-  const pageUrl = `https://www.moviefrost.com/movie/${id}`;
-
-  const seoTitle = movie
-    ? `${movie.name} (${movie.year}) – Watch Online Free`
-    : 'Watch Movie Online Free';
-
-  const seoDescription = movie
-    ? movie.seoDescription ||
-      `${movie.desc?.substring(0, 150) || ''} Watch in HD for free on MovieFrost.`
-    : 'Watch free movies and web series online in HD on MovieFrost.';
+  const movieStructuredData =
+    movie && !hasError
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Movie',
+          name: movie.name,
+          description: movie.seoDescription || movie.desc,
+          image: movie.titleImage || movie.image,
+          datePublished: movie.year ? String(movie.year) : undefined,
+          genre: movie.category,
+          duration: movie.time ? `PT${movie.time}M` : undefined,
+          inLanguage: movie.language,
+          url: `https://www.moviefrost.com/movie/${movie._id}`,
+          ...(hasRating
+            ? {
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: movie.rate,
+                  reviewCount: movie.numberOfReviews,
+                  bestRating: '5',
+                  worstRating: '0',
+                },
+              }
+            : {}),
+          ...(movie.type === 'Movie'
+            ? {
+                video: {
+                  '@type': 'VideoObject',
+                  name: `${movie.name} | MovieFrost`,
+                  description: movie.seoDescription || movie.desc,
+                  thumbnailUrl: movie.image || movie.titleImage,
+                  uploadDate: movie.createdAt || movie.updatedAt || undefined,
+                  duration: movie.time ? `PT${movie.time}M` : undefined,
+                  contentUrl: movie.downloadUrl || movie.video || undefined,
+                  embedUrl: `https://www.moviefrost.com/watch/${movie._id}`,
+                },
+              }
+            : {}),
+        }
+      : null;
 
   return (
     <Layout>
+      {/* Always render meta tags; toggle indexing based on data/error */}
       <MetaTags
         title={seoTitle}
         description={seoDescription}
@@ -141,6 +153,7 @@ function SingleMovie() {
         image={movie?.titleImage || movie?.image}
         url={pageUrl}
         type="movie"
+        noindex={shouldNoIndex}
       />
 
       {movieStructuredData && (
@@ -154,16 +167,19 @@ function SingleMovie() {
           <div className="flex-colo min-h-[60vh]">
             <Loader />
           </div>
-        ) : isError ? (
+        ) : hasError && !movie ? (
+          // Error state with better message
           <div className="flex-colo min-h-[60vh] text-center text-white">
             <p className="text-lg font-semibold mb-4">
-              Something went wrong while loading this movie.
+              {isNotFound
+                ? 'Movie not found. It may have been removed from MovieFrost.'
+                : 'Something went wrong while loading this movie.'}
             </p>
             <button
               onClick={() => dispatch(getMovieByIdAction(id))}
               className="px-4 py-2 rounded bg-customPurple hover:bg-opacity-80 transitions"
             >
-              Retry
+              Try Again
             </button>
           </div>
         ) : movie ? (
@@ -191,6 +207,7 @@ function SingleMovie() {
             )}
           </>
         ) : (
+          // Very unlikely branch: no movie, no error
           <div className="flex-colo min-h-[60vh] text-center text-white">
             <p className="text-lg font-semibold mb-2">Movie not found</p>
             <button

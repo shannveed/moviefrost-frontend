@@ -14,6 +14,8 @@ import Titles from '../Components/Titles';
 import { BsCollectionFill } from 'react-icons/bs';
 import Movie from '../Components/movie';
 import toast from 'react-hot-toast';
+import MetaTags from '../Components/SEO/MetaTags';
+import { FiLogIn } from 'react-icons/fi';
 
 function WatchPage() {
   let { id } = useParams();
@@ -44,9 +46,20 @@ function WatchPage() {
   // Check if the movie is liked
   const isLiked = IfMovieLiked(movie);
 
+  // SEO configuration
+  const pageUrl = `https://www.moviefrost.com/watch/${id}`;
+  const seoTitle = movie
+    ? `${movie.name} (${movie.year}) – Watch Online`
+    : 'Watch Movie Online – MovieFrost';
+  const seoDescription = movie
+    ? `${movie.desc?.substring(0, 150) || ''} Watch instantly in HD on MovieFrost.`
+    : 'Watch free movies and web series online in HD on MovieFrost.';
+  
+  // If movie failed to load, mark this watch URL as noindex
+  const shouldNoIndex = !movie || Boolean(isError);
+
   // Custom back navigation handler
   const handleBackClick = () => {
-    // Always go back – restore real previous page
     navigate(-1);
   };
 
@@ -58,8 +71,8 @@ function WatchPage() {
         setGuestWatchTime(prev => {
           const newTime = prev + 1;
 
-          // Show login prompt after 13 minutes (kept existing threshold logic)
-          if (newTime >= 30 && !hasShownLoginPrompt) {
+          // Show login prompt after 13 mintues 
+          if (newTime >= 780 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
 
@@ -159,6 +172,12 @@ function WatchPage() {
   if (isLoading || !movie) {
     return (
       <Layout>
+        <MetaTags
+          title="Loading... – MovieFrost"
+          description="Loading movie content..."
+          url={pageUrl}
+          noindex={true}
+        />
         <div className={sameClass}>
           <Loader />
         </div>
@@ -169,11 +188,16 @@ function WatchPage() {
   if (isError) {
     return (
       <Layout>
+        <MetaTags
+          title="Error Loading Movie – MovieFrost"
+          description="Unable to load this movie at the moment."
+          url={pageUrl}
+          noindex={true}
+        />
         <div className={sameClass}>
-          <div className="flex-colo w-24 h-24 mb-4 rounded-full bg-dry text-customPurple">
-            <RiMovie2Line />
+          <div className="flex-colo gap-6 w-full min-h-screen text-white">
+            <p className="text-border text-2xl">{isError}</p>
           </div>
-          <p className="text-border text-sm">{isError}</p>
         </div>
       </Layout>
     );
@@ -181,264 +205,266 @@ function WatchPage() {
 
   return (
     <Layout>
-      {/* Forced Login Prompt Modal – unchanged UI */}
+      <MetaTags
+        title={seoTitle}
+        description={seoDescription}
+        keywords={
+          movie?.seoKeywords ||
+          `${movie?.name || 'movie'}, ${movie?.category || ''}, ${
+            movie?.language || ''
+          } movies, watch online, streaming`
+        }
+        image={movie?.titleImage || movie?.image}
+        url={`https://www.moviefrost.com/movie/${id}`} // Canonical to movie page
+        type="video.movie"
+        noindex={shouldNoIndex}
+      />
+
+      {/* Forced Login Prompt Modal */}
       {!userInfo && showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative z-10 w-[95%] sm:w-[540px] max-w-[95%] bg-main border border-customPurple rounded-xl shadow-xl animate-slide-up">
-            <div className="flex items-center gap-3 p-4 border-b border-customPurple/50">
-              <div className="w-10 h-10 rounded-full bg-customPurple text-white flex items-center justify-center shadow">
-                <FaLock className="text-base" />
-              </div>
-              <div className="flex flex-col">
-                <h3 className="text-lg font-semibold">Continue watching - please log in</h3>
-                <p className="text-xs text-text">Sign in for free to keep watching in HD and access downloads.</p>
-              </div>
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center px-4">
+          <div className="bg-dry rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <FaLock className="text-customPurple text-2xl" />
+              <h3 className="text-xl font-semibold text-white">
+                Continue watching - please log in
+              </h3>
             </div>
-
-            <div className="p-5 sm:p-6 space-y-4">
-              <div className="bg-dry rounded-lg p-4 border border-customPurple/30">
-                <p className="text-sm text-text">
-                  You’ve reached the preview limit for guests. Log in for free to continue watching without interruptions,
-                  save favorites, and more.
-                </p>
-              </div>
-
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+            <p className="text-text mb-6">
+              Sign in for free to keep watching in HD and access downloads.
+            </p>
+            <div className="bg-border/20 rounded-lg p-4 mb-6">
+              <p className="text-sm text-text mb-3">
+                You've reached the preview limit for guests. Log in for free to continue watching without interruptions,
+                save favorites, and more.
+              </p>
+              <ul className="space-y-2 text-sm text-text">
                 <li className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  <span className="text-customPurple">✓</span>
                   HD streaming
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  <span className="text-customPurple">✓</span>
                   Watch from where you left
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  <span className="text-customPurple">✓</span>
                   Download available
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-customPurple inline-block" />
+                  <span className="text-customPurple">✓</span>
                   Add to favorites
                 </li>
               </ul>
-
-              <div className="flex items-center justify-end pt-2">
-                <button
-                  onClick={() => navigate('/login')}
-                  className="w-full sm:w-auto px-5 py-2 rounded-md bg-customPurple text-white hover:bg-opacity-90 border-2 border-customPurple transitions flex items-center justify-center gap-2"
-                >
-                  <FaLock className="text-sm" />
-                  Login now
-                </button>
-              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full sm:w-auto px-5 py-2 rounded-md bg-customPurple text-white hover:bg-opacity-90 border-2 border-customPurple transitions flex items-center justify-center gap-2"
+              >
+                <FiLogIn />
+                Login now
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="container mx-auto px-8 mobile:px-2 my-5">
-        <div className="bg-main rounded-lg border border-gray-800 p-4 mobile:p-3 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mobile:gap-2">
-            <div className="flex items-center gap-3 mobile:gap-2 flex-1">
+      <div className="container mx-auto px-4 mobile:px-2 my-6">
+        <div className="flex flex-col gap-6">
+          {/* Back Button */}
+          <div className="flex-btn flex-wrap mb-6 bg-main rounded border border-gray-800 p-6 mobile:p-3">
+            <div className="flex items-center gap-3 w-full md:w-auto">
               <button
                 onClick={handleBackClick}
-                className="flex items-center gap-3 mobile:gap-2 text-dryGray hover:text-white transitions"
+                className="sm:hidden w-10 h-10 flex-colo rounded-md bg-dry transitions hover:bg-customPurple"
               >
-                <BiArrowBack className="text-xl mobile:text-lg flex-shrink-0" />
-                <h1 className="text-xl sm:text-2xl mobile:text-base font-bold mobile:line-clamp-1">{movie?.name}</h1>
+                <BiArrowBack />
               </button>
-
               <button
-                onClick={() => LikeMovie(movie, dispatch, userInfo)}
-                disabled={isLiked || likeLoading}
-                className={`sm:hidden w-10 h-10 mobile:w-9 mobile:h-9 flex-colo rounded-md transitions ml-auto flex-shrink-0
-                  ${isLiked
-                    ? 'bg-customPurple text-white'
-                    : 'bg-dry border border-border text-white hover:bg-customPurple'
-                  }`}
+                onClick={handleBackClick}
+                className="hidden sm:flex md:text-xl text-sm flex items-center gap-3 font-bold text-dryGray"
               >
-                <FaHeart className="text-base mobile:text-sm" />
+                <BiArrowBack /> {movie?.name}
               </button>
+              <div className="flex-btn sm:w-auto w-full gap-5">
+                <button
+                  onClick={() => LikeMovie(movie, dispatch, userInfo)}
+                  disabled={isLiked || likeLoading}
+                  className={`sm:hidden w-10 h-10 mobile:w-9 mobile:h-9 flex-colo rounded-md transitions ml-auto flex-shrink-0
+                    ${isLiked
+                      ? 'bg-customPurple text-white'
+                      : 'bg-dry border border-border text-white hover:bg-customPurple'
+                    }`}
+                >
+                  <FaHeart />
+                </button>
+              </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-3">
+            <div className="flex items-center sm:w-auto gap-5">
               <button
                 onClick={() => LikeMovie(movie, dispatch, userInfo)}
                 disabled={isLiked || likeLoading}
-                className={`w-12 h-12 flex-colo rounded-md transitions
+                className={`hidden sm:flex w-12 h-12 flex-colo rounded-md transitions
                   ${isLiked
                     ? 'bg-customPurple text-white'
                     : 'bg-dry border border-border text-white hover:bg-customPurple'
                   }`}
               >
-                <FaHeart className="text-lg" />
+                <FaHeart />
               </button>
 
               {movie.type === 'Movie' && movie.downloadUrl && (
                 <button
                   onClick={DownloadMovieVideo}
-                  className="bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white rounded-md px-6 py-3 font-medium flex items-center gap-2"
+                  className="hidden md:flex bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white rounded px-8 py-3 font-medium"
                 >
-                  <FaCloudDownloadAlt className="text-lg" />
-                  <span>Download</span>
+                  <FaCloudDownloadAlt /> Download
                 </button>
               )}
             </div>
-
             {movie.type === 'Movie' && movie.downloadUrl && (
               <button
                 onClick={DownloadMovieVideo}
-                className="sm:hidden bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white rounded-md px-4 py-2 mobile:text-sm font-medium flex items-center justify-center gap-2 w-full"
+                className="md:hidden flex justify-center w-full bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white rounded px-8 py-3 font-medium mt-4"
               >
-                <FaCloudDownloadAlt className="text-base" />
-                <span>Download</span>
+                <FaCloudDownloadAlt className="mr-2" /> Download
               </button>
             )}
           </div>
-        </div>
 
-        {movie.type === 'Movie' ? (
-          <div>
-            <div className="flex flex-wrap gap-3 mb-5">
-              {servers.map((server, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setCurrentServerIndex(idx);
-                    setPlay(false);
-                  }}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-md font-medium transitions
-                    ${currentServerIndex === idx
-                      ? 'bg-customPurple text-white'
-                      : 'bg-dry border border-border text-white hover:border-customPurple'
-                    }
-                  `}
-                >
-                  <span className="bg-white text-black text-xs font-bold px-2 py-0.5 rounded">
-                    HD
-                  </span>
-                  {server.label}
-                </button>
-              ))}
-            </div>
-
-            {play ? (
-              <div className="w-full h-[75vh] mobile:h-[50vh] rounded-lg overflow-hidden relative bg-black">
-                <div className="absolute top-4 right-4 bg-main text-white text-xs px-3 py-1.5 rounded-md z-10">
-                  {servers[currentServerIndex].label}
-                </div>
-                <iframe
-                  src={servers[currentServerIndex].url}
-                  title={movie?.name}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            ) : (
-              <div className="w-full h-[75vh] mobile:h-[50vh] rounded-lg overflow-hidden relative">
-                <div className="absolute inset-0 bg-main bg-opacity-50 flex-colo z-10">
+          {/* Player Section */}
+          {movie.type === 'Movie' ? (
+            <>
+              <div className="flex flex-wrap gap-3 mb-4">
+                {servers.map((server, idx) => (
                   <button
-                    onClick={handlePlayClick}
-                    className="bg-white text-customPurple flex-colo border-2 border-white rounded-full w-20 h-20 font-medium text-xl hover:scale-110 transitions"
-                  >
-                    <FaPlay className="ml-1" />
-                  </button>
-                </div>
-                <img
-                  src={movie?.image ? movie.image : '/images/user.png'}
-                  alt={movie?.name}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div>
-            {movie.episodes && movie.episodes.length > 0 ? (
-              <div className="flex flex-wrap gap-3 mb-6">
-                {movie.episodes.map((ep) => (
-                  <button
-                    key={ep._id}
+                    key={idx}
                     onClick={() => {
-                      setCurrentEpisode(ep);
+                      setCurrentServerIndex(idx);
                       setPlay(false);
                     }}
                     className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-md font-medium transitions
-                      ${currentEpisode && currentEpisode._id === ep._id
+                      flex items-center gap-2 px-4 py-2 rounded-md font-medium transitions
+                      ${currentServerIndex === idx
                         ? 'bg-customPurple text-white'
                         : 'bg-dry border border-border text-white hover:border-customPurple'
                       }
                     `}
                   >
-                    <span className="bg-white text-black text-xs font-bold px-2 py-0.5 rounded">
+                    <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded">
                       HD
                     </span>
-                    <span>Episode {ep.episodeNumber}</span>
-                    {ep.title && <span className="hidden sm:inline"> - {ep.title}</span>}
+                    {server.label}
                   </button>
                 ))}
               </div>
-            ) : (
-              <p className="text-border">No episodes available.</p>
-            )}
 
-            {currentEpisode && (
-              <div>
+              <div className="w-full h-screen rounded-lg overflow-hidden bg-main">
                 {play ? (
-                  <div className="w-full h-[75vh] mobile:h-[50vh] rounded-lg overflow-hidden relative bg-black">
-                    <div className="absolute top-4 right-4 bg-main text-white text-xs px-3 py-1.5 rounded-md z-10">
-                      Episode {currentEpisode.episodeNumber}
+                  <>
+                    <div className="w-full h-10 bg-black text-white flex-colo">
+                      {servers[currentServerIndex].label}
                     </div>
                     <iframe
-                      src={currentEpisode.video}
-                      title={currentEpisode.title || `Episode ${currentEpisode.episodeNumber}`}
                       className="w-full h-full"
+                      src={servers[currentServerIndex].url}
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      title={movie?.name}
                     />
-                  </div>
+                  </>
                 ) : (
-                  <div className="w-full h-[75vh] mobile:h-[50vh] rounded-lg overflow-hidden relative">
-                    <div className="absolute inset-0 bg-main bg-opacity-50 flex-colo z-10">
-                      <button
-                        onClick={handlePlayClick}
-                        className="bg-white text-customPurple flex-colo border-2 border-white rounded-full w-20 h-20 font-medium text-xl hover:scale-110 transitions"
-                      >
-                        <FaPlay className="ml-1" />
-                      </button>
-                    </div>
-                    <img
-                      src={movie?.image ? movie.image : '/images/user.png'}
-                      alt={movie?.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+                  <div className="w-full h-full flex-colo">
+                    <button
+                      onClick={handlePlayClick}
+                      className="bg-white text-customPurple flex-colo border border-customPurple rounded-full w-20 h-20 font-medium text-xl"
+                    >
+                      <FaPlay />
+                    </button>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        )}
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {movie.episodes && movie.episodes.length > 0 ? (
+                  movie.episodes.map((ep) => (
+                    <button
+                      key={ep._id}
+                      onClick={() => {
+                        setCurrentEpisode(ep);
+                        setPlay(false);
+                      }}
+                      className={`
+                        flex items-center gap-2 px-4 py-2.5 rounded-md font-medium transitions
+                        ${currentEpisode && currentEpisode._id === ep._id
+                          ? 'bg-customPurple text-white'
+                          : 'bg-dry border border-border text-white hover:border-customPurple'
+                        }
+                      `}
+                    >
+                      <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded">
+                        HD
+                      </span>
+                      Episode {ep.episodeNumber}
+                      {ep.title && ` - ${ep.title}`}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-text">No episodes available.</p>
+                )}
+              </div>
 
-        {/* Related Movies Section */}
-        {movies && movies.length > 0 && (
-          <div className="my-16">
-            <Titles title="Related Movies" Icon={BsCollectionFill} />
-            <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 lg:grid-cols-4 md:grid-cols-4 sm:grid-cols-3 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2">
-              {movies?.filter((m) => m.category === movie?.category && m._id !== movie?._id).slice(0, 10).map((relatedMovie) => (
-                <Movie key={relatedMovie?._id} movie={relatedMovie} />
-              ))}
+              {currentEpisode && (
+                <div className="w-full h-screen rounded-lg overflow-hidden bg-main">
+                  {play ? (
+                    <>
+                      <div className="w-full h-10 bg-black text-white flex-colo">
+                        Episode {currentEpisode.episodeNumber}
+                      </div>
+                      <iframe
+                        className="w-full h-full"
+                        src={currentEpisode.video}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={`${movie?.name} - Episode ${currentEpisode.episodeNumber}`}
+                      />
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex-colo">
+                      <button
+                        onClick={handlePlayClick}
+                        className="bg-white text-customPurple flex-colo border border-customPurple rounded-full w-20 h-20 font-medium text-xl"
+                      >
+                        <FaPlay />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Related Movies Section */}
+          {movies && movies.length > 0 && (
+            <div className="my-16">
+              <Titles title="Related Movies" Icon={BsCollectionFill} />
+              <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-6">
+                {movies?.filter((m) => m.category === movie?.category && m._id !== movie?._id).slice(0, 10).map((relatedMovie) => (
+                  <Movie key={relatedMovie?._id} movie={relatedMovie} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Layout>
   );
 }
 
-export default WatchPage;
+export default WatchPage; 

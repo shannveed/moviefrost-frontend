@@ -9,20 +9,23 @@ const MetaTags = ({
   image = 'https://www.moviefrost.com/og-image.jpg',
   url,
   type = 'website',
+  noindex = false,           // NEW: allow pages to opt-out of indexing
 }) => {
   const siteName = 'MovieFrost';
   const baseUrl = 'https://www.moviefrost.com';
   const canonical = url || baseUrl;
-  const fullTitle = title.includes(siteName)
-    ? title
-    : `${title} | ${siteName}`;
+  const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
   const ogImage = image || `${baseUrl}/og-image.jpg`;
+  const robotsContent = noindex ? 'noindex, nofollow' : 'index, follow';
 
   return (
     <Helmet>
       {/* Canonical & title */}
       <title>{fullTitle}</title>
       <link rel="canonical" href={canonical} />
+
+      {/* Indexing control */}
+      <meta name="robots" content={robotsContent} />
 
       {/* Basic meta */}
       <meta name="description" content={description} />
