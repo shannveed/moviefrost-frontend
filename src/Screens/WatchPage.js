@@ -61,7 +61,7 @@ function WatchPage() {
           const newTime = prev + 1;
 
           // Show login prompt after 13 minutes
-          if (newTime >= 30 && !hasShownLoginPrompt) {
+          if (newTime >= 780 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
 
