@@ -1,6 +1,5 @@
 // Frontend/src/Components/OptimizedImage.js
-import React, { useState, useEffect } from 'react';
-import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+import React, { useState, useEffect, useRef } from 'react';
 
 // Remember which image URLs were already loaded in this session.
 // Once an image URL is loaded, we never show the placeholder for it again.
@@ -17,18 +16,52 @@ const OptimizedImage = ({
   onLoad,
   ...props
 }) => {
-  const [imageRef, isVisible] = useIntersectionObserver({
-    threshold: 0.1,
-    rootMargin: '50px',
-  });
+  const elementRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   // If we've already loaded this src before, start directly with it.
-  const [imageSrc, setImageSrc] = useState(
-    src && loadedImages.has(src) ? src : placeholder
-  );
-  const [isLoaded, setIsLoaded] = useState(
-    !!src && loadedImages.has(src)
-  );
+  const alreadyCached = src && loadedImages.has(src);
+  const [imageSrc, setImageSrc] = useState(alreadyCached ? src : placeholder);
+  const [isLoaded, setIsLoaded] = useState(alreadyCached);
+
+  // Custom intersection observer that stays visible once triggered
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    // If already cached, mark as visible immediately
+    if (alreadyCached) {
+      setIsVisible(true);
+      return;
+    }
+
+    // If IntersectionObserver is not supported, default to visible
+    if (!('IntersectionObserver' in window)) {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(element);
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '100px',
+      }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      if (element) {
+        observer.unobserve(element);
+      }
+    };
+  }, [alreadyCached]);
 
   useEffect(() => {
     if (!src) return;
@@ -52,11 +85,15 @@ const OptimizedImage = ({
       setIsLoaded(true);
       if (onLoad) onLoad();
     };
+    img.onerror = () => {
+      // Keep placeholder on error
+      setIsLoaded(true);
+    };
   }, [isVisible, src, onLoad]);
 
   return (
     <div
-      ref={imageRef}
+      ref={elementRef}
       className={className}
       style={
         width && height
@@ -71,7 +108,7 @@ const OptimizedImage = ({
         width={width}
         height={height}
         className={`w-full h-full object-cover transition-opacity duration-300 ${
-          isLoaded ? 'opacity-100' : 'opacity-0'
+          isLoaded ? 'opacity-100' : 'opacity-60'
         }`}
         {...props}
       />

@@ -21,7 +21,7 @@ export const moviesListReducer = (state = initialMoviesListState, action) => {
 
       // Same query again (e.g. coming back to Movies page) →
       // keep current movies visible while we refetch.
-      if (nextQueryKey && nextQueryKey === state.currentQueryKey) {
+      if (nextQueryKey && nextQueryKey === state.currentQueryKey && state.movies.length > 0) {
         return {
           ...state,
           isLoading: true,
@@ -29,11 +29,14 @@ export const moviesListReducer = (state = initialMoviesListState, action) => {
         };
       }
 
-      // New query or first load → clear list
+      // New query or first load → clear list but keep loading
       return {
-        ...initialMoviesListState,
+        ...state,
         isLoading: true,
+        isError: null,
         currentQueryKey: nextQueryKey,
+        // Keep existing movies visible during load to prevent flicker
+        movies: state.currentQueryKey === nextQueryKey ? state.movies : [],
       };
     }
 
