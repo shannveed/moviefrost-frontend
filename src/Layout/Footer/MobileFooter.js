@@ -2,20 +2,57 @@
 import React, { useContext } from 'react';
 import { BsCollectionPlay } from 'react-icons/bs';
 import { CgMenuBoxed } from 'react-icons/cg';
-import { FiHeart, FiUserCheck } from 'react-icons/fi';
-import { NavLink } from 'react-router-dom';
+import { BiHomeAlt, BiCategory } from 'react-icons/bi';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import MenuDrawer from '../../Components/Drawer/MenuDrawer';
-import { SidebarContext } from '../../Context/DrawerContext'; // from DrawerContext.js
+import { SidebarContext } from '../../Context/DrawerContext';
 import { useSelector } from 'react-redux';
 
 function MobileFooter() {
-  const { mobileDrawer, toggleDrawer } = useContext(SidebarContext);
-  const { likedMovies } = useSelector((state) => state.userGetFavoriteMovies);
+  const { mobileDrawer, toggleDrawer, activeMobileTab, setActiveMobileTab } = useContext(SidebarContext);
   const { userInfo } = useSelector((state) => state.userLogin);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // NavLink styling
-  const active = `bg-white text-main`;
-  const inActive = `transition duration-300 text-2xl flex-colo text-customPurple hover:bg-white hover:text-main rounded-md px-4 py-3`;
+  // Check if we're on the home page
+  const isHomePage = location.pathname === '/';
+
+  // Handle Home tab click
+  const handleHomeClick = (e) => {
+    e.preventDefault();
+    if (isHomePage) {
+      // Already on home, just switch tab
+      setActiveMobileTab('home');
+      window.scrollTo(0, 0);
+    } else {
+      // Navigate to home and set tab
+      setActiveMobileTab('home');
+      navigate('/');
+    }
+  };
+
+  // Handle BrowseBy tab click
+  const handleBrowseByClick = (e) => {
+    e.preventDefault();
+    if (isHomePage) {
+      // Already on home, just switch tab
+      setActiveMobileTab('browseBy');
+      window.scrollTo(0, 0);
+    } else {
+      // Navigate to home and set tab
+      setActiveMobileTab('browseBy');
+      navigate('/');
+    }
+  };
+
+  // NavLink styling - Updated with shorter height and customPurple colors
+  const active = 'bg-customPurple text-white';
+  const inActive = 'transition duration-300 text-xl flex-colo text-white hover:bg-customPurple hover:text-white rounded-md px-3 py-1.5';
+
+  // Determine if Home tab is active
+  const isHomeActive = isHomePage && activeMobileTab === 'home';
+  // Determine if BrowseBy tab is active
+  const isBrowseByActive = isHomePage && activeMobileTab === 'browseBy';
 
   return (
     <>
@@ -23,49 +60,57 @@ function MobileFooter() {
       <MenuDrawer drawerOpen={mobileDrawer} toggleDrawer={toggleDrawer} />
 
       {/* Bottom navigation bar (hidden on lg screens, visible on small) */}
-      {/* Ensure fixed positioning and z-index are correct */}
-      <footer className="lg:hidden fixed z-40 bottom-0 w-full px-1">
+      <footer className="lg:hidden fixed z-50 bottom-0 w-full px-1">
         <div className="bg-dry rounded-md flex-btn w-full p-1">
+          {/* Home Tab */}
+          <button
+            onClick={handleHomeClick}
+            className={isHomeActive ? `${active} ${inActive}` : inActive}
+            aria-label="Home"
+          >
+            <div className="flex flex-col items-center">
+              <BiHomeAlt className="text-lg" />
+              <span className="text-[9px] mt-0.5">Home</span>
+            </div>
+          </button>
+
+          {/* BrowseBy Tab */}
+          <button
+            onClick={handleBrowseByClick}
+            className={isBrowseByActive ? `${active} ${inActive}` : inActive}
+            aria-label="Browse By"
+          >
+            <div className="flex flex-col items-center">
+              <BiCategory className="text-lg" />
+              <span className="text-[9px] mt-0.5">BrowseBy</span>
+            </div>
+          </button>
+
+          {/* Movies Tab */}
           <NavLink
             to="/movies"
+            onClick={() => setActiveMobileTab('movies')}
             className={({ isActive }) =>
               isActive ? `${active} ${inActive}` : inActive
             }
+            aria-label="Movies"
           >
-            <BsCollectionPlay />
-          </NavLink>
-
-          <NavLink
-            to="/favorites"
-            className={({ isActive }) =>
-              isActive ? `${active} ${inActive}` : inActive
-            }
-          >
-            <div className="relative">
-              <div className="w-5 h-5 flex-colo rounded-full text-xs bg-customPurple text-white absolute -top-5 -right-1">
-                {likedMovies?.length > 0 ? likedMovies?.length : 0}
-              </div>
-              <FiHeart />
+            <div className="flex flex-col items-center">
+              <BsCollectionPlay className="text-lg" />
+              <span className="text-[9px] mt-0.5">Movies</span>
             </div>
           </NavLink>
 
-          <NavLink
-            to={
-              userInfo
-                ? userInfo.isAdmin
-                  ? '/dashboard'
-                  : '/profile'
-                : '/login'
-            }
-            className={({ isActive }) =>
-              isActive ? `${active} ${inActive}` : inActive
-            }
+          {/* Menu Tab */}
+          <button
+            onClick={toggleDrawer}
+            className={inActive}
+            aria-label="Menu"
           >
-            <FiUserCheck />
-          </NavLink>
-
-          <button onClick={toggleDrawer} className={inActive}>
-            <CgMenuBoxed />
+            <div className="flex flex-col items-center">
+              <CgMenuBoxed className="text-lg" />
+              <span className="text-[9px] mt-0.5">Menu</span>
+            </div>
           </button>
         </div>
       </footer>

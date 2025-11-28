@@ -23,6 +23,9 @@ const BROWSE_VALUES = [
   'Hollywood Web Series (English)',
 ];
 
+// Build query string for /movies
+const BROWSE_QUERY_PARAM = encodeURIComponent(BROWSE_VALUES.join(','));
+
 // Simple in-memory cache so this section stays filled when user
 // opens a movie and comes back.
 const hollywoodCache = {
@@ -116,7 +119,7 @@ function HollywoodSection() {
         <Titles title="Hollywood" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Hollywood"
+            to={`/movies?browseBy=${BROWSE_QUERY_PARAM}`}
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
             aria-label="Show more Hollywood titles"
           >

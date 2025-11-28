@@ -20,53 +20,44 @@ function Layout({ children }) {
       adsLoadedRef.current = false;
     };
   }, []);
-  
+
   return (
-    <div className="bg-main text-white">
-      <ScrollOnTop>
+    <>
+      <div className="bg-main text-white">
         <NavBar />
-        <div className="mobile:pt-4">
+        {/* Add padding bottom on mobile to account for fixed footer */}
+        <div className="min-h-screen pb-20 sm:pb-0">
           {children}
         </div>
-        <Footer />
-        <MobileFooter />
         
+        {/* Footer - Now visible on all screen sizes */}
+        {/* On mobile, add extra bottom padding to account for MobileFooter */}
+        <div className="mb-16 sm:mb-0">
+          <Footer />
+        </div>
+        
+        {/* Mobile Footer Navigation - Fixed at bottom */}
+        <MobileFooter />
+
         {/* ---- ALL AD-COMPONENTS TEMPORARILY DISABLED ----
         {adsLoadedRef.current && !isAuthRoute && (
           <>
-            <AdsterraSocialBar atOptions={AD_CONFIG.adsterra.socialBar} />
-            <AdsterraPopunder atOptions={AD_CONFIG.adsterra.popunder} />
-            
             {AD_CONFIG.monetag.popunder.enabled && (
-              <MonetagPopunder 
-                frequencyCap={AD_CONFIG.monetag.popunder.frequencyCap}
-              />
+              <MonetagPopunder />
             )}
-            
+
             {AD_CONFIG.monetag.banner.enabled && (
-              <div className="container mx-auto px-4 mb-8">
-                <MonetagBanner
-                  zoneId={AD_CONFIG.monetag.banner.zoneId}
-                  width={728}
-                  height={90}
-                />
-              </div>
+              <MonetagBanner />
             )}
-            
+
             {AD_CONFIG.popAds.enabled && (
-              <PopAdsPopunder
-                enabled={AD_CONFIG.popAds.enabled}
-                websiteId={AD_CONFIG.popAds.websiteId}
-                popundersIP={AD_CONFIG.popAds.popundersPerIP}
-                delay={AD_CONFIG.popAds.delayBetween}
-                minBid={AD_CONFIG.popAds.minBid}
-              />
+              <PopAdsPopunder />
             )}
           </>
         )}
         */}
-      </ScrollOnTop>
-    </div>
+      </div>
+    </>
   );
 }
 

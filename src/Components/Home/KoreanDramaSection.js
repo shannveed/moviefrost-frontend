@@ -18,6 +18,7 @@ import MobileGridSwiper from '../MobileGridSwiper';
 import { Empty } from '../Notifications/Empty';
 
 const BROWSE_VALUES = ['Korean Drama (Korean)'];
+const BROWSE_QUERY_PARAM = encodeURIComponent(BROWSE_VALUES.join(','));
 
 // Simple in-memory cache
 const koreanDramaCache = {
@@ -110,7 +111,7 @@ function KoreanDramaSection() {
         <Titles title="Korean Drama" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/korean-drama"
+            to={`/movies?browseBy=${BROWSE_QUERY_PARAM}`}
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
             aria-label="Show more Korean Drama titles"
           >

@@ -18,6 +18,7 @@ import MobileGridSwiper from '../MobileGridSwiper';
 import { Empty } from '../Notifications/Empty';
 
 const BROWSE_VALUES = ['Korean (Hindi Dubbed)'];
+const BROWSE_QUERY_PARAM = encodeURIComponent(BROWSE_VALUES.join(','));
 
 // Simple in-memory cache
 const koreanHindiCache = {
@@ -110,7 +111,7 @@ function KoreanHindiSection() {
         <Titles title="Korean Hindi" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Korean-Hindi"
+            to={`/movies?browseBy=${BROWSE_QUERY_PARAM}`}
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
             aria-label="Show more Korean Hindi titles"
           >

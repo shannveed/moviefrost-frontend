@@ -23,6 +23,8 @@ const BROWSE_VALUES = [
   'Hollywood( Hindi Dubbed)',
 ];
 
+const BROWSE_QUERY_PARAM = encodeURIComponent(BROWSE_VALUES.join(','));
+
 // Simple in-memory cache
 const hollywoodHindiCache = {
   movies: [],
@@ -114,7 +116,7 @@ function HollywoodHindiSection() {
         <Titles title="Hollywood Hindi" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Hollywood-Hindi"
+            to={`/movies?browseBy=${BROWSE_QUERY_PARAM}`}
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
             aria-label="Show more Hollywood Hindi titles"
           >

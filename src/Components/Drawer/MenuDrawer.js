@@ -4,24 +4,23 @@ import { Link } from 'react-router-dom';
 import { IoClose } from 'react-icons/io5';
 import { BsCollectionPlay } from 'react-icons/bs';
 import { HiOutlineUserGroup } from 'react-icons/hi';
-import { BiPhoneCall } from 'react-icons/bi';
-import { FaFacebook, FaMedium, FaTelegram, FaYoutube } from 'react-icons/fa';
+import { BiPhoneCall, BiInfoCircle } from 'react-icons/bi';
+import { FaFacebook, FaMedium, FaTelegram, FaYoutube, FaHeart, FaUser } from 'react-icons/fa';
+import { FiLogIn } from 'react-icons/fi';
 import { TbChevronDown } from 'react-icons/tb';
+import { useSelector } from 'react-redux';
 
 function MenuDrawer({ drawerOpen, toggleDrawer }) {
   // Track which sub-menu is open on mobile
   const [openMenu, setOpenMenu] = useState('');
+  
+  // Get user info and favorites
+  const { userInfo } = useSelector((state) => state.userLogin);
+  const { likedMovies } = useSelector((state) => state.userGetFavoriteMovies);
 
   // Helper to toggle sub-menus
   const handleSubMenu = (menuName) => {
     setOpenMenu(openMenu === menuName ? '' : menuName);
-  };
-
-  // UPDATED: Handle Movies link click
-  const handleMoviesClick = () => {
-    toggleDrawer();
-    // Force navigation to movies page without parameters
-    window.location.href = '/movies';
   };
 
   // Main menu structure for mobile
@@ -30,7 +29,6 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
       name: 'Movies',
       link: '/movies',
       icon: BsCollectionPlay,
-      onClick: handleMoviesClick, // Add custom onClick
     },
     {
       name: 'Hollywood',
@@ -93,6 +91,11 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
       ],
     },
     {
+      name: 'About Us',
+      link: '/about-us',
+      icon: BiInfoCircle,
+    },
+    {
       name: 'Contact Us',
       link: '/contact-us',
       icon: BiPhoneCall,
@@ -107,92 +110,173 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
   ];
 
   return (
-    // Overlay background (MenuDrawer uses absolute positioning or a parent Drawer?)
     <div
-      className={`fixed inset-0 z-50 transition-transform duration-300 ${
-        drawerOpen ? 'translate-x-0' : '-translate-x-full'
+      className={`fixed inset-0 z-[9999] transition-all duration-300 ${
+        drawerOpen ? 'visible' : 'invisible'
       }`}
     >
       {/* Background overlay */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50"
+        className={`absolute inset-0 bg-black transition-opacity duration-300 ${
+          drawerOpen ? 'opacity-50' : 'opacity-0'
+        }`}
         onClick={toggleDrawer}
-      ></div>
+      />
 
       {/* Drawer content */}
-      <div className="fixed top-0 left-0 w-screen h-full bg-main text-white">
+      <div
+        className={`absolute top-0 left-0 h-full w-[280px] bg-dry transform transition-transform duration-300 overflow-y-auto ${
+          drawerOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         {/* Header with logo and close button */}
-        <div className="flex items-center justify-between h-16 px-6 bg-dry">
-          <Link onClick={toggleDrawer} to="/">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <Link to="/" onClick={toggleDrawer}>
             <img
               src="/images/MOVIEFROST.png"
-              alt="logo"
-              className="w-24 h-24 rounded object-contain"
+              alt="MovieFrost Logo"
+              className="h-10 object-contain"
             />
           </Link>
           <button
             onClick={toggleDrawer}
-            type="button"
-            className="transition w-10 h-10 flex items-center justify-center text-base text-customPurple bg-white rounded-full hover:bg-gray-200"
+            className="w-10 h-10 flex-colo text-customPurple hover:bg-main rounded-full transitions"
           >
-            <IoClose />
+            <IoClose className="text-2xl" />
           </button>
         </div>
 
+        {/* User Account Section - Login/Profile & Favourites */}
+        <div className="p-4 border-b border-border bg-main">
+          <p className="text-xs text-dryGray uppercase mb-3 font-semibold">Account</p>
+          {userInfo ? (
+            // Logged in user - show profile and favourites
+            <div className="space-y-2">
+              <Link
+                to="/profile"
+                onClick={toggleDrawer}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-dry hover:bg-customPurple transitions text-white"
+              >
+                {userInfo.image ? (
+                  <img
+                    src={userInfo.image}
+                    alt={userInfo.fullName}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-customPurple flex-colo">
+                    <FaUser className="text-sm" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{userInfo.fullName}</p>
+                  <p className="text-[10px] text-dryGray">View Profile</p>
+                </div>
+              </Link>
+              <Link
+                to="/favorites"
+                onClick={toggleDrawer}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-dry hover:bg-customPurple transitions text-white"
+              >
+                <div className="w-8 h-8 rounded-full bg-customPurple/20 flex-colo">
+                  <FaHeart className="text-sm text-customPurple" />
+                </div>
+                <span className="text-sm">Favourites</span>
+                {likedMovies?.length > 0 && (
+                  <span className="ml-auto bg-customPurple text-white text-xs px-2 py-0.5 rounded-full">
+                    {likedMovies.length}
+                  </span>
+                )}
+              </Link>
+              {userInfo.isAdmin && (
+                <Link
+                  to="/dashboard"
+                  onClick={toggleDrawer}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-dry hover:bg-customPurple transitions text-white"
+                >
+                  <div className="w-8 h-8 rounded-full bg-customPurple/20 flex-colo">
+                    <HiOutlineUserGroup className="text-sm text-customPurple" />
+                  </div>
+                  <span className="text-sm">Dashboard</span>
+                </Link>
+              )}
+            </div>
+          ) : (
+            // Not logged in - show login and register
+            <div className="space-y-2">
+              <Link
+                to="/login"
+                onClick={toggleDrawer}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-customPurple hover:bg-customPurple/80 transitions text-white"
+              >
+                <FiLogIn className="text-lg" />
+                <span className="text-sm font-medium">Login</span>
+              </Link>
+              <Link
+                to="/register"
+                onClick={toggleDrawer}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-dry border border-customPurple hover:bg-customPurple transitions text-white"
+              >
+                <FaUser className="text-lg" />
+                <span className="text-sm font-medium">Register</span>
+              </Link>
+              <Link
+                to="/favorites"
+                onClick={toggleDrawer}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-dry hover:bg-customPurple transitions text-white"
+              >
+                <FaHeart className="text-lg text-customPurple" />
+                <span className="text-sm">Favourites</span>
+                <span className="text-[10px] text-dryGray ml-auto">(Login required)</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
         {/* Menu Links */}
-        <nav className="flex-1 px-6 py-4 overflow-y-auto">
-          <ul className="space-y-5">
+        <nav className="p-4">
+          <p className="text-xs text-dryGray uppercase mb-3 font-semibold">Navigation</p>
+          <ul className="space-y-1">
             {mainLinks.map((item, index) => (
               <li key={index}>
                 {!item.children ? (
                   // Single link
-                  item.onClick ? (
-                    // Custom onClick for Movies link
-                    <button
-                      onClick={item.onClick}
-                      className="flex items-center transitions text-lg font-normal hover:text-customPurple w-full text-left"
-                    >
-                      <item.icon className="mr-4" />
-                      {item.name}
-                    </button>
-                  ) : (
-                    <Link
-                      to={item.link}
-                      onClick={toggleDrawer}
-                      className="flex items-center transitions text-lg font-normal hover:text-customPurple"
-                    >
-                      <item.icon className="mr-4" />
-                      {item.name}
-                    </Link>
-                  )
+                  <Link
+                    to={item.link}
+                    onClick={toggleDrawer}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-main transitions text-white"
+                  >
+                    {item.icon && <item.icon className="text-customPurple" />}
+                    <span className="text-sm">{item.name}</span>
+                  </Link>
                 ) : (
                   // Has children => Submenu
-                  <div className="flex flex-col">
+                  <div>
                     <button
                       onClick={() => handleSubMenu(item.name)}
-                      className="flex items-center justify-between w-full text-lg font-normal hover:text-customPurple"
+                      className="flex items-center justify-between w-full px-3 py-2.5 rounded-md hover:bg-main transitions text-white"
                     >
-                      <div className="flex items-center">
-                        <item.icon className="mr-4" />
-                        {item.name}
+                      <div className="flex items-center gap-3">
+                        {item.icon && <item.icon className="text-customPurple" />}
+                        <span className="text-sm">{item.name}</span>
                       </div>
                       <TbChevronDown
-                        className={`transition-transform duration-300 ${
+                        className={`text-lg transition-transform duration-200 ${
                           openMenu === item.name ? 'rotate-180' : ''
                         }`}
                       />
                     </button>
                     {/* Sub links */}
                     {openMenu === item.name && (
-                      <ul className="ml-9 mt-2 space-y-2">
+                      <ul className="ml-6 mt-1 space-y-1 border-l border-border pl-3">
                         {item.children.map((child, idx) => (
                           <li key={idx}>
                             <Link
                               to={child.link}
                               onClick={toggleDrawer}
-                              className="flex items-center transitions text-base font-normal hover:text-customPurple"
+                              className="block px-3 py-2 text-sm text-dryGray hover:text-customPurple transitions"
                             >
-                              - {child.name}
+                              {child.name}
                             </Link>
                           </li>
                         ))}
@@ -206,17 +290,18 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
         </nav>
 
         {/* Social Media Links */}
-        <div className="px-8 py-6 bg-dry">
-          <div className="flex items-center justify-center space-x-5">
+        <div className="p-4 border-t border-border">
+          <p className="text-xs text-dryGray uppercase mb-3 font-semibold">Follow Us</p>
+          <div className="flex items-center gap-3">
             {LinkDatas.map((item, index) => (
               <a
                 key={index}
                 href={item.link}
                 target="_blank"
-                rel="noopener noreferrer"
-                className="flex-colo w-10 h-10 transitions hover:bg-customPurple text-lg bg-white rounded bg-opacity-30"
+                rel="noreferrer"
+                className="w-10 h-10 flex-colo bg-main rounded-full hover:bg-customPurple transitions text-white"
               >
-                <item.icon />
+                <item.icon className="text-lg" />
               </a>
             ))}
           </div>
@@ -226,4 +311,4 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
   );
 }
 
-export default MenuDrawer;
+export default MenuDrawer;  

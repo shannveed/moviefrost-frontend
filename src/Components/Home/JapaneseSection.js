@@ -24,6 +24,7 @@ const BROWSE_VALUES = [
 ];
 
 const EXCLUDE_BROWSE = ['Japanese Web Series (Hindi)'];
+const BROWSE_QUERY_PARAM = encodeURIComponent(BROWSE_VALUES.join(','));
 
 // Simple in-memory cache
 const japaneseCache = {
@@ -64,7 +65,17 @@ function JapaneseSection() {
           (res.movies || []).forEach((m) => map.set(m._id, m));
         });
 
-        const merged = Array.from(map.values());
+        let merged = Array.from(map.values());
+
+        // Optionally exclude some browseBy values
+        if (EXCLUDE_BROWSE.length) {
+          const excludeSet = new Set(
+            EXCLUDE_BROWSE.map((v) => v.toLowerCase())
+          );
+          merged = merged.filter(
+            (m) => !excludeSet.has((m?.browseBy || '').toLowerCase())
+          );
+        }
 
         if (!cancelled) {
           setMovies(merged);
@@ -116,7 +127,7 @@ function JapaneseSection() {
         <Titles title="Japanese" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Japanease"
+            to={`/movies?browseBy=${BROWSE_QUERY_PARAM}`}
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
             aria-label="Show more Japanese titles"
           >

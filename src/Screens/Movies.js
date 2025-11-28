@@ -1,6 +1,12 @@
 // src/Screens/Movies.js
 import { trackGuestAction } from '../utils/analytics';
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from 'react';
 import Filters from '../Components/Filters';
 import Layout from '../Layout/Layout';
 import { TbPlayerTrackNext, TbPlayerTrackPrev } from 'react-icons/tb';
@@ -17,7 +23,12 @@ import {
   YearData,
   browseByData,
 } from '../Data/FilterData';
-import { useParams, useSearchParams, useLocation, useNavigationType } from 'react-router-dom';
+import {
+  useParams,
+  useSearchParams,
+  useLocation,
+  useNavigationType,
+} from 'react-router-dom';
 import MetaTags from '../Components/SEO/MetaTags';
 
 // Session storage key for movies page state
@@ -28,10 +39,10 @@ function MoviesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const browseByParam = searchParams.get('browseBy') || '';
   const navigationType = useNavigationType();
-  
+
   const location = useLocation();
   const dispatch = useDispatch();
-  
+
   // Track if we've restored state
   const hasRestoredState = useRef(false);
   const scrollPositionRef = useRef(0);
@@ -59,30 +70,56 @@ function MoviesPage() {
   const saveNavigationState = useCallback(() => {
     const navigationState = {
       page: page || currentPage,
-      category: category,
-      year: year,
-      times: times,
-      rates: rates,
-      language: language,
-      browseBy: browseBy,
+      category,
+      year,
+      times,
+      rates,
+      language,
+      browseBy,
       scrollPosition: window.scrollY,
       timestamp: Date.now(),
-      browseByParam: browseByParam,
+      browseByParam,
       search: search || '',
     };
-    sessionStorage.setItem(MOVIES_PAGE_STATE_KEY, JSON.stringify(navigationState));
-  }, [page, currentPage, category, year, times, rates, language, browseBy, browseByParam, search]);
+    try {
+      sessionStorage.setItem(
+        MOVIES_PAGE_STATE_KEY,
+        JSON.stringify(navigationState)
+      );
+    } catch {
+      // ignore quota errors
+    }
+  }, [
+    page,
+    currentPage,
+    category,
+    year,
+    times,
+    rates,
+    language,
+    browseBy,
+    browseByParam,
+    search,
+  ]);
 
   // Restore state when navigating back
   useEffect(() => {
     if (hasRestoredState.current) return;
 
-    const savedState = sessionStorage.getItem(MOVIES_PAGE_STATE_KEY);
-    
+    let savedStateRaw = null;
+    try {
+      savedStateRaw = sessionStorage.getItem(MOVIES_PAGE_STATE_KEY);
+    } catch {
+      savedStateRaw = null;
+    }
+
     // Restore on browser back (POP) or when coming from movie detail
-    if (savedState && (navigationType === 'POP' || location.state?.fromMovieDetail)) {
+    if (
+      savedStateRaw &&
+      (navigationType === 'POP' || location.state?.fromMovieDetail)
+    ) {
       try {
-        const state = JSON.parse(savedState);
+        const state = JSON.parse(savedStateRaw);
         // Only restore if the state is fresh (less than 30 minutes old)
         if (Date.now() - state.timestamp < 30 * 60 * 1000) {
           setCategory(state.category || { title: 'All Categories' });
@@ -106,23 +143,37 @@ function MoviesPage() {
   // Build query parameters
   const queries = useMemo(() => {
     const query = {
-      category: category?.title === 'All Categories' ? '' : category?.title,
+      category:
+        category?.title === 'All Categories' ? '' : category?.title || '',
       time: times?.title.replace(/\D/g, ''),
-      language: language?.title === 'Sort By Language' ? '' : language?.title,
+      language:
+        language?.title === 'Sort By Language' ? '' : language?.title || '',
       rate: rates?.title.replace(/\D/g, ''),
       year: year?.title.replace(/\D/g, ''),
-      browseBy: browseByParam || (browseBy?.title === 'Browse By' ? '' : browseBy?.title),
+      browseBy:
+        browseByParam ||
+        (browseBy?.title === 'Browse By' ? '' : browseBy?.title || ''),
       search: search ? search : '',
     };
     return query;
-  }, [category, times, language, rates, year, browseBy, browseByParam, search]);
+  }, [
+    category,
+    times,
+    language,
+    rates,
+    year,
+    browseBy,
+    browseByParam,
+    search,
+  ]);
 
   // Get the page number (from restored state or URL)
   const getPageNumber = useCallback(() => {
     if (hasRestoredState.current && currentPage > 1) {
       return currentPage;
     }
-    return searchParams.get('page') ? Number(searchParams.get('page')) : 1;
+    const pageFromUrl = searchParams.get('page');
+    return pageFromUrl ? Number(pageFromUrl) : 1;
   }, [currentPage, searchParams]);
 
   // Fetch movies
@@ -130,21 +181,26 @@ function MoviesPage() {
     if (isError) {
       toast.error(isError);
     }
-    
-    if (!userInfo && Object.values(queries).some(val => val)) {
+
+    if (!userInfo && Object.values(queries).some((val) => val)) {
       trackGuestAction('filter_usage', {
         filters: queries,
-        page_location: '/movies'
+        page_location: '/movies',
       });
     }
-    
+
     const pageNumber = getPageNumber();
     dispatch(getAllMoviesAction({ ...queries, pageNumber }));
   }, [dispatch, isError, queries, userInfo, getPageNumber]);
 
   // Restore scroll position after movies are loaded
   useEffect(() => {
-    if (!isLoading && movies && movies.length > 0 && scrollPositionRef.current > 0) {
+    if (
+      !isLoading &&
+      movies &&
+      movies.length > 0 &&
+      scrollPositionRef.current > 0
+    ) {
       // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         window.scrollTo(0, scrollPositionRef.current);
@@ -201,19 +257,19 @@ function MoviesPage() {
 
   // Filter data for the Filters component
   const datas = {
-    categories: categories,
-    category: category,
-    setCategory: setCategory,
-    language: language,
-    setLanguage: setLanguage,
-    rates: rates,
-    setRates: setRates,
-    times: times,
-    setTimes: setTimes,
-    year: year,
-    setYear: setYear,
-    browseBy: browseBy,
-    setBrowseBy: setBrowseBy,
+    categories,
+    category,
+    setCategory,
+    language,
+    setLanguage,
+    rates,
+    setRates,
+    times,
+    setTimes,
+    year,
+    setYear,
+    browseBy,
+    setBrowseBy,
   };
 
   // SEO helpers
@@ -221,8 +277,9 @@ function MoviesPage() {
     let title = 'Watch Movies Online Free';
     if (search) title = `Search Results for "${search}"`;
     else if (browseByParam) title = `${browseByParam} Movies`;
-    else if (category?.title && category.title !== 'All Categories') title = `${category.title} Movies`;
-    
+    else if (category?.title && category.title !== 'All Categories')
+      title = `${category.title} Movies`;
+
     title += ` - Page ${page} | MovieFrost`;
     return title;
   };
@@ -231,8 +288,9 @@ function MoviesPage() {
     let desc = 'Browse and watch thousands of movies online for free. ';
     if (search) desc = `Search results for "${search}". `;
     else if (browseByParam) desc = `Watch ${browseByParam} movies online. `;
-    else if (category?.title && category.title !== 'All Categories') desc = `Stream ${category.title} movies. `;
-    
+    else if (category?.title && category.title !== 'All Categories')
+      desc = `Stream ${category.title} movies. `;
+
     desc += 'Stream in HD quality for free.';
     return desc;
   };
@@ -244,22 +302,28 @@ function MoviesPage() {
 
   return (
     <Layout>
-      <MetaTags 
+      <MetaTags
         title={generateSEOTitle()}
         description={generateSEODescription()}
-        keywords={`free movies, watch online movies, online streaming, ${category?.title || 'all'} movies, ${language?.title || 'all languages'}, ${year?.title || 'all years'}`}
-        url={`https://moviefrost.com/movies${search ? `/${search}` : ''}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
+        keywords={`free movies, watch online movies, online streaming, ${
+          category?.title || 'all'
+        } movies, ${language?.title || 'all languages'}, ${
+          year?.title || 'all years'
+        }`}
+        url={`https://moviefrost.com/movies${
+          search ? `/${search}` : ''
+        }${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
       />
-      
+
       <div className="min-height-screen container mx-auto px-8 mobile:px-0 my-2">
         <Filters data={datas} />
+        {/* Q1: simplified header text */}
         <p className="text-md font-medium my-4 mobile:px-4">
           Total{' '}
           <span className="font-bold text-customPurple">
-            {movies ? movies?.length : 0}
+            {movies ? movies.length : 0}
           </span>{' '}
-          Items Found On This Page {search && `for "${search}"`}
-          {browseByParam && ` in "${browseByParam}"`}
+          Items Found On This Page
         </p>
         {isLoading ? (
           <div className="w-full gap-6 flex-colo min-h-screen">
@@ -267,7 +331,7 @@ function MoviesPage() {
           </div>
         ) : movies?.length > 0 ? (
           <>
-            <div 
+            <div
               className="grid sm:mt-8 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2 mobile:px-4"
               onClick={handleMovieClick}
             >
@@ -275,17 +339,19 @@ function MoviesPage() {
                 <Movie key={movie._id || index} movie={movie} />
               ))}
             </div>
-            
+
             {/* Pagination */}
             <div className="w-full flex-rows gap-3 md:my-14 my-10 mobile:px-4">
               <button
                 onClick={prevPage}
                 disabled={page === 1}
-                className={`${sameClass} px-2 py-2.5 text-sm ${page === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`${sameClass} px-2 py-2.5 text-sm ${
+                  page === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 <TbPlayerTrackPrev className="text-md" />
               </button>
-              
+
               <div className="flex gap-1.5">
                 {[...Array(Math.min(5, pages))].map((_, index) => {
                   let pageNum;
@@ -298,7 +364,7 @@ function MoviesPage() {
                   } else {
                     pageNum = page - 2 + index;
                   }
-                  
+
                   return (
                     <button
                       key={index}
@@ -314,11 +380,13 @@ function MoviesPage() {
                   );
                 })}
               </div>
-              
+
               <button
                 onClick={nextPage}
                 disabled={page === pages}
-                className={`${sameClass} px-2 py-2.5 text-sm ${page === pages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`${sameClass} px-2 py-2.5 text-sm ${
+                  page === pages ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 <TbPlayerTrackNext className="text-md" />
               </button>

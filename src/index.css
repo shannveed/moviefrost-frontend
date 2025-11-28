@@ -419,3 +419,156 @@ button[type="submit"]:hover:not(:disabled) {
 button[type="submit"]:active:not(:disabled) {
   transform: translateY(0);
 }
+
+
+@media (max-width: 639px) {
+  .mobile-footer-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-footer-btn.active {
+    background-color: white;
+    color: #080A1A;
+  }
+
+  .mobile-footer-btn:not(.active) {
+    color: #1B82FF;
+  }
+
+  .mobile-footer-btn:not(.active):hover {
+    background-color: white;
+    color: #080A1A;
+  }
+
+  /* Ensure mobile footer has proper spacing from content */
+  .mobile-content-padding {
+    padding-bottom: 80px;
+  }
+}
+
+/* Mobile footer fixed positioning adjustments */
+footer.lg\:hidden {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Drawer improvements for mobile */
+@media (max-width: 639px) {
+  .drawer-account-section {
+    background: linear-gradient(135deg, #0B0F29 0%, #080A1A 100%);
+  }
+}
+
+/* Mobile grid improvements for home tab */
+@media (max-width: 639px) {
+  .mobile-movie-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 0 16px;
+  }
+}
+
+/* Smooth transitions for tab switching */
+.tab-content-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tab-content-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+.tab-content-exit {
+  opacity: 1;
+}
+
+.tab-content-exit-active {
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+/* ============================================ */
+/* NEW STYLES FOR DESKTOP TABS AND MOBILE FOOTER */
+/* ============================================ */
+
+/* Desktop tabs styling */
+@media (min-width: 640px) {
+  .desktop-tab-active {
+    background-color: #1B82FF;
+    color: white;
+  }
+  
+  .desktop-tab-inactive {
+    background-color: #0B0F29;
+    color: white;
+    border: 1px solid #4b5563;
+  }
+  
+  .desktop-tab-inactive:hover {
+    background-color: rgba(27, 130, 255, 0.2);
+  }
+}
+
+/* Mobile footer spacing improvements */
+@media (max-width: 639px) {
+  /* Ensure footer has proper left padding on mobile */
+  .mobile-footer-left-spacing {
+    padding-left: 1.5rem;
+  }
+  
+  /* Extra bottom margin for footer to not overlap with MobileFooter nav */
+  .mobile-footer-bottom-margin {
+    margin-bottom: 4rem;
+  }
+}
+
+/* Smooth tab transition */
+.tab-transition {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Desktop Latest grid improvements */
+@media (min-width: 640px) {
+  .desktop-latest-grid {
+    display: grid;
+    gap: 1rem;
+  }
+  
+  @media (min-width: 768px) {
+    .desktop-latest-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .desktop-latest-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .desktop-latest-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+}
+
+/* Mobile footer spacing to prevent content overlap */
+.mobile-content-with-footer {
+  padding-bottom: 5rem;
+}
+
+/* Footer mobile left padding */
+@media (max-width: 639px) {
+  .footer-mobile-padding {
+    padding-left: 1.5rem !important;
+  }
+}

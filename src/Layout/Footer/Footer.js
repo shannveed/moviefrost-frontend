@@ -34,29 +34,34 @@ function Footer() {
   ];
 
   return (
-    <div className="bg-dry py-4 mx-6 mobile:mx-0 border-t-2 border-black above-1000:ml-8">
-      <div className="container mx-auto px-4 mobile:px-0">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 py-10 mobile:py-6">
-          {Links.map((linkGroup, index) => (
-            <div key={index} className="col-span-1 pb-3.5 sm:pb-0">
+    <div className="bg-dry  border-t-2 border-black">
+      {/* Added mobile:pl-4 for left padding on mobile */}
+      <div className="container mx-auto px-2 mobile:px-4 mobile:pl-6">
+        <div className="grid grid-cols-2 md:grid-cols-7 xl:grid-cols-12 gap-5 sm:gap-9 lg:gap-11 xl:gap-7 py-10 justify-between">
+          {Links.map((link, index) => (
+            <div
+              key={index}
+              className="col-span-1 md:col-span-2 lg:col-span-3 pb-3.5 sm:pb-0"
+            >
               <h3 className="text-md lg:leading-7 font-medium mb-4 sm:mb-5 lg:mb-6 pb-0.5">
-                {linkGroup.title}
+                {link.title}
               </h3>
               <ul className="text-sm flex flex-col space-y-3">
-                {linkGroup.links.map((item, idx) => (
-                  <li key={idx} className="flex items-baseline">
+                {link.links.map((text, index) => (
+                  <li key={index} className="flex items-baseline">
                     <Link
-                      to={item.link}
+                      to={text.link}
                       className="text-border inline-block w-full hover:text-customPurple"
                     >
-                      {item.name}
+                      {text.name}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
-          <div className="col-span-1 pb-3.5 sm:pb-0">
+
+          <div className="pb-3.5 sm:pb-0 col-span-1 md:col-span-2 lg:col-span-3">
             <Link to="/">
               <img
                 src="/images/MOVIEFROST.png"
@@ -66,10 +71,10 @@ function Footer() {
             </Link>
             <p className="leading-7 text-sm text-border mt-3">
               <span>
-              Box No. 76706, Dubai <br />Dubai, UAE
+                Box No. 76706, Dubai Dubai, UAE
               </span>
               <br />
-              <span>Tell: +9714-2261242 </span>
+              <span>Tell: +9714-2261242</span>
               <br />
               <span>Email: shannaveed50@gmail.com</span>
             </p>

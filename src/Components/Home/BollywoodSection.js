@@ -23,6 +23,8 @@ const BROWSE_VALUES = [
   'Bollywood Web Series',
 ];
 
+const BROWSE_QUERY_PARAM = encodeURIComponent(BROWSE_VALUES.join(','));
+
 // Simple in-memory cache
 const bollywoodCache = {
   movies: [],
@@ -114,7 +116,7 @@ function BollywoodSection() {
         <Titles title="Bollywood" Icon={BsCollectionFill} />
         {hasMovies && (
           <Link
-            to="/Bollywood"
+            to={`/movies?browseBy=${BROWSE_QUERY_PARAM}`}
             className="group flex items-center gap-1 text-sm font-medium text-white hover:text-customPurple transitions"
             aria-label="Show more Bollywood titles"
           >
@@ -191,4 +193,3 @@ function BollywoodSection() {
 }
 
 export default BollywoodSection;
-  

@@ -7,6 +7,7 @@ import MovieInfo from '../Components/Single/MovieInfo';
 import MovieRates from '../Components/Single/MovieRates';
 import Titles from '../Components/Titles';
 import { BsCollectionFill } from 'react-icons/bs';
+import { FaHeart, FaCloudDownloadAlt, FaPlay, FaShareAlt } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import Loader from '../Components/Loader';
 import Movie from '../Components/movie';
@@ -15,7 +16,7 @@ import {
   getMovieByIdAction,
   getAllMoviesAction,
 } from '../Redux/Actions/MoviesActions';
-import { DownloadVideo } from '../Context/Functionalities';
+import { DownloadVideo, LikeMovie } from '../Context/Functionalities';
 import MetaTags from '../Components/SEO/MetaTags';
 
 function SingleMovie() {
@@ -24,15 +25,31 @@ function SingleMovie() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Movie details
   const {
     isLoading,
-    isError, // string message when API fails
+    isError,
     movie,
   } = useSelector((state) => state.getMovieById || {});
 
+  // Global movies list (used for related movies)
   const { movies = [] } = useSelector(
     (state) => state.getAllMovies || { movies: [] }
   );
+
+  // User & favorites (for mobile quick-actions)
+  const { userInfo } = useSelector((state) => state.userLogin || {});
+  const { likedMovies = [] } = useSelector(
+    (state) => state.userGetFavoriteMovies || { likedMovies: [] }
+  );
+  const { isLoading: likeLoading } = useSelector(
+    (state) => state.userLikeMovie || {}
+  );
+
+  const isLiked =
+    movie && Array.isArray(likedMovies)
+      ? likedMovies.some((liked) => liked?._id === movie._id)
+      : false;
 
   // Related movies: same category, different id
   const relatedMovies = useMemo(
@@ -68,13 +85,63 @@ function SingleMovie() {
     }
   };
 
+  // Mobile-only: quick action handlers
+  const handleMobileWatch = () => {
+    if (!movie?._id) return;
+    navigate(`/watch/${movie._id}`);
+  };
+
+  const handleMobileLike = () => {
+    if (!movie) return;
+    LikeMovie(movie, dispatch, userInfo);
+  };
+
   const pageUrl = `https://www.moviefrost.com/movie/${id}`;
   const isNotFound = isError === 'Movie not found';
   const hasError = Boolean(isError);
 
+  // ---------- Helper to build SEO title without double year ----------
+  const buildMovieSeoTitle = (movieObj) => {
+    if (!movieObj) {
+      return 'Watch Movie Online Free – MovieFrost';
+    }
+
+    const yearStr = movieObj.year ? String(movieObj.year) : null;
+
+    // If an explicit seoTitle is provided, clean "(YEAR) (YEAR)" → "(YEAR)"
+    if (movieObj.seoTitle && typeof movieObj.seoTitle === 'string') {
+      let s = movieObj.seoTitle.trim();
+      if (yearStr) {
+        // Match duplicate year patterns like "(2017) (2017)" or "(2017)(2017)" with optional spaces
+        const duplicatePattern = new RegExp(
+          `\\(\\s*${yearStr}\\s*\\)\\s*\\(\\s*${yearStr}\\s*\\)`,
+          'g'
+        );
+        s = s.replace(duplicatePattern, `(${yearStr})`);
+      }
+      return s;
+    }
+
+    // Fallback: build "Watch {name}[ (YEAR)] Free Online HD"
+    const baseName = (movieObj.name || 'Movie').trim();
+    let nameWithYear = baseName;
+
+    if (yearStr) {
+      // Check if year is already in the name - match (YEAR) with optional spaces
+      const yearPattern = new RegExp(`\\(\\s*${yearStr}\\s*\\)`);
+      // Only append "(YEAR)" if it's not already in the name
+      if (!yearPattern.test(baseName)) {
+        nameWithYear = `${baseName} (${yearStr})`;
+      }
+    }
+
+    // Final desired pattern: Watch It (2017) Free Online HD
+    return `Watch ${nameWithYear} Free Online HD`;
+  };
+
   // ---------- SEO title / description ----------
   const seoTitle = movie
-    ? `${movie.name} (${movie.year}) – Watch Online Free`
+    ? buildMovieSeoTitle(movie)
     : isNotFound
     ? 'Movie not found – MovieFrost'
     : 'Watch Movie Online Free – MovieFrost';
@@ -144,15 +211,9 @@ function SingleMovie() {
       <MetaTags
         title={seoTitle}
         description={seoDescription}
-        keywords={
-          movie?.seoKeywords ||
-          `${movie?.name || 'movie'}, ${movie?.category || ''}, ${
-            movie?.language || ''
-          } movies, watch online`
-        }
         image={movie?.titleImage || movie?.image}
         url={pageUrl}
-        type="movie"
+        type="video.movie"
         noindex={shouldNoIndex}
       />
 
@@ -162,15 +223,14 @@ function SingleMovie() {
         </script>
       )}
 
-      <div className="container mx-auto px-4 mobile:px-2 py-6 min-h-screen">
+      {/* Extra bottom padding so content is not hidden behind mobile quick-actions + footer */}
+      <div className="container mx-auto min-h-screen px-2 my-6 pb-24 sm:pb-8">
         {isLoading ? (
-          <div className="flex-colo min-h-[60vh]">
-            <Loader />
-          </div>
+          <Loader />
         ) : hasError && !movie ? (
           // Error state with better message
-          <div className="flex-colo min-h-[60vh] text-center text-white">
-            <p className="text-lg font-semibold mb-4">
+          <div className="flex-colo gap-6 py-12">
+            <p className="text-border text-sm">
               {isNotFound
                 ? 'Movie not found. It may have been removed from MovieFrost.'
                 : 'Something went wrong while loading this movie.'}
@@ -184,23 +244,27 @@ function SingleMovie() {
           </div>
         ) : movie ? (
           <>
+            <ShareMovieModal
+              modalOpen={modalOpen}
+              setModalOpen={setModalOpen}
+              movie={movie}
+            />
             <MovieInfo
               movie={movie}
               setModalOpen={setModalOpen}
               DownloadVideo={handleDownloadMovieVideo}
               onBackClick={handleBackClick}
             />
-
-            <div className="my-10">
+            {/* Add id for potential "jump to reviews" in future */}
+            <div className="my-12" id="reviews-section">
               <MovieRates movie={movie} />
             </div>
-
             {relatedMovies?.length > 0 && (
-              <div className="my-10">
+              <div className="my-16">
                 <Titles title="Related Movies" Icon={BsCollectionFill} />
-                <div className="grid md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-4 mt-6">
+                <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-3">
                   {relatedMovies.slice(0, 10).map((relatedMovie) => (
-                    <Movie key={relatedMovie._id} movie={relatedMovie} />
+                    <Movie key={relatedMovie?._id} movie={relatedMovie} />
                   ))}
                 </div>
               </div>
@@ -208,8 +272,8 @@ function SingleMovie() {
           </>
         ) : (
           // Very unlikely branch: no movie, no error
-          <div className="flex-colo min-h-[60vh] text-center text-white">
-            <p className="text-lg font-semibold mb-2">Movie not found</p>
+          <div className="flex-colo gap-6 py-12">
+            <p className="text-border text-sm">Movie not found</p>
             <button
               onClick={() => navigate('/movies')}
               className="px-4 py-2 rounded bg-customPurple hover:bg-opacity-80 transitions"
@@ -220,11 +284,59 @@ function SingleMovie() {
         )}
       </div>
 
-      <ShareMovieModal
-        modalOpen={modalOpen}
-        setModalOpen={setModalOpen}
-        movie={movie}
-      />
+      {/* ============================= */}
+      {/* Mobile Quick Actions (only)  */}
+      {/* ============================= */}
+      {movie && !isLoading && !hasError && (
+        <div className="sm:hidden fixed z-40 bottom-16 left-0 right-0 px-3 pb-2">
+          <div className="bg-main/95 border border-border rounded-xl shadow-lg px-3 py-2 flex items-center gap-2">
+            {/* Watch */}
+            <button
+              onClick={handleMobileWatch}
+              className="flex-1 flex items-center justify-center gap-2 bg-customPurple hover:bg-opacity-90 text-white text-sm font-semibold py-2 rounded-lg transitions"
+            >
+              <FaPlay className="text-sm" />
+              <span>Watch</span>
+            </button>
+
+            {/* Download (only for movies with download URL) */}
+            {movie.type === 'Movie' && movie.downloadUrl && (
+              <button
+                onClick={handleDownloadMovieVideo}
+                className="px-3 py-2 rounded-lg border border-customPurple text-customPurple bg-main text-xs font-medium hover:bg-customPurple hover:text-white transitions"
+              >
+                <div className="flex items-center gap-1">
+                  <FaCloudDownloadAlt className="text-sm" />
+                  <span>Download</span>
+                </div>
+              </button>
+            )}
+
+            {/* Like */}
+            <button
+              onClick={handleMobileLike}
+              disabled={isLiked || likeLoading}
+              className={`w-9 h-9 flex items-center justify-center rounded-full border border-customPurple text-sm transitions ${
+                isLiked
+                  ? 'bg-customPurple text-white'
+                  : 'bg-main text-white hover:bg-customPurple'
+              }`}
+              aria-label={isLiked ? 'In favorites' : 'Add to favorites'}
+            >
+              <FaHeart className="text-xs" />
+            </button>
+
+            {/* Share */}
+            <button
+              onClick={() => setModalOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-full border border-border text-white bg-main hover:bg-customPurple transitions"
+              aria-label="Share movie"
+            >
+              <FaShareAlt className="text-xs" />
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
