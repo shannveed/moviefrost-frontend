@@ -7,7 +7,12 @@ import MovieInfo from '../Components/Single/MovieInfo';
 import MovieRates from '../Components/Single/MovieRates';
 import Titles from '../Components/Titles';
 import { BsCollectionFill } from 'react-icons/bs';
-import { FaHeart, FaCloudDownloadAlt, FaPlay, FaShareAlt } from 'react-icons/fa';
+import {
+  FaHeart,
+  FaCloudDownloadAlt,
+  FaPlay,
+  FaShareAlt,
+} from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import Loader from '../Components/Loader';
 import Movie from '../Components/movie';
@@ -100,6 +105,25 @@ function SingleMovie() {
   const isNotFound = isError === 'Movie not found';
   const hasError = Boolean(isError);
 
+  // -------- redirect dead IDs to /404 --------
+  useEffect(() => {
+    if (isNotFound && !movie) {
+      // SPA redirect so Google eventually sees /404 instead of /movie/<dead-id>
+      navigate('/404', { replace: true });
+    }
+  }, [isNotFound, movie, navigate]);
+  // -------------------------------------------------
+
+  // Small helper to keep dates ISO
+  const toIsoString = (value) => {
+    if (!value) return undefined;
+    try {
+      return new Date(value).toISOString();
+    } catch {
+      return undefined;
+    }
+  };
+
   // ---------- Helper to build SEO title without double year ----------
   const buildMovieSeoTitle = (movieObj) => {
     if (!movieObj) {
@@ -157,12 +181,35 @@ function SingleMovie() {
   const shouldNoIndex = !movie || hasError;
 
   // ---------- Structured data for SEO ----------
+
   const hasRating =
     movie &&
     typeof movie.numberOfReviews === 'number' &&
     movie.numberOfReviews > 0 &&
     typeof movie.rate === 'number' &&
     movie.rate > 0;
+
+  // NEW: build individual Review JSON-LD (limit to first 5 reviews)
+  const reviewsStructuredData =
+    movie && Array.isArray(movie.reviews) && movie.reviews.length > 0
+      ? movie.reviews.slice(0, 5).map((rev) => ({
+          '@type': 'Review',
+          author: {
+            '@type': 'Person',
+            name: rev.userName || 'User',
+          },
+          datePublished: toIsoString(rev.createdAt || rev.updatedAt),
+          reviewBody: rev.comment,
+          name: `${movie.name} review`,
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue:
+              typeof rev.rating === 'number' ? rev.rating : undefined,
+            bestRating: '5',
+            worstRating: '0',
+          },
+        }))
+      : null;
 
   const movieStructuredData =
     movie && !hasError
@@ -188,6 +235,9 @@ function SingleMovie() {
                 },
               }
             : {}),
+          ...(reviewsStructuredData && reviewsStructuredData.length
+            ? { review: reviewsStructuredData }
+            : {}),
           ...(movie.type === 'Movie'
             ? {
                 video: {
@@ -195,7 +245,7 @@ function SingleMovie() {
                   name: `${movie.name} | MovieFrost`,
                   description: movie.seoDescription || movie.desc,
                   thumbnailUrl: movie.image || movie.titleImage,
-                  uploadDate: movie.createdAt || movie.updatedAt || undefined,
+                  uploadDate: toIsoString(movie.createdAt || movie.updatedAt),
                   duration: movie.time ? `PT${movie.time}M` : undefined,
                   contentUrl: movie.downloadUrl || movie.video || undefined,
                   embedUrl: `https://www.moviefrost.com/watch/${movie._id}`,
@@ -227,13 +277,11 @@ function SingleMovie() {
       <div className="container mx-auto min-h-screen px-2 my-6 pb-24 sm:pb-8">
         {isLoading ? (
           <Loader />
-        ) : hasError && !movie ? (
-          // Error state with better message
+        ) : hasError && !movie && !isNotFound ? (
+          // Error state with better message (non-404 errors)
           <div className="flex-colo gap-6 py-12">
             <p className="text-border text-sm">
-              {isNotFound
-                ? 'Movie not found. It may have been removed from MovieFrost.'
-                : 'Something went wrong while loading this movie.'}
+              Something went wrong while loading this movie.
             </p>
             <button
               onClick={() => dispatch(getMovieByIdAction(id))}

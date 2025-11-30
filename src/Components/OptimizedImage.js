@@ -14,6 +14,7 @@ const OptimizedImage = ({
   loading = 'lazy',
   placeholder = '/images/placeholder.jpg',
   onLoad,
+  fetchPriority, // optional: allow callers to pass fetchPriority for hero images
   ...props
 }) => {
   const elementRef = useRef(null);
@@ -105,6 +106,8 @@ const OptimizedImage = ({
         src={imageSrc}
         alt={alt}
         loading={loading}
+        decoding="async"
+        fetchPriority={fetchPriority}
         width={width}
         height={height}
         className={`w-full h-full object-cover transition-opacity duration-300 ${

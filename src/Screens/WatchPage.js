@@ -1,15 +1,26 @@
 // src/Screens/WatchPage.js
-import { trackVideoPlay, trackGuestAction, trackLoginPrompt } from '../utils/analytics';
+import {
+  trackVideoPlay,
+  trackGuestAction,
+  trackLoginPrompt,
+} from '../utils/analytics';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../Layout/Layout';
 import { BiArrowBack } from 'react-icons/bi';
 import { FaCloudDownloadAlt, FaHeart, FaPlay, FaLock } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
-import { getMovieByIdAction, getAllMoviesAction } from '../Redux/Actions/MoviesActions';
+import {
+  getMovieByIdAction,
+  getAllMoviesAction,
+} from '../Redux/Actions/MoviesActions';
 import Loader from '../Components/Loader';
 import { RiMovie2Line } from 'react-icons/ri';
-import { DownloadVideo, IfMovieLiked, LikeMovie } from '../Context/Functionalities';
+import {
+  DownloadVideo,
+  IfMovieLiked,
+  LikeMovie,
+} from '../Context/Functionalities';
 import Titles from '../Components/Titles';
 import { BsCollectionFill } from 'react-icons/bs';
 import Movie from '../Components/movie';
@@ -22,6 +33,7 @@ function WatchPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [play, setPlay] = useState(false);
   const [guestWatchTime, setGuestWatchTime] = useState(0);
 
@@ -38,13 +50,25 @@ function WatchPage() {
   const sameClass = 'w-full gap-6 flex-colo min-h-screen';
 
   // Use Selector
-  const { isLoading, isError, movie } = useSelector((state) => state.getMovieById);
-  const { isLoading: likeLoading } = useSelector((state) => state.userLikeMovie);
+  const { isLoading, isError, movie } = useSelector(
+    (state) => state.getMovieById
+  );
+  const { isLoading: likeLoading } = useSelector(
+    (state) => state.userLikeMovie
+  );
   const { userInfo } = useSelector((state) => state.userLogin);
   const { movies } = useSelector((state) => state.getAllMovies);
 
-  // Check if the movie is liked
   const isLiked = IfMovieLiked(movie);
+  const isNotFound = isError === 'Movie not found';
+
+  // -------- NEW: redirect hard 404s to /404 --------
+  useEffect(() => {
+    if (isNotFound && !isLoading && !movie) {
+      navigate('/404', { replace: true });
+    }
+  }, [isNotFound, isLoading, movie, navigate]);
+  // -------------------------------------------------
 
   // Helper to build SEO title without duplicate year from name
   const buildWatchSeoTitle = (movieObj) => {
@@ -89,7 +113,7 @@ function WatchPage() {
     let interval;
     if (play && !userInfo) {
       interval = setInterval(() => {
-        setGuestWatchTime(prev => {
+        setGuestWatchTime((prev) => {
           const newTime = prev + 1;
 
           // Show login prompt after 13 minutes
@@ -102,15 +126,18 @@ function WatchPage() {
               pathname: location.pathname,
               search: location.search,
               hash: location.hash,
-              scrollY: window.scrollY
+              scrollY: window.scrollY,
             };
-            localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
+            localStorage.setItem(
+              'redirectAfterLogin',
+              JSON.stringify(redirectState)
+            );
 
             trackLoginPrompt('watch_time_limit', `/watch/${id}`);
             trackGuestAction('watch_limit_reached', {
               movie_name: movie?.name,
               movie_id: movie?._id,
-              watch_time: newTime
+              watch_time: newTime,
             });
 
             // Show forced login modal
@@ -144,43 +171,58 @@ function WatchPage() {
   }, [movie]);
 
   const handlePlayClick = () => {
+    if (!movie) return;
+
     if (!userInfo) {
       trackGuestAction('play_attempt', {
         movie_name: movie?.name,
         movie_id: movie?._id,
-        episode: currentEpisode?.episodeNumber || null
+        episode: currentEpisode?.episodeNumber || null,
       });
 
       // Allow limited preview for guests
       setPlay(true);
-      trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
+      trackVideoPlay(
+        movie.name,
+        movie._id,
+        currentEpisode?.episodeNumber || null
+      );
     } else {
       setPlay(true);
-      trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
+      trackVideoPlay(
+        movie.name,
+        movie._id,
+        currentEpisode?.episodeNumber || null
+      );
     }
   };
 
   const DownloadMovieVideo = () => {
+    if (!movie) return;
+
     if (!userInfo) {
       // Save current state before redirecting
       const redirectState = {
         pathname: location.pathname,
         search: location.search,
         hash: location.hash,
-        scrollY: window.scrollY
+        scrollY: window.scrollY,
       };
-      localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
+      localStorage.setItem(
+        'redirectAfterLogin',
+        JSON.stringify(redirectState)
+      );
 
       trackGuestAction('download_attempt', {
         movie_name: movie?.name,
-        movie_id: movie?._id
+        movie_id: movie?._id,
       });
       toast.error('Please login to download');
       navigate('/login');
       return;
     }
 
-    if (movie && movie.type === 'Movie') {
+    if (movie.type === 'Movie') {
       DownloadVideo(movie?.downloadUrl, userInfo);
     }
   };
@@ -190,17 +232,26 @@ function WatchPage() {
     { label: 'Server 2', url: movie?.videoUrl2 },
   ];
 
-  if (isLoading || !movie) {
+  // --------- EARLY RETURNS (fixed order) ----------
+
+  // 404-style API error (Movie not found) → we will redirect to /404 via effect.
+  if (isNotFound && !isLoading && !movie) {
     return (
       <Layout>
         <div className={sameClass}>
-          <Loader />
+          <div className="flex-colo w-24 h-24 p-5 mb-4 rounded-full bg-dry text-customPurple">
+            <RiMovie2Line />
+          </div>
+          <p className="text-border text-sm">
+            Movie not found. It may have been removed from MovieFrost.
+          </p>
         </div>
       </Layout>
     );
   }
 
-  if (isError) {
+  // Other errors
+  if (isError && !isLoading && !movie && !isNotFound) {
     return (
       <Layout>
         <div className={sameClass}>
@@ -212,6 +263,19 @@ function WatchPage() {
       </Layout>
     );
   }
+
+  // Loading / initial state
+  if (isLoading || !movie) {
+    return (
+      <Layout>
+        <div className={sameClass}>
+          <Loader />
+        </div>
+      </Layout>
+    );
+  }
+
+  // ------------------------------------------------
 
   return (
     <Layout>
@@ -239,8 +303,9 @@ function WatchPage() {
             </p>
             <div className="bg-main rounded-lg p-4 mb-4 text-left">
               <p className="text-dryGray text-xs mb-3">
-                You've reached the preview limit for guests. Log in for free to continue watching without interruptions,
-                save favorites, and more.
+                You've reached the preview limit for guests. Log in for free to
+                continue watching without interruptions, save favorites, and
+                more.
               </p>
               <ul className="space-y-2 text-sm text-white">
                 <li className="flex items-center gap-2">
@@ -290,9 +355,10 @@ function WatchPage() {
               onClick={() => LikeMovie(movie, dispatch, userInfo)}
               disabled={isLiked || likeLoading}
               className={`sm:hidden w-10 h-10 mobile:w-9 mobile:h-9 flex-colo rounded-md transitions ml-auto flex-shrink-0
-                ${isLiked
-                  ? 'bg-customPurple text-white'
-                  : 'bg-dry border border-border text-white hover:bg-customPurple'
+                ${
+                  isLiked
+                    ? 'bg-customPurple text-white'
+                    : 'bg-dry border border-border text-white hover:bg-customPurple'
                 }`}
             >
               <FaHeart className="text-base mobile:text-sm" />
@@ -304,9 +370,10 @@ function WatchPage() {
               onClick={() => LikeMovie(movie, dispatch, userInfo)}
               disabled={isLiked || likeLoading}
               className={`hidden sm:flex w-12 h-12 flex-colo rounded-md transitions
-                ${isLiked
-                  ? 'bg-customPurple text-white'
-                  : 'bg-dry border border-border text-white hover:bg-customPurple'
+                ${
+                  isLiked
+                    ? 'bg-customPurple text-white'
+                    : 'bg-dry border border-border text-white hover:bg-customPurple'
                 }`}
             >
               <FaHeart />
@@ -345,9 +412,10 @@ function WatchPage() {
                   }}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-md font-medium transitions
-                    ${currentServerIndex === idx
-                      ? 'bg-customPurple text-white'
-                      : 'bg-dry border border-border text-white hover:border-customPurple'
+                    ${
+                      currentServerIndex === idx
+                        ? 'bg-customPurple text-white'
+                        : 'bg-dry border border-border text-white hover:border-customPurple'
                     }
                   `}
                 >
@@ -374,7 +442,9 @@ function WatchPage() {
                   <div
                     className="w-full h-full rounded-lg overflow-hidden relative bg-main"
                     style={{
-                      backgroundImage: `url(${movie?.image || movie?.titleImage})`,
+                      backgroundImage: `url(${
+                        movie?.image || movie?.titleImage
+                      })`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                     }}
@@ -405,9 +475,10 @@ function WatchPage() {
                     }}
                     className={`
                       flex items-center gap-2 px-4 py-2.5 rounded-md font-medium transitions
-                      ${currentEpisode && currentEpisode._id === ep._id
-                        ? 'bg-customPurple text-white'
-                        : 'bg-dry border border-border text-white hover:border-customPurple'
+                      ${
+                        currentEpisode && currentEpisode._id === ep._id
+                          ? 'bg-customPurple text-white'
+                          : 'bg-dry border border-border text-white hover:border-customPurple'
                       }
                     `}
                   >
@@ -424,7 +495,10 @@ function WatchPage() {
             </div>
 
             {currentEpisode && (
-              <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+              <div
+                className="relative w-full"
+                style={{ paddingTop: '56.25%' }}
+              >
                 {play ? (
                   <iframe
                     title={`Episode ${currentEpisode.episodeNumber}`}
@@ -439,7 +513,9 @@ function WatchPage() {
                     <div
                       className="w-full h-full rounded-lg overflow-hidden relative bg-main"
                       style={{
-                        backgroundImage: `url(${movie?.image || movie?.titleImage})`,
+                        backgroundImage: `url(${
+                          movie?.image || movie?.titleImage
+                        })`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                       }}
@@ -466,7 +542,9 @@ function WatchPage() {
             <Titles title="Related Movies" Icon={BsCollectionFill} />
             <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-5 gap-6">
               {movies
-                ?.filter((m) => m.category === movie?.category && m._id !== movie?._id)
+                ?.filter(
+                  (m) => m.category === movie?.category && m._id !== movie?._id
+                )
                 .slice(0, 10)
                 .map((relatedMovie) => (
                   <Movie key={relatedMovie?._id} movie={relatedMovie} />

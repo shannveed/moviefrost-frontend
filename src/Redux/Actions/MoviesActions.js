@@ -268,4 +268,3 @@ export const getLatestMoviesAction = () => async (dispatch) => {
   }
 };
 
-
