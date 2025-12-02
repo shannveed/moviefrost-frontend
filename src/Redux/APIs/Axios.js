@@ -1,19 +1,29 @@
 import axios from "axios";
 
-const Axios = axios.create({
-  baseURL: getApiBaseUrl(),
-  timeout: 10000, // Q4: 10s timeout for global reliability
-});
-
 function getApiBaseUrl() {
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
-  if (process.env.NODE_ENV === 'development') {
+  const envUrl = process.env.REACT_APP_API_URL;
+
+  // In development, prefer localhost so new backend changes are always used
+  if (process.env.NODE_ENV === "development") {
+    if (envUrl && envUrl.includes("localhost")) {
+      return envUrl; // e.g. http://localhost:5000/api
+    }
     return "http://localhost:5000/api";
   }
+
+  // In production / preview environments, use the env URL if provided
+  if (envUrl) {
+    return envUrl;
+  }
+
+  // Fallback production API URL
   return "https://moviefrost-backend-pi.vercel.app/api";
 }
+
+const Axios = axios.create({
+  baseURL: getApiBaseUrl(),
+  timeout: 10000, // 10s timeout for global reliability
+});
 
 // Simple retry on network/5xx with backoff
 const shouldRetry = (error) => {
@@ -47,12 +57,9 @@ Axios.interceptors.response.use(
     const config = error?.config;
     if (shouldRetry(error) && config && config.__retryCount < config.__maxRetries) {
       config.__retryCount += 1;
-      const delay = config.__retryDelayBase * Math.pow(2, config.__retryCount - 1);
-      await wait(delay);
+      const delayMs = config.__retryDelayBase * Math.pow(2, config.__retryCount - 1);
+      await wait(delayMs);
       return Axios(config);
-    }
-    if (error.message === 'Network Error' && !error.response) {
-      console.error('Network error - please check your connection');
     }
     return Promise.reject(error);
   }

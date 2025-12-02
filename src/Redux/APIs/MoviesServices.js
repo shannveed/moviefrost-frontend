@@ -1,7 +1,7 @@
-// MoviesServices.js
+// Frontend/src/Redux/APIs/MoviesServices.js
 import Axios from "./Axios";
 
-// ************ PUBLIC APIs ************
+// * PUBLIC APIs *
 
 // get all movies
 export const getAllMoviesService = async (
@@ -100,12 +100,41 @@ export const getDistinctBrowseByService = async () => {
   return data;
 };
 
-// ============ NEW ============
-// Admin replies to a user's review
+// Admin: reply to user's review
 export const adminReplyReviewService = async (token, movieId, reviewId, reply) => {
   const { data } = await Axios.post(
     `/movies/${movieId}/reviews/${reviewId}/reply`,
     { reply },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return data;
+};
+
+// ============ NEW ADMIN ORDERING APIs ============
+
+// Reorder movies within a specific page
+export const reorderMoviesInPageService = async (token, pageNumber, orderedIds) => {
+  const { data } = await Axios.post(
+    '/movies/admin/reorder-page',
+    { pageNumber, orderedIds },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return data;
+};
+
+// Move one or more movies to a different page
+export const moveMoviesToPageService = async (token, targetPage, movieIds) => {
+  const { data } = await Axios.post(
+    '/movies/admin/move-to-page',
+    { targetPage, movieIds },
     {
       headers: {
         Authorization: `Bearer ${token}`,

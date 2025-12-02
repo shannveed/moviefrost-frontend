@@ -30,8 +30,11 @@ import {
   useNavigationType,
 } from 'react-router-dom';
 import MetaTags from '../Components/SEO/MetaTags';
+import {
+  reorderMoviesInPageService,
+  moveMoviesToPageService,
+} from '../Redux/APIs/MoviesServices';
 
-// Session storage key for movies page state
 const MOVIES_PAGE_STATE_KEY = 'moviesPageState';
 
 function MoviesPage() {
@@ -43,7 +46,6 @@ function MoviesPage() {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  // Track if we've restored state
   const hasRestoredState = useRef(false);
   const scrollPositionRef = useRef(0);
 
@@ -62,9 +64,146 @@ function MoviesPage() {
   const { isLoading, isError, movies, pages, page } = useSelector(
     (state) => state.getAllMovies
   );
-
   const { userInfo } = useSelector((state) => state.userLogin);
   const { categories } = useSelector((state) => state.categoryGetAll);
+
+  const isAdmin = !!userInfo?.isAdmin;
+
+  // ============= ADMIN ORDERING STATE =============
+  const [adminMode, setAdminMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [localOrder, setLocalOrder] = useState([]);
+  const [draggedId, setDraggedId] = useState(null);
+  const [hasPendingReorder, setHasPendingReorder] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [movingPage, setMovingPage] = useState(false);
+
+  // Sync localOrder with Redux movies when page changes
+  useEffect(() => {
+    if (isAdmin && adminMode && Array.isArray(movies)) {
+      setLocalOrder([...movies]);
+      setHasPendingReorder(false);
+      setDraggedId(null);
+    } else {
+      setLocalOrder([]);
+      setHasPendingReorder(false);
+      setDraggedId(null);
+    }
+  }, [movies, isAdmin, adminMode, page]);
+
+  const displayMovies =
+    isAdmin && adminMode && Array.isArray(localOrder) && localOrder.length
+      ? localOrder
+      : movies;
+
+  // Selected IDs toggling
+  const toggleSelect = useCallback((id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }, []);
+
+  const clearSelection = () => setSelectedIds([]);
+
+  // Drag handlers
+  const handleDragStart = (e, id) => {
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedId(id);
+  };
+
+  const handleDragEnter = (e, targetId) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === targetId) return;
+    setLocalOrder((prev) => {
+      if (!Array.isArray(prev) || !prev.length) return prev;
+      const currentIndex = prev.findIndex((m) => m._id === draggedId);
+      const targetIndex = prev.findIndex((m) => m._id === targetId);
+      if (currentIndex === -1 || targetIndex === -1) return prev;
+      const updated = [...prev];
+      const [moved] = updated.splice(currentIndex, 1);
+      updated.splice(targetIndex, 0, moved);
+      return updated;
+    });
+    setHasPendingReorder(true);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+  };
+
+  // Build queries helper
+  const buildQueries = useCallback(() => {
+    return {
+      category:
+        category?.title === 'All Categories' ? '' : category?.title || '',
+      time: times?.title.replace(/\D/g, ''),
+      language:
+        language?.title === 'Sort By Language' ? '' : language?.title || '',
+      rate: rates?.title.replace(/\D/g, ''),
+      year: year?.title.replace(/\D/g, ''),
+      browseBy:
+        browseByParam ||
+        (browseBy?.title === 'Browse By' ? '' : browseBy?.title || ''),
+      search: search ? search : '',
+    };
+  }, [category, times, language, rates, year, browseBy, browseByParam, search]);
+
+  // Save page order to backend
+  const handleSaveOrder = async () => {
+    if (!isAdmin || !adminMode) return;
+    if (!Array.isArray(localOrder) || !localOrder.length) return;
+    if (!userInfo?.token) {
+      toast.error('You must be logged in as admin.');
+      return;
+    }
+    try {
+      setSavingOrder(true);
+      const orderedIds = localOrder.map((m) => m._id);
+      await reorderMoviesInPageService(userInfo.token, page, orderedIds);
+      toast.success('Order updated for this page');
+      setHasPendingReorder(false);
+      // Refresh data
+      const queries = buildQueries();
+      dispatch(getAllMoviesAction({ ...queries, pageNumber: page }));
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message || error?.message || 'Failed to save order';
+      toast.error(msg);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  // Move selected (or single) movie(s) to a target page via backend
+  const handleMoveToPage = async (baseMovieId, targetPage) => {
+    if (!isAdmin) return;
+    if (!userInfo?.token) {
+      toast.error('You must be logged in as admin.');
+      return;
+    }
+    const idsToMove =
+      selectedIds && selectedIds.length > 0 ? selectedIds : [baseMovieId];
+
+    try {
+      setMovingPage(true);
+      await moveMoviesToPageService(userInfo.token, targetPage, idsToMove);
+      toast.success(
+        `Moved ${idsToMove.length} item${idsToMove.length > 1 ? 's' : ''} to page ${targetPage}`
+      );
+      clearSelection();
+      // After move we reload current page data
+      const queries = buildQueries();
+      dispatch(getAllMoviesAction({ ...queries, pageNumber: page }));
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to move movies to target page';
+      toast.error(msg);
+    } finally {
+      setMovingPage(false);
+    }
+  };
 
   // Save navigation state to sessionStorage
   const saveNavigationState = useCallback(() => {
@@ -113,14 +252,12 @@ function MoviesPage() {
       savedStateRaw = null;
     }
 
-    // Restore on browser back (POP) or when coming from movie detail
     if (
       savedStateRaw &&
       (navigationType === 'POP' || location.state?.fromMovieDetail)
     ) {
       try {
         const state = JSON.parse(savedStateRaw);
-        // Only restore if the state is fresh (less than 30 minutes old)
         if (Date.now() - state.timestamp < 30 * 60 * 1000) {
           setCategory(state.category || { title: 'All Categories' });
           setYear(state.year || YearData[0]);
@@ -135,39 +272,15 @@ function MoviesPage() {
       } catch (e) {
         console.error('Error restoring movies page state:', e);
       }
-      // Clean the location state
       window.history.replaceState({}, document.title);
     }
   }, [navigationType, location.state]);
 
   // Build query parameters
   const queries = useMemo(() => {
-    const query = {
-      category:
-        category?.title === 'All Categories' ? '' : category?.title || '',
-      time: times?.title.replace(/\D/g, ''),
-      language:
-        language?.title === 'Sort By Language' ? '' : language?.title || '',
-      rate: rates?.title.replace(/\D/g, ''),
-      year: year?.title.replace(/\D/g, ''),
-      browseBy:
-        browseByParam ||
-        (browseBy?.title === 'Browse By' ? '' : browseBy?.title || ''),
-      search: search ? search : '',
-    };
-    return query;
-  }, [
-    category,
-    times,
-    language,
-    rates,
-    year,
-    browseBy,
-    browseByParam,
-    search,
-  ]);
+    return buildQueries();
+  }, [buildQueries]);
 
-  // Get the page number (from restored state or URL)
   const getPageNumber = useCallback(() => {
     if (hasRestoredState.current && currentPage > 1) {
       return currentPage;
@@ -197,17 +310,16 @@ function MoviesPage() {
   useEffect(() => {
     if (
       !isLoading &&
-      movies &&
-      movies.length > 0 &&
+      displayMovies &&
+      displayMovies.length > 0 &&
       scrollPositionRef.current > 0
     ) {
-      // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         window.scrollTo(0, scrollPositionRef.current);
         scrollPositionRef.current = 0;
       });
     }
-  }, [isLoading, movies]);
+  }, [isLoading, displayMovies]);
 
   // Update URL with page number
   const updatePageInUrl = (pageNum) => {
@@ -216,7 +328,7 @@ function MoviesPage() {
     setSearchParams(newSearchParams);
   };
 
-  // Navigation handlers
+  // Pagination handlers
   const nextPage = () => {
     const newPage = page + 1;
     setCurrentPage(newPage);
@@ -255,7 +367,6 @@ function MoviesPage() {
     window.scrollTo(0, 0);
   };
 
-  // Filter data for the Filters component
   const datas = {
     categories,
     category,
@@ -295,7 +406,6 @@ function MoviesPage() {
     return desc;
   };
 
-  // Handle movie card click - save state before navigation
   const handleMovieClick = () => {
     saveNavigationState();
   };
@@ -317,26 +427,121 @@ function MoviesPage() {
 
       <div className="min-height-screen container mx-auto px-8 mobile:px-0 my-2">
         <Filters data={datas} />
-        {/* Q1: simplified header text */}
+
+        {/* ADMIN ORDERING BAR */}
+        {isAdmin && (
+          <div className="my-4 p-4 bg-dry rounded-lg border border-border">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => {
+                  setAdminMode((prev) => !prev);
+                  setHasPendingReorder(false);
+                  setDraggedId(null);
+                  clearSelection();
+                }}
+                className={`px-4 py-2 text-sm rounded border transitions ${
+                  adminMode
+                    ? 'bg-customPurple border-customPurple text-white'
+                    : 'border-customPurple text-white hover:bg-customPurple'
+                }`}
+              >
+                {adminMode ? 'Exit Admin Mode' : 'Enter Admin Mode'}
+              </button>
+
+              {adminMode && (
+                <>
+                  <span className="text-xs text-dryGray">
+                    Drag cards to reorder. Use dropdown to move to another page.
+                  </span>
+
+                  {selectedIds.length > 0 && (
+                    <span className="text-xs text-customPurple font-semibold">
+                      {selectedIds.length} selected
+                    </span>
+                  )}
+
+                  {selectedIds.length > 0 && (
+                    <button
+                      onClick={clearSelection}
+                      className="px-3 py-1.5 text-xs rounded border border-border text-white bg-main hover:bg-dry transitions"
+                    >
+                      Clear Selection
+                    </button>
+                  )}
+
+                  {hasPendingReorder && (
+                    <button
+                      onClick={handleSaveOrder}
+                      disabled={savingOrder}
+                      className="px-4 py-2 text-sm rounded bg-green-600 hover:bg-green-700 text-white transitions disabled:opacity-50"
+                    >
+                      {savingOrder ? 'Saving...' : 'Save Order'}
+                    </button>
+                  )}
+
+                  {hasPendingReorder && (
+                    <button
+                      onClick={() => {
+                        if (Array.isArray(movies)) {
+                          setLocalOrder([...movies]);
+                        } else {
+                          setLocalOrder([]);
+                        }
+                        setHasPendingReorder(false);
+                        setDraggedId(null);
+                      }}
+                      className="px-3 py-1.5 text-sm rounded border border-border text-white bg-main hover:bg-dry transitions"
+                    >
+                      Reset
+                    </button>
+                  )}
+
+                  {movingPage && (
+                    <span className="text-xs text-customPurple animate-pulse">
+                      Moving...
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Header text */}
         <p className="text-md font-medium my-4 mobile:px-4">
           Total{' '}
           <span className="font-bold text-customPurple">
-            {movies ? movies.length : 0}
+            {displayMovies ? displayMovies.length : 0}
           </span>{' '}
           Items Found On This Page
         </p>
+
         {isLoading ? (
           <div className="w-full gap-6 flex-colo min-h-screen">
             <Loader />
           </div>
-        ) : movies?.length > 0 ? (
+        ) : displayMovies?.length > 0 ? (
           <>
             <div
               className="grid sm:mt-8 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2 mobile:px-4"
               onClick={handleMovieClick}
             >
-              {movies.map((movie, index) => (
-                <Movie key={movie._id || index} movie={movie} />
+              {displayMovies.map((movie, index) => (
+                <Movie
+                  key={movie._id || index}
+                  movie={movie}
+                  showAdminControls={isAdmin && adminMode}
+                  isSelected={selectedIds.includes(movie._id)}
+                  onSelectToggle={toggleSelect}
+                  totalPages={pages}
+                  onMoveToPageClick={(movieId, targetPage) =>
+                    handleMoveToPage(movieId, targetPage)
+                  }
+                  adminDraggable={isAdmin && adminMode}
+                  onAdminDragStart={handleDragStart}
+                  onAdminDragEnter={handleDragEnter}
+                  onAdminDragEnd={handleDragEnd}
+                />
               ))}
             </div>
 

@@ -1,5 +1,5 @@
 // src/Components/MobileGridSwiper.js
-import React, { useMemo, useRef } from 'react';
+import React, {useMemo, useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -15,85 +15,80 @@ function chunkArray(arr, size = 4) {
   return out;
 }
 
-export default function MobileGridSwiper({ movies = [] }) {
+function MobileGridSwiper({ movies = [] }) {
+  // Each slide contains up to 4 movies (2x2 grid)
+  const slides = useMemo(() => chunkArray(movies, 4), [movies]);
+
+  const swiperRef = useRef(null);
   const prevEl = useRef(null);
   const nextEl = useRef(null);
 
-  const slides = useMemo(() => chunkArray(movies, 4), [movies]);
+  // Wire navigation buttons to Swiper instance (mobile only)
+  useEffect(() => {
+    if (
+      swiperRef.current &&
+      swiperRef.current.swiper &&
+      prevEl.current &&
+      nextEl.current
+    ) {
+      const swiper = swiperRef.current.swiper;
+      swiper.params.navigation.prevEl = prevEl.current;
+      swiper.params.navigation.nextEl = nextEl.current;
+      swiper.navigation.destroy();
+      swiper.navigation.init();
+      swiper.navigation.update();
+    }
+  }, [slides.length]);
 
   if (!slides.length) return null;
 
+  const arrowBase =
+    'absolute top-1/2 -translate-y-1/2 z-20 w-8 h-8 flex-colo bg-customPurple/80 hover:bg-customPurple text-white rounded-full';
+
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <Swiper
+        ref={swiperRef}
         modules={[Navigation]}
-        slidesPerView={1}
-        spaceBetween={10}
         navigation={{
           prevEl: prevEl.current,
           nextEl: nextEl.current,
         }}
-        onBeforeInit={(swiper) => {
-          swiper.params.navigation.prevEl = prevEl.current;
-          swiper.params.navigation.nextEl = nextEl.current;
-        }}
-        speed={200}
+        speed={250}
         loop={slides.length > 1}
       >
         {slides.map((group, idx) => (
-          <SwiperSlide key={`mobile-4-grid-${idx}`}>
-            <div className="grid grid-cols-2 gap-3">
+          <SwiperSlide key={idx}>
+            <div className="grid grid-cols-2 gap-2">
               {group.map((m) => (
-                <div key={m._id}>
-                  <Movie movie={m} />
-                </div>
+                <Movie key={m._id} movie={m} />
               ))}
             </div>
           </SwiperSlide>
         ))}
       </Swiper>
 
-      {/* NEW: Small, circular mobile-only arrows */}
+      {/* Small, circular arrows – mobile only, but work for all sections */}
       {slides.length > 1 && (
         <>
           <button
             ref={prevEl}
             aria-label="Previous"
-            className="
-              sm:hidden
-              absolute left-2 top-1/2 -translate-y-1/2 z-20
-              w-7 h-7 rounded-full
-              bg-customPurple/70 text-white
-              border border-customPurple/80
-              shadow-md backdrop-blur-sm
-              flex items-center justify-center
-              hover:bg-customPurple hover:text-white
-              active:scale-95
-              transition
-            "
+            className={`${arrowBase} left-2`}
           >
-            <BsCaretLeftFill size={16} />
+            <BsCaretLeftFill className="text-sm" />
           </button>
           <button
             ref={nextEl}
             aria-label="Next"
-            className="
-              sm:hidden
-              absolute right-2 top-1/2 -translate-y-1/2 z-20
-              w-7 h-7 rounded-full
-             bg-customPurple/70 text-white
-              border border-customPurple/80
-              shadow-md backdrop-blur-sm
-              flex items-center justify-center
-              hover:bg-customPurple hover:text-white
-              active:scale-95
-              transition
-            "
+            className={`${arrowBase} right-2`}
           >
-            <BsCaretRightFill size={16} />
+            <BsCaretRightFill className="text-sm" />
           </button>
         </>
       )}
     </div>
   );
 }
+
+export default MobileGridSwiper;

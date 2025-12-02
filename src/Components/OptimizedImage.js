@@ -14,7 +14,7 @@ const OptimizedImage = ({
   loading = 'lazy',
   placeholder = '/images/placeholder.jpg',
   onLoad,
-  fetchPriority, // optional: allow callers to pass fetchPriority for hero images
+  fetchPriority, // 'high' | 'low' | 'auto' (optional)
   ...props
 }) => {
   const elementRef = useRef(null);
@@ -92,6 +92,13 @@ const OptimizedImage = ({
     };
   }, [isVisible, src, onLoad]);
 
+  // Build extra attributes for the <img> tag
+  // Use lowercase 'fetchpriority' to avoid React 18.2 warning
+  const imgExtraProps = {};
+  if (fetchPriority) {
+    imgExtraProps.fetchpriority = fetchPriority;
+  }
+
   return (
     <div
       ref={elementRef}
@@ -107,12 +114,12 @@ const OptimizedImage = ({
         alt={alt}
         loading={loading}
         decoding="async"
-        fetchPriority={fetchPriority}
         width={width}
         height={height}
         className={`w-full h-full object-cover transition-opacity duration-300 ${
           isLoaded ? 'opacity-100' : 'opacity-60'
         }`}
+        {...imgExtraProps}
         {...props}
       />
     </div>

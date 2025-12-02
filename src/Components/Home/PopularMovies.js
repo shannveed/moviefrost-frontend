@@ -1,7 +1,11 @@
 // Frontend/src/Components/Home/PopularMovies.js
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Titles from '../Titles';
-import { BsCollectionFill, BsCaretLeftFill, BsCaretRightFill } from 'react-icons/bs';
+import {
+  BsCollectionFill,
+  BsCaretLeftFill,
+  BsCaretRightFill,
+} from 'react-icons/bs';
 import Movie from '../movie';
 import { Empty } from '../Notifications/Empty';
 import Loader from '../Loader';
@@ -16,9 +20,27 @@ import MobileGridSwiper from '../MobileGridSwiper';
 function PopularMovies({ isLoading, movies = [] }) {
   const prevEl = useRef(null);
   const nextEl = useRef(null);
+  const swiperRef = useRef(null); // NEW
 
   const hasMovies = movies && movies.length > 0;
   const showLoader = isLoading && !hasMovies;
+
+  // NEW: ensure navigation buttons work reliably on ≥ sm screens
+  useEffect(() => {
+    if (
+      swiperRef.current &&
+      swiperRef.current.swiper &&
+      prevEl.current &&
+      nextEl.current
+    ) {
+      const swiper = swiperRef.current.swiper;
+      swiper.params.navigation.prevEl = prevEl.current;
+      swiper.params.navigation.nextEl = nextEl.current;
+      swiper.navigation.destroy();
+      swiper.navigation.init();
+      swiper.navigation.update();
+    }
+  }, [movies.length]); // re-run when movie list size changes
 
   return (
     <div className="my-8 mobile:my-4">
@@ -40,12 +62,15 @@ function PopularMovies({ isLoading, movies = [] }) {
         <Loader />
       ) : hasMovies ? (
         <>
+          {/* MOBILE: 2x2 grid slider using MobileGridSwiper */}
           <div className="sm:hidden">
             <MobileGridSwiper movies={movies.slice(0, 20)} />
           </div>
 
+          {/* DESKTOP / TABLET: horizontal Swiper with working arrows */}
           <div className="hidden sm:block relative">
             <Swiper
+              ref={swiperRef}
               modules={[Navigation, Autoplay]}
               navigation={{
                 prevEl: prevEl.current,

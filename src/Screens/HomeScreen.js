@@ -426,8 +426,10 @@ function HomeScreen() {
       </script>
 
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        {/* Banner – shows /movies page 1 data */}
-        <Banner movies={bannerFeed} isLoading={isLoading} />
+        {/* Banner – desktop always; on mobile only on Home tab (hidden on BrowseBy tab) */}
+        <div className={activeMobileTab === 'browseBy' ? 'hidden sm:block' : ''}>
+          <Banner movies={bannerFeed} isLoading={isLoading} />
+        </div>
 
         {/* ============================================================ */}
         {/* MOBILE LAYOUT - Conditional based on activeMobileTab        */}
