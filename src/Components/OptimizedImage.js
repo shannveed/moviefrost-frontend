@@ -14,30 +14,32 @@ const OptimizedImage = ({
   loading = 'lazy',
   placeholder = '/images/placeholder.jpg',
   onLoad,
-  fetchPriority, // 'high' | 'low' | 'auto' (optional)
+  fetchPriority = 'auto', // 'high' | 'low' | 'auto'
   ...props
 }) => {
   const elementRef = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
 
-  // If we've already loaded this src before, start directly with it.
+  // Determine if this is a high-priority image (LCP candidate)
+  const isHighPriority = fetchPriority === 'high' || loading === 'eager';
   const alreadyCached = src && loadedImages.has(src);
-  const [imageSrc, setImageSrc] = useState(alreadyCached ? src : placeholder);
-  const [isLoaded, setIsLoaded] = useState(alreadyCached);
 
-  // Custom intersection observer that stays visible once triggered
+  // If high-priority or already cached, treat as visible immediately.
+  const [isVisible, setIsVisible] = useState(isHighPriority || !!alreadyCached);
+  const [imageSrc, setImageSrc] = useState(
+    (isHighPriority || alreadyCached) && src ? src : placeholder
+  );
+  const [isLoaded, setIsLoaded] = useState(!!alreadyCached);
+
+  // IntersectionObserver for non-priority images only
   useEffect(() => {
+    // Skip IO for LCP / eager images
+    if (isHighPriority) return;
+
     const element = elementRef.current;
     if (!element) return;
 
-    // If already cached, mark as visible immediately
-    if (alreadyCached) {
-      setIsVisible(true);
-      return;
-    }
-
     // If IntersectionObserver is not supported, default to visible
-    if (!('IntersectionObserver' in window)) {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
       setIsVisible(true);
       return;
     }
@@ -62,42 +64,26 @@ const OptimizedImage = ({
         observer.unobserve(element);
       }
     };
-  }, [alreadyCached]);
+  }, [isHighPriority]);
 
+  // Switch to real src when visible / high-priority / cached
   useEffect(() => {
     if (!src) return;
 
-    // Already known as loaded → sync state & skip placeholder.
-    if (loadedImages.has(src)) {
+    if ((isVisible || isHighPriority || alreadyCached) && src !== imageSrc) {
       setImageSrc(src);
-      setIsLoaded(true);
-      if (onLoad) onLoad();
-      return;
     }
-
-    // Otherwise, lazy‑load when visible.
-    if (!isVisible) return;
-
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-      loadedImages.add(src);
-      setImageSrc(src);
-      setIsLoaded(true);
-      if (onLoad) onLoad();
-    };
-    img.onerror = () => {
-      // Keep placeholder on error
-      setIsLoaded(true);
-    };
-  }, [isVisible, src, onLoad]);
+  }, [src, isVisible, isHighPriority, alreadyCached, imageSrc]);
 
   // Build extra attributes for the <img> tag
   // Use lowercase 'fetchpriority' to avoid React 18.2 warning
   const imgExtraProps = {};
-  if (fetchPriority) {
+  if (fetchPriority && fetchPriority !== 'auto') {
     imgExtraProps.fetchpriority = fetchPriority;
   }
+
+  // Determine the actual loading attribute
+  const actualLoading = isHighPriority ? 'eager' : loading;
 
   return (
     <div
@@ -112,13 +98,24 @@ const OptimizedImage = ({
       <img
         src={imageSrc}
         alt={alt}
-        loading={loading}
-        decoding="async"
+        loading={actualLoading}
+        decoding={isHighPriority ? 'sync' : 'async'}
         width={width}
         height={height}
         className={`w-full h-full object-cover transition-opacity duration-300 ${
           isLoaded ? 'opacity-100' : 'opacity-60'
         }`}
+        onLoad={(e) => {
+          if (src && !loadedImages.has(src)) {
+            loadedImages.add(src);
+          }
+          setIsLoaded(true);
+          if (onLoad) onLoad(e);
+        }}
+        onError={() => {
+          // Keep placeholder on error, but stop the fade-in animation
+          setIsLoaded(true);
+        }}
         {...imgExtraProps}
         {...props}
       />

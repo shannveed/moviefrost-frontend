@@ -34,7 +34,7 @@ function Footer() {
   ];
 
   return (
-    <div className="bg-dry  border-t-2 border-black">
+    <div className="bg-dry border-t-2 border-black">
       {/* Added mobile:pl-4 for left padding on mobile */}
       <div className="container mx-auto px-2 mobile:px-4 mobile:pl-6">
         <div className="grid grid-cols-2 md:grid-cols-7 xl:grid-cols-12 gap-5 sm:gap-9 lg:gap-11 xl:gap-7 py-10 justify-between">
@@ -47,8 +47,8 @@ function Footer() {
                 {link.title}
               </h3>
               <ul className="text-sm flex flex-col space-y-3">
-                {link.links.map((text, index) => (
-                  <li key={index} className="flex items-baseline">
+                {link.links.map((text, idx) => (
+                  <li key={idx} className="flex items-baseline">
                     <Link
                       to={text.link}
                       className="text-border inline-block w-full hover:text-customPurple"
@@ -65,7 +65,11 @@ function Footer() {
             <Link to="/">
               <img
                 src="/images/MOVIEFROST.png"
-                alt="logo"
+                alt="MovieFrost logo"
+                width={150}
+                height={48}
+                loading="lazy"
+                decoding="async"
                 className="w-2/4 object-contain h-12"
               />
             </Link>

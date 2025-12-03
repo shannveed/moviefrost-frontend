@@ -51,6 +51,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             height={1080}
             className="w-full h-full object-cover"
             loading={index === 0 ? 'eager' : 'lazy'}
+            fetchPriority={index === 0 ? 'high' : 'auto'}
           />
 
           <div className="sm:hidden absolute inset-0 bg-black/50 pointer-events-none" />
