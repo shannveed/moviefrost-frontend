@@ -96,10 +96,26 @@ function HomeScreen() {
     initializedRef.current = true;
 
     try {
+      // 1) Critical: first page of movies (used for banner + Latest grid)
       dispatch(getAllMoviesAction({ pageNumber: 1 }));
-      dispatch(getLatestMoviesAction());
-      dispatch(getRandomMoviesAction());
-      dispatch(getTopRatedMovieAction());
+
+      // 2) Non-critical home widgets → defer slightly for performance
+      const loadSecondaryData = () => {
+        try {
+          dispatch(getLatestMoviesAction());
+          dispatch(getRandomMoviesAction());
+          dispatch(getTopRatedMovieAction());
+        } catch (error) {
+          console.error('Error loading secondary home data:', error);
+        }
+      };
+
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        requestIdleCallback(loadSecondaryData);
+      } else {
+        // Fallback: small delay after load
+        setTimeout(loadSecondaryData, 800);
+      }
     } catch (error) {
       console.error('Error loading initial home data:', error);
       toast.error('Error loading data. Please refresh the page.');

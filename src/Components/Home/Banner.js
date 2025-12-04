@@ -13,6 +13,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { IfMovieLiked, LikeMovie } from '../../Context/Functionalities';
 import OptimizedImage from '../OptimizedImage';
 
+// Reduced from 20 to 12 for better mobile performance
+const MAX_SLIDES = 12;
+
 const SwiperComponent = memo(({ sameClass, movies }) => {
   const { isLoading } = useSelector((state) => state.userLikeMovie);
   const dispatch = useDispatch();
@@ -26,11 +29,16 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
     [dispatch, userInfo]
   );
 
+  // Limit slides for better performance
+  const visibleMovies = Array.isArray(movies)
+    ? movies.slice(0, MAX_SLIDES)
+    : [];
+
   return (
     <Swiper
       direction="vertical"
       slidesPerView={1}
-      loop
+      loop={visibleMovies.length > 1}
       speed={400}
       autoplay={{
         delay: 4000,
@@ -39,7 +47,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
       modules={[Autoplay]}
       className={sameClass}
     >
-      {movies?.slice(0, 20).map((movie, index) => (
+      {visibleMovies.map((movie, index) => (
         <SwiperSlide
           key={movie._id || index}
           className="relative rounded overflow-hidden"

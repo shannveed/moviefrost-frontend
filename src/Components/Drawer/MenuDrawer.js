@@ -135,6 +135,8 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
             <img
               src="/images/MOVIEFROST.png"
               alt="MovieFrost Logo"
+              width={150}
+              height={40}
               className="h-10 object-contain"
             />
           </Link>
@@ -161,6 +163,8 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
                   <img
                     src={userInfo.image}
                     alt={userInfo.fullName}
+                    width={32}
+                    height={32}
                     className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
@@ -311,4 +315,4 @@ function MenuDrawer({ drawerOpen, toggleDrawer }) {
   );
 }
 
-export default MenuDrawer;  
+export default MenuDrawer;
