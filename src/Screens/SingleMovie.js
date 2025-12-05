@@ -30,6 +30,9 @@ function SingleMovie() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Helper: does the current param look like a MongoDB ObjectId?
+  const looksLikeObjectId = /^[0-9a-fA-F]{24}$/.test(routeParam || '');
+
   // Movie details
   const {
     isLoading,
@@ -82,12 +85,19 @@ function SingleMovie() {
     }
   }, [movie]);
 
-  // Redirect old /movie/<id> URLs to /movie/<slug> once movie is known
+  // Redirect old /movie/<id> URLs to /movie/<slug> once movie is known.
+  // IMPORTANT: only do this if the URL param looks like an ObjectId.
   useEffect(() => {
-    if (movie && movie.slug && routeParam && routeParam !== movie.slug) {
+    if (
+      looksLikeObjectId &&
+      movie &&
+      movie.slug &&
+      routeParam &&
+      routeParam !== movie.slug
+    ) {
       navigate(`/movie/${movie.slug}`, { replace: true });
     }
-  }, [movie, routeParam, navigate]);
+  }, [looksLikeObjectId, movie, routeParam, navigate]);
 
   const handleBackClick = () => {
     navigate(-1);
@@ -334,7 +344,7 @@ function SingleMovie() {
           <div className="bg-main/95 border border-border rounded-xl shadow-lg px-3 py-2 flex items-center gap-2">
             <button
               onClick={handleMobileWatch}
-              className="flex-1 flex items-center justify-center gap-2 bg-customPurple hover:bg-opacity-90 text-white text-sm font-semibold py-2 rounded-lg transitions"
+              className="flex-1 flex items-center justify-center gap-2 bg-customPurple hover:bg-opacity-90 text:white text-sm font-semibold py-2 rounded-lg transitions"
             >
               <FaPlay className="text-sm" />
               <span>Watch</span>

@@ -34,6 +34,9 @@ function WatchPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Helper: does the current param look like a MongoDB ObjectId?
+  const looksLikeObjectId = /^[0-9a-fA-F]{24}$/.test(routeParam || '');
+
   const [play, setPlay] = useState(false);
   const [guestWatchTime, setGuestWatchTime] = useState(0);
 
@@ -64,12 +67,19 @@ function WatchPage() {
     }
   }, [isNotFound, isLoading, movie, navigate]);
 
-  // Redirect old /watch/<id> URLs to /watch/<slug> once movie is known
+  // Redirect old /watch/<id> URLs to /watch/<slug> once movie is known.
+  // IMPORTANT: only do this if the URL param looks like an ObjectId.
   useEffect(() => {
-    if (movie && movie.slug && routeParam && routeParam !== movie.slug) {
+    if (
+      looksLikeObjectId &&
+      movie &&
+      movie.slug &&
+      routeParam &&
+      routeParam !== movie.slug
+    ) {
       navigate(`/watch/${movie.slug}`, { replace: true });
     }
-  }, [movie, routeParam, navigate]);
+  }, [looksLikeObjectId, movie, routeParam, navigate]);
 
   // Helper to build SEO title without duplicate year from name
   const buildWatchSeoTitle = (movieObj) => {
@@ -381,7 +391,7 @@ function WatchPage() {
           {movie.type === 'Movie' && movie.downloadUrl && (
             <button
               onClick={DownloadMovieVideo}
-              className="sm:hidden flex items-center justify-center gap-2 bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white px-3 py-2 rounded font-medium text-sm flex-shrink-0"
+              className="sm:hidden flex items:center justify-center gap-2 bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white px-3 py-2 rounded font-medium text-sm flex-shrink-0"
             >
               <FaCloudDownloadAlt className="text-base" /> Download
             </button>
