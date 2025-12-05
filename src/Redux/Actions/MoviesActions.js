@@ -1,10 +1,10 @@
-// MoviesActions.js
+// Frontend/src/Redux/Actions/MoviesActions.js
 import * as moviesConstants from "../Constants/MoviesConstants";
 import * as moviesAPIs from "../APIs/MoviesServices";
 import { ErrorsAction, tokenProtection } from "../Protection";
 import toast from "react-hot-toast";
 import { addNotification } from "./notificationsActions";
-import { getLatestMoviesService } from "../APIs/MoviesServices";   // NEW
+import { getLatestMoviesService } from "../APIs/MoviesServices";
 
 // get all movies
 export const getAllMoviesAction =
@@ -23,7 +23,6 @@ export const getAllMoviesAction =
       const normalizedPageNumber =
         pageNumber && Number(pageNumber) > 0 ? Number(pageNumber) : 1;
 
-      // Stable key for this exact query
       const queryKey = JSON.stringify({
         category,
         time,
@@ -77,11 +76,11 @@ export const getRandomMoviesAction = () => async (dispatch) => {
   }
 };
 
-// get movie by id
-export const getMovieByIdAction = (id) => async (dispatch) => {
+// get movie by id (now accepts slug or id)
+export const getMovieByIdAction = (idOrSlug) => async (dispatch) => {
   try {
     dispatch({ type: moviesConstants.MOVIE_DETAILS_REQUEST });
-    const response = await moviesAPIs.getMovieByIdService(id);
+    const response = await moviesAPIs.getMovieByIdService(idOrSlug);
     dispatch({
       type: moviesConstants.MOVIE_DETAILS_SUCCESS,
       payload: response,
@@ -111,7 +110,6 @@ export const reviewMovieAction =
   async (dispatch, getState) => {
     try {
       dispatch({ type: moviesConstants.CREATE_REVIEW_REQUEST });
-      // This now returns { message: 'Review added', review: newReview }
       const response = await moviesAPIs.reviewMovieService(
         tokenProtection(getState),
         id,
@@ -122,21 +120,22 @@ export const reviewMovieAction =
       });
       toast.success("Review added successfully");
       dispatch({ type: moviesConstants.CREATE_REVIEW_RESET });
-      dispatch(getMovieByIdAction(id)); // Refresh movie details
+      dispatch(getMovieByIdAction(id));
 
-      // ========== Dispatch a notification for admin ==========
       const {
         userLogin: { userInfo },
       } = getState();
 
-      if (userInfo && userInfo.token && response.review) { // Check if review object exists in response
+      if (userInfo && userInfo.token && response.review) {
+        // Use movieSlug for notification link
+        const moviePathSegment = response.review.movieSlug || id;
         dispatch(
           addNotification({
-            // Provide a more specific message if possible
             message: `User "${userInfo.fullName}" reviewed "${response.review.comment.substring(0, 30)}..." on movie ${response.review.movieName || ''}`.trim(),
-            forAdmin: true,  // show to admin
-             // Ensure response.review._id exists
-            link: response.review._id ? `/movie/${id}#review-${response.review._id}` : `/movie/${id}`,
+            forAdmin: true,
+            link: response.review._id 
+              ? `/movie/${moviePathSegment}#review-${response.review._id}` 
+              : `/movie/${moviePathSegment}`,
           })
         );
       }
@@ -144,7 +143,6 @@ export const reviewMovieAction =
       ErrorsAction(error, dispatch, moviesConstants.CREATE_REVIEW_FAIL);
     }
   };
-
 
 // delete movie
 export const deleteMovieAction = (id) => async (dispatch, getState) => {
@@ -185,7 +183,7 @@ export const createMovieAction = (movie) => async (dispatch, getState) => {
       type: moviesConstants.CREATE_MOVIE_SUCCESS,
     });
     toast.success("Movie created successfully");
-    dispatch(getAllMoviesAction());
+    dispatch(getAllMoviesAction({}));
   } catch (error) {
     ErrorsAction(error, dispatch, moviesConstants.CREATE_MOVIE_FAIL);
   }
@@ -206,7 +204,7 @@ export const updateMovieAction = (id, movie) => async (dispatch, getState) => {
   }
 };
 
-// NEW: get distinct "browseBy" values
+// get distinct "browseBy" values
 export const getDistinctBrowseByAction = () => async (dispatch) => {
   try {
     dispatch({ type: moviesConstants.MOVIE_BROWSEBY_REQUEST });
@@ -217,36 +215,30 @@ export const getDistinctBrowseByAction = () => async (dispatch) => {
   }
 };
 
-// ============ NEW ============
 // Admin replying to a user review
 export const adminReplyReviewAction = (movieId, reviewId, reply) => async (dispatch, getState) => {
   try {
     dispatch({ type: moviesConstants.ADMIN_REPLY_REVIEW_REQUEST });
     const token = tokenProtection(getState);
-    // returns => { message: 'Admin reply added', review: <updatedReview> }
     const response = await moviesAPIs.adminReplyReviewService(token, movieId, reviewId, reply);
 
     dispatch({
       type: moviesConstants.ADMIN_REPLY_REVIEW_SUCCESS,
-      payload: response, // Contains the updated review
+      payload: response,
     });
     toast.success("Admin replied successfully");
-    // Refresh the movie data to get updated reviews
     dispatch(getMovieByIdAction(movieId));
 
-    // ===== Dispatch a notification for the specific user =====
-    if (response.review) { // Ensure review object is in response
-        dispatch(
+    if (response.review) {
+      // Use movieSlug for notification link
+      const moviePathSegment = response.review.movieSlug || movieId;
+      dispatch(
         addNotification({
-            // Provide a more specific message
-            message: `Admin replied to your review: "${response.review.adminReply.substring(0, 30)}..."`,
-            forAdmin: false, // Show to the user
-            // Ensure reviewId is correct for linking
-            link: `/movie/${movieId}#review-${reviewId}`,
-            // Optional: Add userId if you store it in the review and need to target specific user later
-            // userId: response.review.userId
+          message: `Admin replied to your review: "${response.review.adminReply.substring(0, 30)}..."`,
+          forAdmin: false,
+          link: `/movie/${moviePathSegment}#review-${reviewId}`,
         })
-        );
+      );
     }
 
   } catch (error) {
@@ -254,7 +246,7 @@ export const adminReplyReviewAction = (movieId, reviewId, reply) => async (dispa
   }
 };
 
-// NEW: latest 15 movies
+// latest 15 movies
 export const getLatestMoviesAction = () => async (dispatch) => {
   try {
     dispatch({ type: moviesConstants.MOVIES_LATEST_REQUEST });
@@ -267,4 +259,3 @@ export const getLatestMoviesAction = () => async (dispatch) => {
     ErrorsAction(error, dispatch, moviesConstants.MOVIES_LATEST_FAIL);
   }
 };
-

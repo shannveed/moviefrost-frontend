@@ -13,9 +13,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { IfMovieLiked, LikeMovie } from '../../Context/Functionalities';
 import OptimizedImage from '../OptimizedImage';
 
-// Reduced from 20 to 12 for better mobile performance
-const MAX_SLIDES = 12;
-
 const SwiperComponent = memo(({ sameClass, movies }) => {
   const { isLoading } = useSelector((state) => state.userLikeMovie);
   const dispatch = useDispatch();
@@ -29,17 +26,12 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
     [dispatch, userInfo]
   );
 
-  // Limit slides for better performance
-  const visibleMovies = Array.isArray(movies)
-    ? movies.slice(0, MAX_SLIDES)
-    : [];
-
   return (
     <Swiper
       direction="vertical"
       slidesPerView={1}
-      loop={visibleMovies.length > 1}
-      speed={400}
+      loop
+      speed={1000}
       autoplay={{
         delay: 4000,
         disableOnInteraction: false,
@@ -47,11 +39,12 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
       modules={[Autoplay]}
       className={sameClass}
     >
-      {visibleMovies.map((movie, index) => (
+      {movies?.slice(0, 8).map((movie, index) => (
         <SwiperSlide
           key={movie._id || index}
           className="relative rounded overflow-hidden"
         >
+          {/* Poster */}
           <OptimizedImage
             src={movie?.image || '/images/c1.jpg'}
             alt={movie?.name || 'Movie banner'}
@@ -59,11 +52,12 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             height={1080}
             className="w-full h-full object-cover"
             loading={index === 0 ? 'eager' : 'lazy'}
-            fetchPriority={index === 0 ? 'high' : 'auto'}
           />
 
+          {/* Mobile dark overlay */}
           <div className="sm:hidden absolute inset-0 bg-black/50 pointer-events-none" />
 
+          {/* Desktop/Tablet overlay */}
           <div className="hidden sm:flex absolute linear-bg xl:pl-52 sm:pl-32 pl-8 top-0 bottom-0 right-0 left-0 flex-col justify-center lg:gap-8 md:gap-5 gap-4">
             <h1 className="xl:text-4xl truncate capitalize font-sans sm:text-xl text-lg font-bold">
               {movie?.name}
@@ -75,7 +69,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
 
             <div className="flex gap-5 items-center">
               <Link
-                to={`/movie/${movie?._id}`}
+                to={`/movie/${movie?.slug || movie?._id}`}
                 className="bg-customPurple hover:text-main transitions text-white px-8 py-2 rounded font sm:text-sm text-xs"
                 aria-label={`Watch ${movie?.name}`}
               >
@@ -99,6 +93,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
             </div>
           </div>
 
+          {/* Mobile overlay (bottom sheet) */}
           <div className="sm:hidden absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-4 py-3 flex flex-col gap-2 z-10">
             <h2 className="text-base font-semibold leading-5 line-clamp-2">
               {movie?.name}
@@ -108,7 +103,7 @@ const SwiperComponent = memo(({ sameClass, movies }) => {
 
             <div className="flex items-center gap-3 mt-1">
               <Link
-                to={`/movie/${movie?._id}`}
+                to={`/movie/${movie?.slug || movie?._id}`}
                 className="flex-[0.5] bg-customPurple hover:bg-opacity-80 transition text-white text-sm py-3 rounded text-center"
               >
                 Watch
@@ -141,16 +136,13 @@ function Banner({ movies = [], isLoading = false }) {
   const sameClass =
     'w-full flex-colo xl:h-[530px] bg-dry lg:h-96 h-80 mobile:h-[calc(100vw*0.645)]';
 
-  const hasMovies = movies && movies.length > 0;
-  const showLoader = isLoading && !hasMovies;
-
   return (
     <section className="relative w-full" aria-label="Featured movies">
-      {showLoader ? (
+      {isLoading ? (
         <div className={sameClass}>
           <Loader />
         </div>
-      ) : hasMovies ? (
+      ) : movies?.length > 0 ? (
         <SwiperComponent sameClass={sameClass} movies={movies} />
       ) : (
         <div className={sameClass}>

@@ -46,9 +46,11 @@ const Movie = memo(
           }
         }
 
-        navigate(`/movie/${movie?._id}`, { state: { fromMoviesPage: true } });
+        // Use slug if available, fallback to _id
+        const pathSegment = movie?.slug || movie?._id;
+        navigate(`/movie/${pathSegment}`, { state: { fromMoviesPage: true } });
       },
-      [navigate, movie?._id]
+      [navigate, movie]
     );
 
     const handleLikeClick = useCallback(

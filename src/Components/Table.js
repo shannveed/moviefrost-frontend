@@ -1,3 +1,4 @@
+// Frontend/src/Components/Table.js
 import React, { memo } from 'react';
 import { FaCloudDownloadAlt, FaEdit } from 'react-icons/fa';
 import { MdDelete } from 'react-icons/md';
@@ -6,7 +7,6 @@ import { GoEye } from 'react-icons/go';
 import { formatTime } from '../Context/Functionalities';
 import OptimizedImage from './OptimizedImage';
 
-// Head / cell helpers
 const Head = 'text-xs above-1000:text-[11px] mobile:text-[10px] text-left text-main font-semibold px-6 above-1000:px-4 mobile:px-2 py-2 mobile:py-1 uppercase';
 const Text = 'text-sm above-1000:text-xs mobile:text-[11px] text-left leading-6 above-1000:leading-5 mobile:leading-4 break-words px-5 above-1000:px-3 mobile:px-2 py-3 above-1000:py-2 mobile:py-1.5';
 
@@ -59,7 +59,7 @@ const MobileCard = memo(({ movie, admin, downloadVideo, onDeleteHandler, progres
             Download <FaCloudDownloadAlt className="text-green-500 text-sm" aria-hidden="true" />
           </button>
           <Link
-            to={`/movie/${movie?._id}`}
+            to={`/movie/${movie?.slug || movie?._id}`}
             className="bg-customPurple text-white rounded px-4 py-2 flex items-center justify-center"
             aria-label={`View ${movie?.name} details`}
           >
@@ -125,7 +125,7 @@ const Row = memo(({ movie, index, onDeleteHandler, admin, downloadVideo, progres
             Download <FaCloudDownloadAlt className="text-green-500" aria-hidden="true" />
           </button>
           <Link
-            to={`/movie/${movie?._id}`}
+            to={`/movie/${movie?.slug || movie?._id}`}
             className="bg-customPurple text-white rounded w-6 h-6 flex items-center justify-center"
             aria-label={`View ${movie?.name} details`}
           >

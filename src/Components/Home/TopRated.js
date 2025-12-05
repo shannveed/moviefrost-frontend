@@ -1,4 +1,4 @@
-// src/Components/Home/TopRated.js
+// Frontend/src/Components/Home/TopRated.js
 import React, { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Titles from "../Titles";
@@ -25,7 +25,6 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
 
   const swiperRef = useRef(null);
 
-  // If liked function
   const isLiked = (movie) => {
     return IfMovieLiked(movie);
   };
@@ -40,7 +39,6 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
       swiperRef.current.swiper.params.navigation.prevEl = prevEl.current;
       swiperRef.current.swiper.params.navigation.nextEl = nextEl.current;
 
-      // Re-initialize navigation
       swiperRef.current.swiper.navigation.destroy();
       swiperRef.current.swiper.navigation.init();
       swiperRef.current.swiper.navigation.update();
@@ -59,7 +57,6 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
         nextEl: nextEl.current,
       }}
       breakpoints={{
-        /* ≤ 639 px (mobile) – always two cards */
         0: {
           slidesPerView: 2,
           spaceBetween: 6,
@@ -93,7 +90,7 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
       {movies?.map((movie, index) => (
         <SwiperSlide key={index}>
           <div className="border border-border mobile:border-0 p-2 mobile:p-0 hover:scale-95 transitions relative rounded mobile:rounded-none overflow-hidden group">
-            <Link to={`/movie/${movie?._id}`}>
+            <Link to={`/movie/${movie?.slug || movie?._id}`}>
               <img
                 src={movie?.titleImage ? movie.titleImage : "/images/c3.jpg"}
                 alt={movie?.name}
@@ -101,7 +98,7 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
               />
             </Link>
             <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center gap-4 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 mobile:px-2">
-              {/* Like Button - Updated with smaller mobile size (20px) */}
+              {/* Like Button */}
               <button
                 onClick={(e) => {
                   LikeMovie(movie, dispatch, userInfo);
@@ -114,8 +111,8 @@ const SwiperTop = ({ prevEl, nextEl, movies }) => {
                 <FaHeart className="mobile:text-[10px] above-1000:text-xs text-sm" />
               </button>
 
-              {/* Movie Name - Link inside the overlay */}
-              <Link to={`/movie/${movie?._id}`} className="w-full">
+              {/* Movie Name */}
+              <Link to={`/movie/${movie?.slug || movie?._id}`} className="w-full">
                 <p className="font-semibold text-md mobile:text-sm truncate line-clamp-2 text-white hover:text-customPurple transition">
                   {movie?.name}
                 </p>
@@ -136,12 +133,10 @@ function TopRated({ movies, isLoading }) {
   const nextEl = useRef(null);
   const prevEl = useRef(null);
 
-  // Unified arrow style with responsive sizes
   const baseArrow =
     "absolute top-1/2 -translate-y-1/2 z-20 transition rounded-md flex items-center justify-center text-white bg-customPurple/70 hover:bg-customPurple";
   const leftPos = "left-1";
   const rightPos = "right-1";
-  // Tall on mobile (h-16), standard height on ≥ sm (h-14)
   const sizeClasses = "w-8 h-16 sm:h-14";
 
   return (
@@ -163,7 +158,6 @@ function TopRated({ movies, isLoading }) {
 
         {movies?.length > 0 && !isLoading && (
           <>
-            {/* One set of buttons with responsive sizes – tall rectangular on mobile */}
             <button
               className={`${baseArrow} ${sizeClasses} ${leftPos}`}
               ref={prevEl}

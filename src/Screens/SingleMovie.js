@@ -26,7 +26,7 @@ import MetaTags from '../Components/SEO/MetaTags';
 
 function SingleMovie() {
   const [modalOpen, setModalOpen] = useState(false);
-  const { id } = useParams();
+  const { id: routeParam } = useParams(); // can be slug or MongoId
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -69,9 +69,11 @@ function SingleMovie() {
 
   // Load movie + base list for related
   useEffect(() => {
-    dispatch(getMovieByIdAction(id));
+    if (routeParam) {
+      dispatch(getMovieByIdAction(routeParam));
+    }
     dispatch(getAllMoviesAction({}));
-  }, [dispatch, id]);
+  }, [dispatch, routeParam]);
 
   // Track movie view for analytics
   useEffect(() => {
@@ -79,6 +81,13 @@ function SingleMovie() {
       trackMovieView(movie.name, movie._id);
     }
   }, [movie]);
+
+  // Redirect old /movie/<id> URLs to /movie/<slug> once movie is known
+  useEffect(() => {
+    if (movie && movie.slug && routeParam && routeParam !== movie.slug) {
+      navigate(`/movie/${movie.slug}`, { replace: true });
+    }
+  }, [movie, routeParam, navigate]);
 
   const handleBackClick = () => {
     navigate(-1);
@@ -93,7 +102,8 @@ function SingleMovie() {
   // Mobile-only: quick action handlers
   const handleMobileWatch = () => {
     if (!movie?._id) return;
-    navigate(`/watch/${movie._id}`);
+    const pathSegment = movie.slug || movie._id;
+    navigate(`/watch/${pathSegment}`);
   };
 
   const handleMobileLike = () => {
@@ -101,18 +111,18 @@ function SingleMovie() {
     LikeMovie(movie, dispatch, userInfo);
   };
 
-  const pageUrl = `https://www.moviefrost.com/movie/${id}`;
+  const pathSegmentForMeta =
+    movie?.slug || routeParam || (movie?._id && String(movie._id));
+  const pageUrl = `https://www.moviefrost.com/movie/${pathSegmentForMeta}`;
   const isNotFound = isError === 'Movie not found';
   const hasError = Boolean(isError);
 
-  // -------- redirect dead IDs to /404 --------
+  // Redirect dead IDs to /404
   useEffect(() => {
     if (isNotFound && !movie) {
-      // SPA redirect so Google eventually sees /404 instead of /movie/<dead-id>
       navigate('/404', { replace: true });
     }
   }, [isNotFound, movie, navigate]);
-  // -------------------------------------------------
 
   // Small helper to keep dates ISO
   const toIsoString = (value) => {
@@ -124,7 +134,7 @@ function SingleMovie() {
     }
   };
 
-  // ---------- Helper to build SEO title without double year ----------
+  // Helper to build SEO title without double year
   const buildMovieSeoTitle = (movieObj) => {
     if (!movieObj) {
       return 'Watch Movie Online Free – MovieFrost';
@@ -132,11 +142,9 @@ function SingleMovie() {
 
     const yearStr = movieObj.year ? String(movieObj.year) : null;
 
-    // If an explicit seoTitle is provided, clean "(YEAR) (YEAR)" → "(YEAR)"
     if (movieObj.seoTitle && typeof movieObj.seoTitle === 'string') {
       let s = movieObj.seoTitle.trim();
       if (yearStr) {
-        // Match duplicate year patterns like "(2017) (2017)" or "(2017)(2017)" with optional spaces
         const duplicatePattern = new RegExp(
           `\\(\\s*${yearStr}\\s*\\)\\s*\\(\\s*${yearStr}\\s*\\)`,
           'g'
@@ -146,24 +154,20 @@ function SingleMovie() {
       return s;
     }
 
-    // Fallback: build "Watch {name}[ (YEAR)] Free Online HD"
     const baseName = (movieObj.name || 'Movie').trim();
     let nameWithYear = baseName;
 
     if (yearStr) {
-      // Check if year is already in the name - match (YEAR) with optional spaces
       const yearPattern = new RegExp(`\\(\\s*${yearStr}\\s*\\)`);
-      // Only append "(YEAR)" if it's not already in the name
       if (!yearPattern.test(baseName)) {
         nameWithYear = `${baseName} (${yearStr})`;
       }
     }
 
-    // Final desired pattern: Watch It (2017) Free Online HD
     return `Watch ${nameWithYear} Free Online HD`;
   };
 
-  // ---------- SEO title / description ----------
+  // SEO title / description
   const seoTitle = movie
     ? buildMovieSeoTitle(movie)
     : isNotFound
@@ -177,11 +181,9 @@ function SingleMovie() {
     ? 'This movie is no longer available on MovieFrost.'
     : 'We were unable to load this movie right now. Please try again later.';
 
-  // When there is no movie data or an error, tell Google not to index this URL
   const shouldNoIndex = !movie || hasError;
 
-  // ---------- Structured data for SEO ----------
-
+  // Structured data for SEO
   const hasRating =
     movie &&
     typeof movie.numberOfReviews === 'number' &&
@@ -189,7 +191,6 @@ function SingleMovie() {
     typeof movie.rate === 'number' &&
     movie.rate > 0;
 
-  // NEW: build individual Review JSON-LD (limit to first 5 reviews)
   const reviewsStructuredData =
     movie && Array.isArray(movie.reviews) && movie.reviews.length > 0
       ? movie.reviews.slice(0, 5).map((rev) => ({
@@ -223,7 +224,7 @@ function SingleMovie() {
           genre: movie.category,
           duration: movie.time ? `PT${movie.time}M` : undefined,
           inLanguage: movie.language,
-          url: `https://www.moviefrost.com/movie/${movie._id}`,
+          url: `https://www.moviefrost.com/movie/${movie.slug || movie._id}`,
           ...(hasRating
             ? {
                 aggregateRating: {
@@ -248,7 +249,7 @@ function SingleMovie() {
                   uploadDate: toIsoString(movie.createdAt || movie.updatedAt),
                   duration: movie.time ? `PT${movie.time}M` : undefined,
                   contentUrl: movie.downloadUrl || movie.video || undefined,
-                  embedUrl: `https://www.moviefrost.com/watch/${movie._id}`,
+                  embedUrl: `https://www.moviefrost.com/watch/${movie.slug || movie._id}`,
                 },
               }
             : {}),
@@ -257,7 +258,6 @@ function SingleMovie() {
 
   return (
     <Layout>
-      {/* Always render meta tags; toggle indexing based on data/error */}
       <MetaTags
         title={seoTitle}
         description={seoDescription}
@@ -273,18 +273,16 @@ function SingleMovie() {
         </script>
       )}
 
-      {/* Extra bottom padding so content is not hidden behind mobile quick-actions + footer */}
       <div className="container mx-auto min-h-screen px-2 my-6 pb-24 sm:pb-8">
         {isLoading ? (
           <Loader />
         ) : hasError && !movie && !isNotFound ? (
-          // Error state with better message (non-404 errors)
           <div className="flex-colo gap-6 py-12">
             <p className="text-border text-sm">
               Something went wrong while loading this movie.
             </p>
             <button
-              onClick={() => dispatch(getMovieByIdAction(id))}
+              onClick={() => dispatch(getMovieByIdAction(routeParam))}
               className="px-4 py-2 rounded bg-customPurple hover:bg-opacity-80 transitions"
             >
               Try Again
@@ -303,7 +301,6 @@ function SingleMovie() {
               DownloadVideo={handleDownloadMovieVideo}
               onBackClick={handleBackClick}
             />
-            {/* Add id for potential "jump to reviews" in future */}
             <div className="my-12" id="reviews-section">
               <MovieRates movie={movie} />
             </div>
@@ -319,7 +316,6 @@ function SingleMovie() {
             )}
           </>
         ) : (
-          // Very unlikely branch: no movie, no error
           <div className="flex-colo gap-6 py-12">
             <p className="text-border text-sm">Movie not found</p>
             <button
@@ -332,13 +328,10 @@ function SingleMovie() {
         )}
       </div>
 
-      {/* ============================= */}
-      {/* Mobile Quick Actions (only)  */}
-      {/* ============================= */}
+      {/* Mobile Quick Actions */}
       {movie && !isLoading && !hasError && (
         <div className="sm:hidden fixed z-40 bottom-16 left-0 right-0 px-3 pb-2">
           <div className="bg-main/95 border border-border rounded-xl shadow-lg px-3 py-2 flex items-center gap-2">
-            {/* Watch */}
             <button
               onClick={handleMobileWatch}
               className="flex-1 flex items-center justify-center gap-2 bg-customPurple hover:bg-opacity-90 text-white text-sm font-semibold py-2 rounded-lg transitions"
@@ -347,7 +340,6 @@ function SingleMovie() {
               <span>Watch</span>
             </button>
 
-            {/* Download (only for movies with download URL) */}
             {movie.type === 'Movie' && movie.downloadUrl && (
               <button
                 onClick={handleDownloadMovieVideo}
@@ -360,7 +352,6 @@ function SingleMovie() {
               </button>
             )}
 
-            {/* Like */}
             <button
               onClick={handleMobileLike}
               disabled={isLiked || likeLoading}
@@ -374,7 +365,6 @@ function SingleMovie() {
               <FaHeart className="text-xs" />
             </button>
 
-            {/* Share */}
             <button
               onClick={() => setModalOpen(true)}
               className="w-9 h-9 flex items-center justify-center rounded-full border border-border text-white bg-main hover:bg-customPurple transitions"

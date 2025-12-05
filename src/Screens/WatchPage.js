@@ -1,4 +1,4 @@
-// src/Screens/WatchPage.js
+// Frontend/src/Screens/WatchPage.js
 import {
   trackVideoPlay,
   trackGuestAction,
@@ -29,7 +29,7 @@ import MetaTags from '../Components/SEO/MetaTags';
 import { FiLogIn } from 'react-icons/fi';
 
 function WatchPage() {
-  let { id } = useParams();
+  const { id: routeParam } = useParams(); // can be slug or MongoId
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,19 +37,14 @@ function WatchPage() {
   const [play, setPlay] = useState(false);
   const [guestWatchTime, setGuestWatchTime] = useState(0);
 
-  // Guard flag to avoid repeated prompts
   const [hasShownLoginPrompt, setHasShownLoginPrompt] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // For Movies with 2 servers:
   const [currentServerIndex, setCurrentServerIndex] = useState(0);
-
-  // For WebSeries episodes:
   const [currentEpisode, setCurrentEpisode] = useState(null);
 
   const sameClass = 'w-full gap-6 flex-colo min-h-screen';
 
-  // Use Selector
   const { isLoading, isError, movie } = useSelector(
     (state) => state.getMovieById
   );
@@ -62,13 +57,19 @@ function WatchPage() {
   const isLiked = IfMovieLiked(movie);
   const isNotFound = isError === 'Movie not found';
 
-  // -------- NEW: redirect hard 404s to /404 --------
+  // Redirect hard 404s to /404
   useEffect(() => {
     if (isNotFound && !isLoading && !movie) {
       navigate('/404', { replace: true });
     }
   }, [isNotFound, isLoading, movie, navigate]);
-  // -------------------------------------------------
+
+  // Redirect old /watch/<id> URLs to /watch/<slug> once movie is known
+  useEffect(() => {
+    if (movie && movie.slug && routeParam && routeParam !== movie.slug) {
+      navigate(`/watch/${movie.slug}`, { replace: true });
+    }
+  }, [movie, routeParam, navigate]);
 
   // Helper to build SEO title without duplicate year from name
   const buildWatchSeoTitle = (movieObj) => {
@@ -80,19 +81,18 @@ function WatchPage() {
     let nameWithYear = baseName;
 
     if (yearStr) {
-      // Check if year is already in the name - match (YEAR) with optional spaces
       const yearPattern = new RegExp(`\\(\\s*${yearStr}\\s*\\)`);
       if (!yearPattern.test(baseName)) {
         nameWithYear = `${baseName} (${yearStr})`;
       }
     }
 
-    // Example: "It (2017) – Watch Online"
     return `${nameWithYear} – Watch Online`;
   };
 
   // SEO configuration
-  const pageUrl = `https://www.moviefrost.com/watch/${id}`;
+  const pathSegmentForMeta = movie?.slug || routeParam;
+  const pageUrl = `https://www.moviefrost.com/watch/${pathSegmentForMeta}`;
   const seoTitle = movie
     ? buildWatchSeoTitle(movie)
     : 'Watch Movie Online – MovieFrost';
@@ -100,15 +100,13 @@ function WatchPage() {
     ? `${movie.desc?.substring(0, 150) || ''} Watch instantly in HD on MovieFrost.`
     : 'Watch free movies and web series online in HD on MovieFrost.';
 
-  // If movie failed to load, mark this watch URL as noindex
   const shouldNoIndex = !movie || Boolean(isError);
 
-  // Custom back navigation handler
   const handleBackClick = () => {
     navigate(-1);
   };
 
-  // Track guest watch time + show modal (login prompt)
+  // Track guest watch time + show modal
   useEffect(() => {
     let interval;
     if (play && !userInfo) {
@@ -116,12 +114,10 @@ function WatchPage() {
         setGuestWatchTime((prev) => {
           const newTime = prev + 1;
 
-          // Show login prompt after 13 minutes
           if (newTime >= 780 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
 
-            // Save current state before redirecting
             const redirectState = {
               pathname: location.pathname,
               search: location.search,
@@ -133,14 +129,13 @@ function WatchPage() {
               JSON.stringify(redirectState)
             );
 
-            trackLoginPrompt('watch_time_limit', `/watch/${id}`);
+            trackLoginPrompt('watch_time_limit', `/watch/${routeParam}`);
             trackGuestAction('watch_limit_reached', {
               movie_name: movie?.name,
               movie_id: movie?._id,
               watch_time: newTime,
             });
 
-            // Show forced login modal
             setShowLoginModal(true);
           }
 
@@ -152,12 +147,14 @@ function WatchPage() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [play, userInfo, hasShownLoginPrompt, id, movie, location]);
+  }, [play, userInfo, hasShownLoginPrompt, routeParam, movie, location]);
 
   useEffect(() => {
-    dispatch(getMovieByIdAction(id));
+    if (routeParam) {
+      dispatch(getMovieByIdAction(routeParam));
+    }
     dispatch(getAllMoviesAction({}));
-  }, [dispatch, id]);
+  }, [dispatch, routeParam]);
 
   useEffect(() => {
     if (
@@ -180,7 +177,6 @@ function WatchPage() {
         episode: currentEpisode?.episodeNumber || null,
       });
 
-      // Allow limited preview for guests
       setPlay(true);
       trackVideoPlay(
         movie.name,
@@ -201,7 +197,6 @@ function WatchPage() {
     if (!movie) return;
 
     if (!userInfo) {
-      // Save current state before redirecting
       const redirectState = {
         pathname: location.pathname,
         search: location.search,
@@ -232,9 +227,7 @@ function WatchPage() {
     { label: 'Server 2', url: movie?.videoUrl2 },
   ];
 
-  // --------- EARLY RETURNS (fixed order) ----------
-
-  // 404-style API error (Movie not found) → we will redirect to /404 via effect.
+  // Early returns
   if (isNotFound && !isLoading && !movie) {
     return (
       <Layout>
@@ -250,7 +243,6 @@ function WatchPage() {
     );
   }
 
-  // Other errors
   if (isError && !isLoading && !movie && !isNotFound) {
     return (
       <Layout>
@@ -264,7 +256,6 @@ function WatchPage() {
     );
   }
 
-  // Loading / initial state
   if (isLoading || !movie) {
     return (
       <Layout>
@@ -274,8 +265,6 @@ function WatchPage() {
       </Layout>
     );
   }
-
-  // ------------------------------------------------
 
   return (
     <Layout>
