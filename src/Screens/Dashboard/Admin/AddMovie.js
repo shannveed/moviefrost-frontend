@@ -88,7 +88,7 @@ function AddMovie() {
       thumbnailInfo: '',
       latest: false,
       previousHit: false,
-      isPublished: true, // NEW: published by default
+      isPublished: false, // NEW: published by default
     },
   });
 
@@ -191,7 +191,7 @@ function AddMovie() {
         episodes: [],
         latest: false,
         previousHit: false,
-        isPublished: true, // NEW: reset to published by default
+        isPublished: false, // NEW: reset to published by default
       });
       setImageWithoutTitle('');
       setImageTitle('');
