@@ -1,9 +1,7 @@
 // Frontend/src/Redux/APIs/MoviesServices.js
 import Axios from "./Axios";
 
-// * PUBLIC APIs *
-
-// get all movies
+// PUBLIC: get all movies (only published, backend enforces visibility)
 export const getAllMoviesService = async (
   category,
   time,
@@ -20,31 +18,66 @@ export const getAllMoviesService = async (
   return data;
 };
 
-// get random movies
-export const getRandomMoviesService = async () => {
-  const { data } = await Axios.get('/movies/random/all');
+// ADMIN: get all movies (includes drafts/unpublished)
+export const getAllMoviesAdminService = async (
+  token,
+  {
+    category = '',
+    time = '',
+    language = '',
+    rate = '',
+    year = '',
+    browseBy = '',
+    search = '',
+    pageNumber = 1,
+  } = {}
+) => {
+  const { data } = await Axios.get(
+    `/movies/admin?category=${category}&time=${time}&language=${language}&rate=${rate}&year=${year}&browseBy=${browseBy}&search=${search}&pageNumber=${pageNumber}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   return data;
 };
 
-// get movie by id
+// PUBLIC: get movie by id/slug (only published)
 export const getMovieByIdService = async (id) => {
   const { data } = await Axios.get(`/movies/${id}`);
   return data;
 };
 
-// get top rated movie
+// ADMIN: get movie by id/slug (includes drafts)
+export const getMovieByIdAdminService = async (token, id) => {
+  const { data } = await Axios.get(`/movies/admin/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return data;
+};
+
+// PUBLIC: get random movies
+export const getRandomMoviesService = async () => {
+  const { data } = await Axios.get('/movies/random/all');
+  return data;
+};
+
+// PUBLIC: get top rated
 export const getTopRatedMovieService = async () => {
   const { data } = await Axios.get('/movies/rated/top');
   return data;
 };
 
-// get latest movies
+// PUBLIC: get latest
 export const getLatestMoviesService = async () => {
   const { data } = await Axios.get('/movies/latest');
   return data;
 };
 
-// review movie
+// PRIVATE: review movie
 export const reviewMovieService = async (token, id, review) => {
   const { data } = await Axios.post(`/movies/${id}/reviews`, review, {
     headers: {
@@ -54,7 +87,7 @@ export const reviewMovieService = async (token, id, review) => {
   return data;
 };
 
-// delete movie
+// ADMIN: delete movie
 export const deleteMovieService = async (token, id) => {
   const { data } = await Axios.delete(`/movies/${id}`, {
     headers: {
@@ -64,7 +97,7 @@ export const deleteMovieService = async (token, id) => {
   return data;
 };
 
-// delete all movies
+// ADMIN: delete all movies
 export const deleteAllMoviesService = async (token) => {
   const { data } = await Axios.delete(`/movies`, {
     headers: {
@@ -74,7 +107,7 @@ export const deleteAllMoviesService = async (token) => {
   return data;
 };
 
-// create movie
+// ADMIN: create movie
 export const createMovieService = async (token, movie) => {
   const { data } = await Axios.post(`/movies`, movie, {
     headers: {
@@ -84,7 +117,7 @@ export const createMovieService = async (token, movie) => {
   return data;
 };
 
-// update movie
+// ADMIN: update movie
 export const updateMovieService = async (token, id, movie) => {
   const { data } = await Axios.put(`/movies/${id}`, movie, {
     headers: {
@@ -94,13 +127,13 @@ export const updateMovieService = async (token, id, movie) => {
   return data;
 };
 
-// NEW: get distinct browseBy
+// PUBLIC: get distinct browseBy
 export const getDistinctBrowseByService = async () => {
   const { data } = await Axios.get('/movies/browseBy-distinct');
   return data;
 };
 
-// Admin: reply to user's review
+// ADMIN: reply to user's review
 export const adminReplyReviewService = async (token, movieId, reviewId, reply) => {
   const { data } = await Axios.post(
     `/movies/${movieId}/reviews/${reviewId}/reply`,
@@ -114,9 +147,7 @@ export const adminReplyReviewService = async (token, movieId, reviewId, reply) =
   return data;
 };
 
-// ============ NEW ADMIN ORDERING APIs ============
-
-// Reorder movies within a specific page
+// ADMIN ORDERING APIs
 export const reorderMoviesInPageService = async (token, pageNumber, orderedIds) => {
   const { data } = await Axios.post(
     '/movies/admin/reorder-page',
@@ -130,7 +161,6 @@ export const reorderMoviesInPageService = async (token, pageNumber, orderedIds) 
   return data;
 };
 
-// Move one or more movies to a different page
 export const moveMoviesToPageService = async (token, targetPage, movieIds) => {
   const { data } = await Axios.post(
     '/movies/admin/move-to-page',

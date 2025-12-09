@@ -1,3 +1,4 @@
+// Frontend/src/Components/Validation/MovieValidation.js
 import * as yup from 'yup';
 
 const ReviewValidation = yup.object().shape({
@@ -8,10 +9,12 @@ const ReviewValidation = yup.object().shape({
   rating: yup.number().required('Select a rating'),
 });
 
-// Regex to validate duration input like "2Hr 35Min", "2hr 35min", "2 Hr", "35 Min"
+// Regex to validate duration input like "2Hr 35Min", "2 hr", "35 Min"
 const durationRegex = /^((\d+)\s*Hr\s*)?((\d+)\s*Min)?$/i;
-const durationRequiredMessage = 'Please enter duration, e.g., 2Hr 35Min, 2Hr, or 35Min';
-const durationMatchMessage = 'Duration must be format: 2Hr 35Min, 2Hr, or 35Min';
+const durationRequiredMessage =
+  'Please enter duration, e.g., 2Hr 35Min, 2Hr, or 35Min';
+const durationMatchMessage =
+  'Duration must be format: 2Hr 35Min, 2Hr, or 35Min';
 
 const episodeSchema = yup.object().shape({
   episodeNumber: yup
@@ -19,16 +22,16 @@ const episodeSchema = yup.object().shape({
     .typeError('Episode number must be a number')
     .required('Episode number is required')
     .min(1, 'Episode number must be at least 1'),
-  title: yup.string().nullable(), // Title remains optional
-  desc: yup.string().nullable(), // Description is optional
+  title: yup.string().nullable(),
+  desc: yup.string().nullable(),
   duration: yup
     .string()
     .required(durationRequiredMessage)
     .matches(durationRegex, durationMatchMessage)
-    .test( // Ensure it's not just whitespace or empty
-        'duration-format-check-ep',
-        durationMatchMessage,
-        value => !value || (durationRegex.test(value) && value.trim().length > 0)
+    .test(
+      'duration-format-check-ep',
+      durationMatchMessage,
+      (value) => !value || (durationRegex.test(value) && value.trim().length > 0)
     ),
   video: yup
     .string()
@@ -47,38 +50,36 @@ const movieValidation = yup
       .string()
       .required('Please enter a name')
       .max(100, 'Name should be less than 100 characters'),
-    time: yup // Represents total duration for Movie/WebSeries
+    time: yup
       .string()
       .required(durationRequiredMessage)
       .matches(durationRegex, durationMatchMessage)
-      .test( // Ensure it's not just whitespace or empty
+      .test(
         'duration-format-check-main',
         durationMatchMessage,
-        value => !value || (durationRegex.test(value) && value.trim().length > 0)
+        (value) => !value || (durationRegex.test(value) && value.trim().length > 0)
       ),
     language: yup.string().required('Please enter a language'),
     year: yup
       .number()
       .typeError('Please enter a valid year')
       .required('Please enter year of release')
-      .min(1888, 'Year must be after 1888') // Oldest film known
-      .max(new Date().getFullYear() + 5, 'Year seems too far in the future'), // Allow a little future buffer
+      .min(1888, 'Year must be after 1888')
+      .max(new Date().getFullYear() + 5, 'Year seems too far in the future'),
     category: yup.string().required('Please select category'),
     desc: yup
       .string()
       .required('Please enter a description')
       .max(1000, 'Description should be less than 1000 characters'),
-
-    // ****** UPDATED: browseBy (dropdown) is now required ******
-    browseBy: yup.string().required('Please select a "Browse By" value (e.g., Hollywood)'),
-
-    // ****** NEW: thumbnailInfo (optional text input) ******
+    browseBy: yup
+      .string()
+      .required('Please select a "Browse By" value (e.g., Hollywood)'),
     thumbnailInfo: yup
       .string()
-      .nullable() // Allow it to be empty/null
-      .max(50, 'Thumbnail info should be short (max 50 chars)'), // Optional max length
+      .nullable()
+      .max(50, 'Thumbnail info should be short (max 50 chars)'),
 
-    // ---- Movie Specific Fields ----
+    // Movie Specific Fields
     video: yup.string().when('type', {
       is: 'Movie',
       then: (schema) =>
@@ -88,37 +89,38 @@ const movieValidation = yup
       otherwise: (schema) => schema.notRequired().nullable(),
     }),
     videoUrl2: yup.string().when('type', {
-        is: 'Movie',
-        then: (schema) =>
-          schema
-            .url('Please enter a valid second server URL')
-            .required('Movie server 2 URL is required'),
-        otherwise: (schema) => schema.notRequired().nullable(),
-      }),
+      is: 'Movie',
+      then: (schema) =>
+        schema
+          .url('Please enter a valid second server URL')
+          .required('Movie server 2 URL is required'),
+      otherwise: (schema) => schema.notRequired().nullable(),
+    }),
     downloadUrl: yup.string().when('type', {
       is: 'Movie',
       then: (schema) =>
         schema
           .url('Please enter a valid download URL')
-          .nullable() // Optional
-          .transform(value => value === '' ? null : value), // Treat empty string as null
+          .nullable()
+          .transform((value) => (value === '' ? null : value)),
       otherwise: (schema) => schema.notRequired().nullable(),
     }),
 
-    // ---- WebSeries Specific Fields ----
+    // WebSeries Specific Fields
     episodes: yup.array().when('type', {
       is: 'WebSeries',
       then: (schema) =>
         schema
-          .of(episodeSchema) // Use the updated episodeSchema
+          .of(episodeSchema)
           .min(1, 'At least one episode is required for a WebSeries')
           .required('Please add episodes for the WebSeries'),
       otherwise: (schema) => schema.notRequired().nullable(),
     }),
 
-    // ---------- NEW FLAGS (optional booleans) ----------
+    // Flags
     latest: yup.boolean(),
-    previousHit: yup.boolean()
+    previousHit: yup
+      .boolean()
       .test(
         'not-both',
         'Latest and PreviousHit cannot both be selected',
@@ -127,6 +129,9 @@ const movieValidation = yup
           return !(latest && value);
         }
       ),
+
+    // NEW: publish flag
+    isPublished: yup.boolean().default(true),
   })
   .test(
     'not-both-flags',
@@ -135,6 +140,5 @@ const movieValidation = yup
       return !(value.latest && value.previousHit);
     }
   );
-
 
 export { ReviewValidation, movieValidation };

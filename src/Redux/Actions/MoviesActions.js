@@ -18,7 +18,7 @@ export const getAllMoviesAction =
     search = '',
     pageNumber = '',
   }) =>
-  async (dispatch) => {
+  async (dispatch, getState) => {
     try {
       const normalizedPageNumber =
         pageNumber && Number(pageNumber) > 0 ? Number(pageNumber) : 1;
@@ -39,16 +39,39 @@ export const getAllMoviesAction =
         payload: { queryKey },
       });
 
-      const response = await moviesAPIs.getAllMoviesService(
-        category,
-        time,
-        language,
-        rate,
-        year,
-        browseBy,
-        search,
-        normalizedPageNumber
-      );
+      const {
+        userLogin: { userInfo },
+      } = getState();
+
+      const isAdmin = !!userInfo?.isAdmin;
+
+      let response;
+
+      if (isAdmin && userInfo?.token) {
+        // ADMIN: includes drafts/unpublished
+        response = await moviesAPIs.getAllMoviesAdminService(userInfo.token, {
+          category,
+          time,
+          language,
+          rate,
+          year,
+          browseBy,
+          search,
+          pageNumber: normalizedPageNumber,
+        });
+      } else {
+        // PUBLIC: only published (backend visibility filter)
+        response = await moviesAPIs.getAllMoviesService(
+          category,
+          time,
+          language,
+          rate,
+          year,
+          browseBy,
+          search,
+          normalizedPageNumber
+        );
+      }
 
       dispatch({
         type: moviesConstants.MOVIES_LIST_SUCCESS,
@@ -77,10 +100,25 @@ export const getRandomMoviesAction = () => async (dispatch) => {
 };
 
 // get movie by id (now accepts slug or id)
-export const getMovieByIdAction = (idOrSlug) => async (dispatch) => {
+export const getMovieByIdAction = (idOrSlug) => async (dispatch, getState) => {
   try {
     dispatch({ type: moviesConstants.MOVIE_DETAILS_REQUEST });
-    const response = await moviesAPIs.getMovieByIdService(idOrSlug);
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    let response;
+
+    if (userInfo?.isAdmin && userInfo?.token) {
+      // ADMIN: see drafts as well
+      const token = tokenProtection(getState);
+      response = await moviesAPIs.getMovieByIdAdminService(token, idOrSlug);
+    } else {
+      // PUBLIC: only published
+      response = await moviesAPIs.getMovieByIdService(idOrSlug);
+    }
+
     dispatch({
       type: moviesConstants.MOVIE_DETAILS_SUCCESS,
       payload: response,
@@ -127,14 +165,16 @@ export const reviewMovieAction =
       } = getState();
 
       if (userInfo && userInfo.token && response.review) {
-        // Use movieSlug for notification link
         const moviePathSegment = response.review.movieSlug || id;
         dispatch(
           addNotification({
-            message: `User "${userInfo.fullName}" reviewed "${response.review.comment.substring(0, 30)}..." on movie ${response.review.movieName || ''}`.trim(),
+            message: `User "${userInfo.fullName}" reviewed "${response.review.comment.substring(
+              0,
+              30
+            )}..." on movie ${response.review.movieName || ''}`.trim(),
             forAdmin: true,
-            link: response.review._id 
-              ? `/movie/${moviePathSegment}#review-${response.review._id}` 
+            link: response.review._id
+              ? `/movie/${moviePathSegment}#review-${response.review._id}`
               : `/movie/${moviePathSegment}`,
           })
         );
@@ -216,35 +256,42 @@ export const getDistinctBrowseByAction = () => async (dispatch) => {
 };
 
 // Admin replying to a user review
-export const adminReplyReviewAction = (movieId, reviewId, reply) => async (dispatch, getState) => {
-  try {
-    dispatch({ type: moviesConstants.ADMIN_REPLY_REVIEW_REQUEST });
-    const token = tokenProtection(getState);
-    const response = await moviesAPIs.adminReplyReviewService(token, movieId, reviewId, reply);
-
-    dispatch({
-      type: moviesConstants.ADMIN_REPLY_REVIEW_SUCCESS,
-      payload: response,
-    });
-    toast.success("Admin replied successfully");
-    dispatch(getMovieByIdAction(movieId));
-
-    if (response.review) {
-      // Use movieSlug for notification link
-      const moviePathSegment = response.review.movieSlug || movieId;
-      dispatch(
-        addNotification({
-          message: `Admin replied to your review: "${response.review.adminReply.substring(0, 30)}..."`,
-          forAdmin: false,
-          link: `/movie/${moviePathSegment}#review-${reviewId}`,
-        })
+export const adminReplyReviewAction =
+  (movieId, reviewId, reply) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: moviesConstants.ADMIN_REPLY_REVIEW_REQUEST });
+      const token = tokenProtection(getState);
+      const response = await moviesAPIs.adminReplyReviewService(
+        token,
+        movieId,
+        reviewId,
+        reply
       );
-    }
 
-  } catch (error) {
-    ErrorsAction(error, dispatch, moviesConstants.ADMIN_REPLY_REVIEW_FAIL);
-  }
-};
+      dispatch({
+        type: moviesConstants.ADMIN_REPLY_REVIEW_SUCCESS,
+        payload: response,
+      });
+      toast.success("Admin replied successfully");
+      dispatch(getMovieByIdAction(movieId));
+
+      if (response.review) {
+        const moviePathSegment = response.review.movieSlug || movieId;
+        dispatch(
+          addNotification({
+            message: `Admin replied to your review: "${response.review.adminReply.substring(
+              0,
+              30
+            )}..."`,
+            forAdmin: false,
+            link: `/movie/${moviePathSegment}#review-${reviewId}`,
+          })
+        );
+      }
+    } catch (error) {
+      ErrorsAction(error, dispatch, moviesConstants.ADMIN_REPLY_REVIEW_FAIL);
+    }
+  };
 
 // latest 15 movies
 export const getLatestMoviesAction = () => async (dispatch) => {
