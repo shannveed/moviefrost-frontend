@@ -234,23 +234,54 @@ function NavBar() {
           </form>
 
           {/* Dropdown Suggestions - Full width on mobile */}
-          {showDropdown && searchResults.length > 0 && (
-            <div className="absolute left-0 mobile:left-0 top-full w-full mobile:w-full bg-black text-white border border-customPurple mobile:border-t-0 mobile:border-x-0 rounded mobile:rounded-none mt-1 mobile:mt-0 z-50 max-h-60 overflow-y-auto">
-              {searchResults.map((movie) => (
-                <Link
-                  key={movie._id}
-                  to={`/movie/${movie._id}`}
-                  className="block px-4 mobile:px-3 py-2 mobile:py-3 hover:bg-gray-700 hover:text-customPurple mobile:border-b mobile:border-gray-800" // Style adjustments
-                  onClick={() => {
-                    setShowDropdown(false);
-                    setSearch(''); // Clear search on selection
-                  }}
-                >
-                  {movie.name}
-                </Link>
-              ))}
-            </div>
-          )}
+           {showDropdown && searchResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-dry border border-border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                {searchResults.map((movie) => (
+                  <Link
+                    key={movie._id}
+                    to={`/movie/${movie?.slug || movie?._id}`}
+                    onClick={() => {
+                      setShowDropdown(false);
+                      setSearch(''); // Clear search on selection
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-main transitions border-b border-border/50 last:border-b-0"
+                  >
+                    {/* Movie/Web Series Image */}
+                    <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-main">
+                      <img
+                        src={movie?.titleImage || '/images/placeholder.jpg'}
+                        alt={movie?.name || 'Movie poster'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/images/placeholder.jpg';
+                        }}
+                      />
+                    </div>
+                    {/* Movie/Web Series Name and Details */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white font-medium truncate">
+                        {movie.name}
+                      </p>
+                      <p className="text-xs text-dryGray truncate">
+                        {movie.year} • {movie.category}
+                      </p>
+                    </div>
+                    {/* Type Badge */}
+                    {movie.type && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${
+                        movie.type === 'WebSeries' 
+                          ? 'bg-green-600/20 text-green-400' 
+                          : 'bg-customPurple/20 text-customPurple'
+                      }`}>
+                        {movie.type === 'WebSeries' ? 'Series' : 'Movie'}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+         
         </div>
 
         {/* Navigation Links - Hidden on mobile */}
