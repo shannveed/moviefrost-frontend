@@ -1,83 +1,54 @@
-// notificationsReducers.js
-import {
-  ADD_NOTIFICATION,
-  REMOVE_NOTIFICATION,
-  CLEAR_NOTIFICATIONS,
-  MARK_NOTIFICATION_AS_READ,
-} from "../Constants/notificationsConstants";
-
-// Function to load notifications from local storage
-const loadNotificationsFromStorage = () => {
-  try {
-    const serializedState = localStorage.getItem('notifications');
-    if (serializedState === null) {
-      return []; // Return empty array if nothing is in storage
-    }
-    return JSON.parse(serializedState);
-  } catch (err) {
-    console.error("Could not load notifications from local storage", err);
-    return []; // Return empty array on error
-  }
-};
-
-// Function to save notifications to local storage
-const saveNotificationsToStorage = (notifications) => {
-  try {
-    const serializedState = JSON.stringify(notifications);
-    localStorage.setItem('notifications', serializedState);
-  } catch (err) {
-    console.error("Could not save notifications to local storage", err);
-  }
-};
-
+import * as C from '../Constants/notificationsConstants';
 
 const initialState = {
-  // Load initial state from local storage
-  notifications: loadNotificationsFromStorage(),
+  notifications: [],
+  unreadCount: 0,
+  isLoading: false,
+  isError: null,
 };
 
 export const notificationsReducer = (state = initialState, action) => {
-  let newState;
   switch (action.type) {
-    case ADD_NOTIFICATION:
-      newState = {
-        ...state,
-        notifications: [...state.notifications, action.payload],
-      };
-      saveNotificationsToStorage(newState.notifications); // Save after adding
-      return newState;
+    case C.NOTIFICATIONS_LIST_REQUEST:
+      return { ...state, isLoading: true, isError: null };
 
-    case REMOVE_NOTIFICATION:
-      newState = {
+    case C.NOTIFICATIONS_LIST_SUCCESS:
+      return {
         ...state,
-        // Filter out the notification with the matching ID
-        notifications: state.notifications.filter(
-          (n) => n.id !== action.payload
-        ),
+        isLoading: false,
+        notifications: action.payload.notifications || [],
+        unreadCount: action.payload.unreadCount || 0,
       };
-       saveNotificationsToStorage(newState.notifications); // Save after removing
-      return newState;
 
-    case CLEAR_NOTIFICATIONS:
-      // payload is a boolean, e.g. true for admin, false for user
-      newState = {
-        ...state,
-        notifications: state.notifications.filter(
-          (n) => n.forAdmin !== action.payload // Keep only those NOT matching the side to be cleared
-        ),
-      };
-      saveNotificationsToStorage(newState.notifications); // Save after clearing
-      return newState;
+    case C.NOTIFICATIONS_LIST_FAIL:
+      return { ...state, isLoading: false, isError: action.payload };
 
-    case MARK_NOTIFICATION_AS_READ:
-      newState = {
+    case C.NOTIFICATION_MARK_READ_SUCCESS:
+      return {
         ...state,
         notifications: state.notifications.map((n) =>
-          n.id === action.payload ? { ...n, read: true } : n // Find by ID and set read: true
+          n._id === action.payload ? { ...n, read: true } : n
+        ),
+        unreadCount: Math.max(
+          0,
+          state.unreadCount - (state.notifications.find((n) => n._id === action.payload && !n.read) ? 1 : 0)
         ),
       };
-      saveNotificationsToStorage(newState.notifications); // Save after marking as read
-      return newState;
+
+    case C.NOTIFICATION_DELETE_SUCCESS: {
+      const removed = state.notifications.find((n) => n._id === action.payload);
+      return {
+        ...state,
+        notifications: state.notifications.filter((n) => n._id !== action.payload),
+        unreadCount: removed && !removed.read ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
+      };
+    }
+
+    case C.NOTIFICATIONS_CLEAR_SUCCESS:
+      return { ...state, notifications: [], unreadCount: 0 };
+
+    case C.NOTIFICATIONS_RESET:
+      return { ...initialState };
 
     default:
       return state;

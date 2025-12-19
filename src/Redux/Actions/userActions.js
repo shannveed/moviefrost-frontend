@@ -1,6 +1,7 @@
 import * as userConstants from "../Constants/userConstants";
 import * as movieConstants from "../Constants/MoviesConstants";
 import * as categoriesConstants from "../Constants/CategoriesConstants";
+import * as notificationsConstants from "../Constants/notificationsConstants";
 
 import * as userApi from "../APIs/userServices";
 import toast from "react-hot-toast";
@@ -51,6 +52,8 @@ const logoutAction = () => (dispatch) => {
   dispatch({ type: categoriesConstants.CREATE_CATEGORY_RESET });
   dispatch({ type: categoriesConstants.UPDATE_CATEGORY_RESET });
   dispatch({ type: categoriesConstants.DELETE_CATEGORY_RESET });
+  dispatch({ type: notificationsConstants.NOTIFICATIONS_RESET });
+
 };
 
 

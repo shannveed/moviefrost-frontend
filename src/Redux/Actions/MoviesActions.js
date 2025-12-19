@@ -3,7 +3,7 @@ import * as moviesConstants from "../Constants/MoviesConstants";
 import * as moviesAPIs from "../APIs/MoviesServices";
 import { ErrorsAction, tokenProtection } from "../Protection";
 import toast from "react-hot-toast";
-import { addNotification } from "./notificationsActions";
+// Removed addNotification import
 import { getLatestMoviesService } from "../APIs/MoviesServices";
 
 // get all movies
@@ -148,7 +148,7 @@ export const reviewMovieAction =
   async (dispatch, getState) => {
     try {
       dispatch({ type: moviesConstants.CREATE_REVIEW_REQUEST });
-      const response = await moviesAPIs.reviewMovieService(
+      await moviesAPIs.reviewMovieService(
         tokenProtection(getState),
         id,
         review
@@ -160,25 +160,9 @@ export const reviewMovieAction =
       dispatch({ type: moviesConstants.CREATE_REVIEW_RESET });
       dispatch(getMovieByIdAction(id));
 
-      const {
-        userLogin: { userInfo },
-      } = getState();
-
-      if (userInfo && userInfo.token && response.review) {
-        const moviePathSegment = response.review.movieSlug || id;
-        dispatch(
-          addNotification({
-            message: `User "${userInfo.fullName}" reviewed "${response.review.comment.substring(
-              0,
-              30
-            )}..." on movie ${response.review.movieName || ''}`.trim(),
-            forAdmin: true,
-            link: response.review._id
-              ? `/movie/${moviePathSegment}#review-${response.review._id}`
-              : `/movie/${moviePathSegment}`,
-          })
-        );
-      }
+      // Removed client-side addNotification logic here; 
+      // Backend should handle notification creation.
+      
     } catch (error) {
       ErrorsAction(error, dispatch, moviesConstants.CREATE_REVIEW_FAIL);
     }
@@ -275,19 +259,9 @@ export const adminReplyReviewAction =
       toast.success("Admin replied successfully");
       dispatch(getMovieByIdAction(movieId));
 
-      if (response.review) {
-        const moviePathSegment = response.review.movieSlug || movieId;
-        dispatch(
-          addNotification({
-            message: `Admin replied to your review: "${response.review.adminReply.substring(
-              0,
-              30
-            )}..."`,
-            forAdmin: false,
-            link: `/movie/${moviePathSegment}#review-${reviewId}`,
-          })
-        );
-      }
+      // Removed client-side addNotification logic here;
+      // Backend should handle notification creation.
+
     } catch (error) {
       ErrorsAction(error, dispatch, moviesConstants.ADMIN_REPLY_REVIEW_FAIL);
     }

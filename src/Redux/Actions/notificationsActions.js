@@ -1,52 +1,74 @@
-// notificationsActions.js
-import {
-  ADD_NOTIFICATION,
-  REMOVE_NOTIFICATION,
-  CLEAR_NOTIFICATIONS,
-  MARK_NOTIFICATION_AS_READ,
-} from "../Constants/notificationsConstants";
-import { v4 as uuidv4 } from 'uuid'; // Import uuid for unique IDs
+// Frontend/src/Redux/Actions/notificationsActions.js
+import * as C from '../Constants/notificationsConstants';
+import * as API from '../APIs/NotificationsServices';
+import { ErrorsAction, tokenProtection } from '../Protection';
 
-// Add new notification item
-export const addNotification = (payload) => (dispatch) => {
-  // payload example:
-  // {
-  //   message: 'User posted a new review: "Great movie!"',
-  //   forAdmin: true,
-  //   link: '/movie/123#review-456'
-  // }
-  dispatch({
-    type: ADD_NOTIFICATION,
-    payload: {
-      ...payload,
-      id: uuidv4(), // Add a unique ID
-      read: false, // Add read status, default to false
-      timestamp: Date.now(), // Optional: Add a timestamp
-    },
-  });
+export const getNotificationsAction =
+  (silent = false, limit = 50) =>
+  async (dispatch, getState) => {
+    try {
+      if (!silent) dispatch({ type: C.NOTIFICATIONS_LIST_REQUEST });
+
+      const token = tokenProtection(getState);
+      if (!token) {
+        dispatch({ type: C.NOTIFICATIONS_RESET });
+        return;
+      }
+
+      const data = await API.getNotificationsService(token, limit);
+      dispatch({ type: C.NOTIFICATIONS_LIST_SUCCESS, payload: data });
+    } catch (error) {
+      ErrorsAction(error, dispatch, C.NOTIFICATIONS_LIST_FAIL);
+    }
+  };
+
+export const markNotificationAsRead = (id) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: C.NOTIFICATION_MARK_READ_REQUEST, payload: id });
+
+    const token = tokenProtection(getState);
+    if (!token) {
+      dispatch({ type: C.NOTIFICATIONS_RESET });
+      return;
+    }
+
+    await API.markNotificationReadService(token, id);
+    dispatch({ type: C.NOTIFICATION_MARK_READ_SUCCESS, payload: id });
+  } catch (error) {
+    ErrorsAction(error, dispatch, C.NOTIFICATION_MARK_READ_FAIL);
+  }
 };
 
-// Remove a specific notification by its unique ID
-export const removeNotification = (id) => (dispatch) => {
-  dispatch({
-    type: REMOVE_NOTIFICATION,
-    payload: id, // Pass the ID to remove
-  });
+export const removeNotification = (id) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: C.NOTIFICATION_DELETE_REQUEST, payload: id });
+
+    const token = tokenProtection(getState);
+    if (!token) {
+      dispatch({ type: C.NOTIFICATIONS_RESET });
+      return;
+    }
+
+    await API.deleteNotificationService(token, id);
+    dispatch({ type: C.NOTIFICATION_DELETE_SUCCESS, payload: id });
+  } catch (error) {
+    ErrorsAction(error, dispatch, C.NOTIFICATION_DELETE_FAIL);
+  }
 };
 
-// Clear all notifications for either admin or user
-export const clearNotifications = (forAdminValue) => (dispatch) => {
-  // forAdminValue is either true (admin) or false (regular user)
-  dispatch({
-    type: CLEAR_NOTIFICATIONS,
-    payload: forAdminValue,
-  });
-};
+export const clearNotifications = () => async (dispatch, getState) => {
+  try {
+    dispatch({ type: C.NOTIFICATIONS_CLEAR_REQUEST });
 
-// Mark a specific notification as read by its unique ID
-export const markNotificationAsRead = (id) => (dispatch) => {
-  dispatch({
-    type: MARK_NOTIFICATION_AS_READ,
-    payload: id, // Pass the ID to mark as read
-  });
+    const token = tokenProtection(getState);
+    if (!token) {
+      dispatch({ type: C.NOTIFICATIONS_RESET });
+      return;
+    }
+
+    await API.clearNotificationsService(token);
+    dispatch({ type: C.NOTIFICATIONS_CLEAR_SUCCESS });
+  } catch (error) {
+    ErrorsAction(error, dispatch, C.NOTIFICATIONS_CLEAR_FAIL);
+  }
 };

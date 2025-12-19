@@ -1,6 +1,5 @@
-// src/App.js
-// App.js
-import React, { useEffect, useRef, Suspense, lazy } from 'react';
+// Frontend/src/App.js
+import React, { useEffect, useRef, Suspense, lazy, useState } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ScrollOnTop from './ScrollOnTop';
 import DrawerContext from './Context/DrawerContext';
@@ -11,8 +10,19 @@ import { getAllCategoriesAction } from './Redux/Actions/CategoriesActions';
 import { getAllMoviesAction } from './Redux/Actions/MoviesActions';
 import { getFavoriteMoviesAction } from './Redux/Actions/userActions';
 import toast from 'react-hot-toast';
-import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analytics';
+import {
+  trackUserType,
+  trackGuestExit,
+  trackLoginPrompt,
+} from './utils/analytics';
 import Loader from './Components/Loader';
+
+import Axios from './Redux/APIs/Axios';
+import MovieRequestPopup from './Components/Modals/MovieRequestPopup';
+import { getNotificationsAction } from './Redux/Actions/notificationsActions';
+import { ensurePushSubscription } from './utils/pushNotifications';
+
+// Non-lazy route components you already had
 import HollywoodSection from './Components/Home/HollywoodSection';
 import KoreanSection from './Components/Home/KoreanSection';
 import BollywoodSection from './Components/Home/BollywoodSection';
@@ -25,8 +35,7 @@ import ChineseDramaSection from './Components/Home/ChineseDramaSection';
 import KoreanDramaSection from './Components/Home/KoreanDramaSection';
 import JapaneseAnimeSection from './Components/Home/JapaneseAnimeSection';
 
-// Lazy load ALL components
-
+// Lazy load pages
 const HomeScreen = lazy(() => import('./Screens/HomeScreen'));
 const MoviesPage = lazy(() => import('./Screens/Movies'));
 const SingleMovie = lazy(() => import('./Screens/SingleMovie'));
@@ -47,9 +56,7 @@ const Users = lazy(() => import('./Screens/Dashboard/Admin/Users'));
 const NotFound = lazy(() => import('./Screens/NotFound'));
 const GoogleAnalytics = lazy(() => import('./Components/GoogleAnalytics'));
 
-// NEW pages
-
-// Error Boundary Component
+// Error Boundary
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -58,18 +65,18 @@ class ErrorBoundary extends React.Component {
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
-
   componentDidCatch(error, errorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
   }
-
   render() {
     if (this.state.hasError) {
       return (
         <div className="flex-colo gap-6 w-full min-h-screen text-white bg-main">
           <h1 className="text-2xl font-bold">Something went wrong</h1>
-          <p className="text-text">{this.state.error?.message || 'An unexpected error occurred'}</p>
-          <button 
+          <p className="text-text">
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </p>
+          <button
             onClick={() => {
               this.setState({ hasError: false, error: null });
               window.location.href = '/';
@@ -81,12 +88,10 @@ class ErrorBoundary extends React.Component {
         </div>
       );
     }
-
     return this.props.children;
   }
 }
 
-// Loading fallback component
 const LoadingFallback = () => (
   <div className="flex-colo w-full min-h-screen">
     <Loader />
@@ -97,9 +102,18 @@ function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
   const pageEntryTime = useRef(Date.now());
   const hasShownPrompt = useRef(false);
   const aosInitialized = useRef(false);
+
+  // ✅ IMPORTANT: define userInfo BEFORE any useEffect that references it
+  const { userInfo } = useSelector((state) => state.userLogin || {});
+  const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
+  const { isError: catError } = useSelector((state) => state.categoryGetAll || {});
+
+  // Q1 popup open state
+  const [requestPopupOpen, setRequestPopupOpen] = useState(false);
 
   // Force a clean reload on /login or /register once
   useEffect(() => {
@@ -124,17 +138,14 @@ function App() {
         AOS.init({
           duration: 800,
           once: true,
-          disable: 'mobile'
+          disable: 'mobile',
         });
         aosInitialized.current = true;
       });
     }
   }, []);
 
-  const { userInfo } = useSelector((state) => state.userLogin || {});
-  const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
-  const { isError: catError } = useSelector((state) => state.categoryGetAll || {});
-
+  // Track user type
   useEffect(() => {
     trackUserType(!!userInfo);
   }, [userInfo]);
@@ -157,46 +168,32 @@ function App() {
 
   // Disable right click
   useEffect(() => {
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-    };
-    document.addEventListener("contextmenu", handleContextMenu);
-    return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
-    };
+    const handleContextMenu = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, []);
 
-  // Initial data
+  // Initial data load
   useEffect(() => {
+    const load = () => {
+      try {
+        dispatch(getAllCategoriesAction());
+        dispatch(getAllMoviesAction({}));
+        if (userInfo) dispatch(getFavoriteMoviesAction());
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        toast.error('Error loading data. Please refresh the page.');
+      }
+    };
+
     if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => {
-        try {
-          dispatch(getAllCategoriesAction());
-          dispatch(getAllMoviesAction({}));
-          if (userInfo) {
-            dispatch(getFavoriteMoviesAction());
-          }
-        } catch (error) {
-          console.error('Error loading initial data:', error);
-          toast.error('Error loading data. Please refresh the page.');
-        }
-      });
+      requestIdleCallback(load);
     } else {
-      setTimeout(() => {
-        try {
-          dispatch(getAllCategoriesAction());
-          dispatch(getAllMoviesAction({}));
-          if (userInfo) {
-            dispatch(getFavoriteMoviesAction());
-          }
-        } catch (error) {
-          console.error('Error loading initial data:', error);
-          toast.error('Error loading data. Please refresh the page.');
-        }
-      }, 100);
+      setTimeout(load, 100);
     }
   }, [dispatch, userInfo]);
 
+  // Like movie errors
   useEffect(() => {
     if (isError || catError) {
       toast.error(isError || catError);
@@ -207,29 +204,112 @@ function App() {
     }
   }, [dispatch, isError, catError, isSuccess]);
 
+  // Existing 30-min forced login prompt (kept)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!userInfo && !hasShownPrompt.current) {
         hasShownPrompt.current = true;
+
         const redirectState = {
           pathname: location.pathname,
           search: location.search,
           hash: location.hash,
-          scrollY: window.scrollY
+          scrollY: window.scrollY,
         };
         localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
+
         trackLoginPrompt('30_minute_timer', location.pathname);
         alert('Please log in now for free to continue');
         navigate('/login');
       }
     }, 30 * 60 * 1000);
+
     return () => clearTimeout(timer);
   }, [userInfo, navigate, location]);
+
+  // ✅ Popup: show the “What do you want to watch?” popup after 30s (once per session)
+  useEffect(() => {
+    const path = location.pathname;
+
+    if (path === '/login' || path === '/register') return;
+    if (path.startsWith('/watch')) return;
+
+    if (sessionStorage.getItem('movieRequestPopupShown')) return;
+
+    const t = setTimeout(() => {
+      setRequestPopupOpen(true);
+      sessionStorage.setItem('movieRequestPopupShown', '1');
+    }, 30000); // ✅ changed from 40000 to 30000
+
+    return () => clearTimeout(t);
+  }, [location.pathname]);
+
+  // ✅ After login: load notifications + ensure push subscription + auto-submit pending watch request
+  useEffect(() => {
+    const run = async () => {
+      if (!userInfo?.token) return;
+
+      // Load notifications silently
+      dispatch(getNotificationsAction(true));
+
+      // If user already granted push permissions earlier, sync subscription to backend
+      try {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          await ensurePushSubscription(userInfo.token);
+        }
+      } catch {
+        // ignore push errors
+      }
+
+      // Auto-submit pending request
+      const raw = localStorage.getItem('pendingWatchRequest');
+      if (!raw) return;
+
+      try {
+        const pending = JSON.parse(raw);
+        const title = pending?.title;
+        if (!title) return;
+
+        await Axios.post(
+          '/requests',
+          { title },
+          { headers: { Authorization: `Bearer ${userInfo.token}` } }
+        );
+      } catch (e) {
+        console.warn('Auto-submit pendingWatchRequest failed:', e);
+      } finally {
+        localStorage.removeItem('pendingWatchRequest');
+      }
+    };
+
+    run();
+  }, [userInfo?.token, dispatch]);
+
+  // ✅ Refresh notifications when SW push arrives
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handler = (event) => {
+      if (event?.data?.type === 'PUSH_RECEIVED' && userInfo?.token) {
+        dispatch(getNotificationsAction(true));
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, [dispatch, userInfo?.token]);
 
   return (
     <ErrorBoundary>
       <DrawerContext>
         <ToastContainer />
+
+        {/* Movie request popup */}
+        <MovieRequestPopup
+          open={requestPopupOpen}
+          onClose={() => setRequestPopupOpen(false)}
+        />
+
         <ScrollOnTop>
           <Suspense fallback={<LoadingFallback />}>
             <GoogleAnalytics />
@@ -245,22 +325,19 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
-              {/* existing new content routes */}
+              {/* extra browse routes */}
               <Route path="/Hollywood" element={<HollywoodSection />} />
               <Route path="/Korean" element={<KoreanSection />} />
               <Route path="/Bollywood" element={<BollywoodSection />} />
               <Route path="/Hollywood-Hindi" element={<HollywoodHindiSection />} />
               <Route path="/Korean-Hindi" element={<KoreanHindiSection />} />
               <Route path="/Japanease" element={<JapaneseSection />} />
-
-              {/* NEW */}
-
               <Route path="/South-Indian" element={<SouthIndianSection />} />
-              {/* Wrestling route removed */}
               <Route path="/Punjabi" element={<PunjabiSection />} />
               <Route path="/Chinese" element={<ChineseDramaSection />} />
               <Route path="/korean-drama" element={<KoreanDramaSection />} />
-             <Route path="/japanese-anime" element={<JapaneseAnimeSection />} />
+              <Route path="/japanese-anime" element={<JapaneseAnimeSection />} />
+
               <Route path="*" element={<NotFound />} />
 
               {/* PRIVATE ROUTES */}

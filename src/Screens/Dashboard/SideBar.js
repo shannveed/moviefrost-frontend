@@ -9,6 +9,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAction } from "../../Redux/Actions/userActions";
 import toast from "react-hot-toast";
+import { FaBell } from "react-icons/fa";
 
 function SideBar({children}) {
   const dispatch = useDispatch();
@@ -40,6 +41,12 @@ function SideBar({children}) {
         link: "/addmovie",
         icon: RiMovie2Fill,
       },
+      {
+        name: "Push Notification",
+        link: "/push-notification",
+        icon: FaBell, // import { FaBell } from "react-icons/fa";
+      },
+
       {
         name: "Categories",
         link: "/categories",
