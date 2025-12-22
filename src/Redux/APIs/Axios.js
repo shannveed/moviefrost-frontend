@@ -17,7 +17,7 @@ function getApiBaseUrl() {
   }
 
   // Fallback production API URL
-  return "https://moviefrost-backend-wine.vercel.app/api";
+  return "https://moviefrost-backend.vercel.app/api";
 }
 
 const Axios = axios.create({
