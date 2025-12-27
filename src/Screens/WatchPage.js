@@ -4,8 +4,8 @@ import {
   trackGuestAction,
   trackLoginPrompt,
 } from '../utils/analytics';
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import Layout from '../Layout/Layout';
 import { BiArrowBack } from 'react-icons/bi';
 import { FaCloudDownloadAlt, FaHeart, FaPlay, FaLock } from 'react-icons/fa';
@@ -59,6 +59,32 @@ function WatchPage() {
 
   const isLiked = IfMovieLiked(movie);
   const isNotFound = isError === 'Movie not found';
+
+  // ✅ Q2: Related movies (up to 20) + Show More link
+  const relatedMovies = useMemo(() => {
+    if (!Array.isArray(movies) || !movie?._id) return [];
+    return movies.filter(
+      (m) => m.category === movie?.category && m._id !== movie?._id
+    );
+  }, [movies, movie]);
+
+  const relatedMoviesToShow = useMemo(
+    () => relatedMovies.slice(0, 20),
+    [relatedMovies]
+  );
+
+  // ✅ Q1: Prevent background scroll (especially important for mobile landscape modal UX)
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (showLoginModal) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [showLoginModal]);
 
   // Redirect hard 404s to /404
   useEffect(() => {
@@ -124,7 +150,7 @@ function WatchPage() {
         setGuestWatchTime((prev) => {
           const newTime = prev + 1;
 
-          if (newTime >= 780 && !hasShownLoginPrompt) {
+          if (newTime >= 30 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
 
@@ -287,51 +313,86 @@ function WatchPage() {
         noindex={shouldNoIndex}
       />
 
-      {/* Forced Login Prompt Modal */}
+      {/* ✅ Q1: Guest Login Prompt Modal (Landscape-safe, scrollable, same layout) */}
       {!userInfo && showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 px-4">
-          <div className="bg-dry rounded-lg p-6 max-w-md w-full text-center shadow-xl border border-border">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-customPurple/20 flex items-center justify-center">
-              <FaLock className="text-customPurple text-2xl" />
-            </div>
-            <h2 className="text-xl font-bold text-white mb-2">
-              Continue watching - please log in
-            </h2>
-            <p className="text-text text-sm mb-4">
-              Sign in for free to keep watching in HD and access downloads.
-            </p>
-            <div className="bg-main rounded-lg p-4 mb-4 text-left">
-              <p className="text-dryGray text-xs mb-3">
-                You've reached the preview limit for guests. Log in for free to
-                continue watching without interruptions, save favorites, and
-                more.
-              </p>
-              <ul className="space-y-2 text-sm text-white">
-                <li className="flex items-center gap-2">
-                  <span className="text-customPurple">✓</span>
-                  HD streaming
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-customPurple">✓</span>
-                  Watch from where you left
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-customPurple">✓</span>
-                  Download available
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-customPurple">✓</span>
-                  Add to favorites
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full sm:w-auto px-5 py-2 rounded-md bg-customPurple text-white hover:bg-opacity-90 border-2 border-customPurple transitions flex items-center justify-center gap-2"
+        <div
+          className="
+            fixed inset-0 z-50 bg-black/80
+            px-4 py-6 overflow-y-auto
+          "
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="
+              min-h-full flex items-center justify-center
+              mobile:landscape:items-start
+            "
+          >
+            <div
+              className="
+                bg-dry rounded-lg shadow-xl border border-border
+                w-full max-w-md
+                max-h-[90vh] overflow-y-auto
+                p-6
+                mobile:landscape:max-w-lg
+                mobile:landscape:p-4
+              "
             >
-              <FiLogIn />
-              Login now
-            </button>
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-customPurple/20 flex items-center justify-center">
+                  <FaLock className="text-customPurple text-2xl" />
+                </div>
+
+                <h2 className="text-xl font-bold text-white mb-2">
+                  Continue watching - please log in
+                </h2>
+
+                <p className="text-text text-sm mb-4">
+                  Sign in for free to keep watching in HD and access downloads.
+                </p>
+
+                <div className="bg-main rounded-lg p-4 mb-4 text-left">
+                  <p className="text-dryGray text-xs mb-3">
+                    You've reached the preview limit for guests. Log in for free
+                    to continue watching without interruptions, save favorites,
+                    and more.
+                  </p>
+
+                  <ul className="space-y-2 text-sm text-white">
+                    <li className="flex items-center gap-2">
+                      <span className="text-customPurple">✓</span>
+                      HD streaming
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-customPurple">✓</span>
+                      Watch from where you left
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-customPurple">✓</span>
+                      Download available
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-customPurple">✓</span>
+                      Add to favorites
+                    </li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => navigate('/login')}
+                  className="
+                    w-full sm:w-auto px-5 py-2 rounded-md
+                    bg-customPurple text-white hover:bg-opacity-90
+                    border-2 border-customPurple transitions
+                    flex items-center justify-center gap-2
+                  "
+                >
+                  <FiLogIn />
+                  Login now
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -494,10 +555,7 @@ function WatchPage() {
             </div>
 
             {currentEpisode && (
-              <div
-                className="relative w-full"
-                style={{ paddingTop: '56.25%' }}
-              >
+              <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
                 {play ? (
                   <iframe
                     title={`Episode ${currentEpisode.episodeNumber}`}
@@ -535,19 +593,25 @@ function WatchPage() {
           </div>
         )}
 
-        {/* Related Movies Section */}
-        {movies && movies.length > 0 && (
+        {/* ✅ Q2: Related Movies Section (show up to 20 + Show More button → /movies) */}
+        {relatedMoviesToShow.length > 0 && (
           <div className="my-16">
             <Titles title="Related Movies" Icon={BsCollectionFill} />
+
             <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-5 gap-6">
-              {movies
-                ?.filter(
-                  (m) => m.category === movie?.category && m._id !== movie?._id
-                )
-                .slice(0, 10)
-                .map((relatedMovie) => (
-                  <Movie key={relatedMovie?._id} movie={relatedMovie} />
-                ))}
+              {relatedMoviesToShow.map((relatedMovie) => (
+                <Movie key={relatedMovie?._id} movie={relatedMovie} />
+              ))}
+            </div>
+
+            {/* Show More button */}
+            <div className="flex justify-center mt-10">
+              <Link
+                to="/movies"
+                className="bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white px-8 py-3 rounded font-medium"
+              >
+                Show More
+              </Link>
             </div>
           </div>
         )}
