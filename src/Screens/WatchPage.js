@@ -150,7 +150,7 @@ function WatchPage() {
         setGuestWatchTime((prev) => {
           const newTime = prev + 1;
 
-          if (newTime >= 120 && !hasShownLoginPrompt) {
+          if (newTime >= 780 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
             setPlay(false);
 
