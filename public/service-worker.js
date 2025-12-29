@@ -1,6 +1,12 @@
 const CACHE_PREFIX = 'moviefrost-cache-';
 const CACHE_NAME = `${CACHE_PREFIX}${Date.now()}`;
+
 const STATIC_ASSETS = [
+  // App icons (NEW)
+  '/images/desktop-icon-192.jpeg',
+  '/images/desktop-icon-512.jpeg',
+
+  // Existing assets
   '/images/MOVIEFROST.png',
   '/images/placeholder.jpg',
 ];
