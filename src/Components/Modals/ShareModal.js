@@ -10,7 +10,7 @@ import {
 
 const ShareMovieModal = ({ modalOpen, setModalOpen, movie }) => {
   const shareUrl = window.location.href;
-  const shareMessage = `Check out "${movie?.name}" on MoviSphere!`;
+  const shareMessage = `Check out "${movie?.name}" on MovieFrost!`;
 
   const shareLinks = [
     {

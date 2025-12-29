@@ -10,15 +10,14 @@ import { getAllCategoriesAction } from './Redux/Actions/CategoriesActions';
 import { getAllMoviesAction } from './Redux/Actions/MoviesActions';
 import { getFavoriteMoviesAction } from './Redux/Actions/userActions';
 import toast from 'react-hot-toast';
-import {
-  trackUserType,
-  trackGuestExit,
-  trackLoginPrompt,
-} from './utils/analytics';
+import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analytics';
 import Loader from './Components/Loader';
 
 import Axios from './Redux/APIs/Axios';
 import MovieRequestPopup from './Components/Modals/MovieRequestPopup';
+import ChannelPopup from './Components/Modals/ChannelPopup';
+import { FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
+
 import { getNotificationsAction } from './Redux/Actions/notificationsActions';
 import { ensurePushSubscription } from './utils/pushNotifications';
 
@@ -111,6 +110,14 @@ function App() {
   const { userInfo } = useSelector((state) => state.userLogin || {});
   const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
   const { isError: catError } = useSelector((state) => state.categoryGetAll || {});
+
+  // Channel URLs (set them in .env and Vercel)
+  const TELEGRAM_CHANNEL_URL = process.env.REACT_APP_TELEGRAM_CHANNEL_URL || '';
+  const WHATSAPP_CHANNEL_URL = process.env.REACT_APP_WHATSAPP_CHANNEL_URL || '';
+
+  // Timed popups state
+  const [telegramPopupOpen, setTelegramPopupOpen] = useState(false);
+  const [whatsappPopupOpen, setWhatsappPopupOpen] = useState(false);
 
   // Q1 popup open state
   const [requestPopupOpen, setRequestPopupOpen] = useState(false);
@@ -227,7 +234,49 @@ function App() {
     return () => clearTimeout(timer);
   }, [userInfo, navigate, location]);
 
-  // ✅ Popup: show the “What do you want to watch?” popup after 30s (once per session)
+  /* ============================================================
+     ✅ NEW POPUP #1: Telegram (after 20 seconds)
+     ============================================================ */
+  useEffect(() => {
+    const path = location.pathname;
+
+    if (!TELEGRAM_CHANNEL_URL) return;
+    if (path === '/login' || path === '/register') return;
+    if (path.startsWith('/watch')) return;
+
+    if (sessionStorage.getItem('telegramPopupShown')) return;
+
+    const t = setTimeout(() => {
+      setTelegramPopupOpen(true);
+      sessionStorage.setItem('telegramPopupShown', '1');
+    }, 20000);
+
+    return () => clearTimeout(t);
+  }, [location.pathname, TELEGRAM_CHANNEL_URL]);
+
+  /* ============================================================
+     ✅ NEW POPUP #2: WhatsApp (after 40 seconds)
+     ============================================================ */
+  useEffect(() => {
+    const path = location.pathname;
+
+    if (!WHATSAPP_CHANNEL_URL) return;
+    if (path === '/login' || path === '/register') return;
+    if (path.startsWith('/watch')) return;
+
+    if (sessionStorage.getItem('whatsappPopupShown')) return;
+
+    const t = setTimeout(() => {
+      setWhatsappPopupOpen(true);
+      sessionStorage.setItem('whatsappPopupShown', '1');
+    }, 40000);
+
+    return () => clearTimeout(t);
+  }, [location.pathname, WHATSAPP_CHANNEL_URL]);
+
+  /* ============================================================
+     ✅ UPDATED: Movie Request popup (after 3 minutes)
+     ============================================================ */
   useEffect(() => {
     const path = location.pathname;
 
@@ -239,7 +288,7 @@ function App() {
     const t = setTimeout(() => {
       setRequestPopupOpen(true);
       sessionStorage.setItem('movieRequestPopupShown', '1');
-    }, 30000); // ✅ changed from 40000 to 30000
+    }, 180000); // ✅ 3 minutes
 
     return () => clearTimeout(t);
   }, [location.pathname]);
@@ -304,7 +353,33 @@ function App() {
       <DrawerContext>
         <ToastContainer />
 
-        {/* Movie request popup */}
+        {/* ✅ Telegram popup */}
+        {TELEGRAM_CHANNEL_URL ? (
+          <ChannelPopup
+            open={telegramPopupOpen}
+            onClose={() => setTelegramPopupOpen(false)}
+            title="Join our Telegram Channel"
+            description="Get instant updates, new uploads, and announcements."
+            buttonText="Open Telegram"
+            url={TELEGRAM_CHANNEL_URL}
+            Icon={FaTelegramPlane}
+          />
+        ) : null}
+
+        {/* ✅ WhatsApp popup */}
+        {WHATSAPP_CHANNEL_URL ? (
+          <ChannelPopup
+            open={whatsappPopupOpen}
+            onClose={() => setWhatsappPopupOpen(false)}
+            title="Join our WhatsApp Channel"
+            description="Receive updates , new uploads, and announcements directly on WhatsApp."
+            buttonText="Open WhatsApp"
+            url={WHATSAPP_CHANNEL_URL}
+            Icon={FaWhatsapp}
+          />
+        ) : null}
+
+        {/* Movie request popup (now after 3 minutes) */}
         <MovieRequestPopup
           open={requestPopupOpen}
           onClose={() => setRequestPopupOpen(false)}
