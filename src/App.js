@@ -184,7 +184,7 @@ function App() {
     };
   }, []);
 
-  // Show install popup after 10 seconds (unless installed / excluded routes)
+  // Show install popup after 20 seconds (unless installed / excluded routes)
   useEffect(() => {
     const path = location.pathname;
 
@@ -216,7 +216,7 @@ function App() {
       } catch {
         // ignore
       }
-    }, 10000);
+    }, 20000);
 
     return () => clearTimeout(t);
   }, [location.pathname]);
@@ -362,7 +362,7 @@ function App() {
   }, [userInfo, navigate, location]);
 
   /* ============================================================
-     Telegram popup (after 20 seconds)
+     Telegram popup (after 40 seconds)
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
@@ -376,13 +376,13 @@ function App() {
     const t = setTimeout(() => {
       setTelegramPopupOpen(true);
       sessionStorage.setItem('telegramPopupShown', '1');
-    }, 30000);
+    }, 40000);
 
     return () => clearTimeout(t);
   }, [location.pathname, TELEGRAM_CHANNEL_URL]);
 
   /* ============================================================
-     WhatsApp popup (after 40 seconds)
+     WhatsApp popup (after 1minutes 20seconds)
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
@@ -396,7 +396,7 @@ function App() {
     const t = setTimeout(() => {
       setWhatsappPopupOpen(true);
       sessionStorage.setItem('whatsappPopupShown', '1');
-    }, 60000);
+    }, 80000);
 
     return () => clearTimeout(t);
   }, [location.pathname, WHATSAPP_CHANNEL_URL]);
