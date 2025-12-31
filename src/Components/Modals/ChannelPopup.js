@@ -10,25 +10,20 @@ export default function ChannelPopup({
   buttonText = 'Open',
   Icon,
 
-  // ✅ NEW: allow hiding the "Maybe later" button (Telegram will set this false)
+  // allow hiding the "Maybe later" button (Telegram sets this false)
   showMaybeLater = true,
   maybeLaterText = 'Maybe later',
 }) {
   if (!open) return null;
 
-  const handleOpen = () => {
-    if (url) {
-      // Try opening in a new tab (best UX)
-      const win = window.open(url, '_blank', 'noopener,noreferrer');
+  const safeUrl = typeof url === 'string' ? url.trim() : '';
 
-      // Fallback if popup blocked: navigate in same tab
-      if (!win) {
-        window.location.href = url;
-      }
-    }
-
-    // Close popup after user clicks open
-    onClose?.();
+  // Close popup after click, but do NOT redirect current tab
+  const handleOpenClick = () => {
+    // small delay so the browser starts opening the new tab/app first
+    window.setTimeout(() => {
+      onClose?.();
+    }, 50);
   };
 
   return (
@@ -49,15 +44,26 @@ export default function ChannelPopup({
         ) : null}
 
         <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={handleOpen}
-            className="w-full bg-customPurple hover:bg-opacity-90 transition text-white py-3 rounded-md font-semibold"
-          >
-            {buttonText}
-          </button>
+          {safeUrl ? (
+            <a
+              href={safeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleOpenClick}
+              className="w-full bg-customPurple hover:bg-opacity-90 transition text-white py-3 rounded-md font-semibold text-center"
+            >
+              {buttonText}
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="w-full bg-customPurple/60 text-white py-3 rounded-md font-semibold cursor-not-allowed"
+            >
+              {buttonText}
+            </button>
+          )}
 
-          {/* ✅ Optional dismiss button (we will disable this for Telegram popup only) */}
           {showMaybeLater ? (
             <button
               type="button"
