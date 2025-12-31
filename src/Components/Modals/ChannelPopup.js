@@ -9,13 +9,25 @@ export default function ChannelPopup({
   url,
   buttonText = 'Open',
   Icon,
+
+  // ✅ NEW: allow hiding the "Maybe later" button (Telegram will set this false)
+  showMaybeLater = true,
+  maybeLaterText = 'Maybe later',
 }) {
   if (!open) return null;
 
   const handleOpen = () => {
     if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
+      // Try opening in a new tab (best UX)
+      const win = window.open(url, '_blank', 'noopener,noreferrer');
+
+      // Fallback if popup blocked: navigate in same tab
+      if (!win) {
+        window.location.href = url;
+      }
     }
+
+    // Close popup after user clicks open
     onClose?.();
   };
 
@@ -45,13 +57,16 @@ export default function ChannelPopup({
             {buttonText}
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full border border-border hover:bg-main transition text-white py-3 rounded-md"
-          >
-            Maybe later
-          </button>
+          {/* ✅ Optional dismiss button (we will disable this for Telegram popup only) */}
+          {showMaybeLater ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full border border-border hover:bg-main transition text-white py-3 rounded-md"
+            >
+              {maybeLaterText}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

@@ -10,11 +10,7 @@ import { getAllCategoriesAction } from './Redux/Actions/CategoriesActions';
 import { getAllMoviesAction } from './Redux/Actions/MoviesActions';
 import { getFavoriteMoviesAction } from './Redux/Actions/userActions';
 import toast from 'react-hot-toast';
-import {
-  trackUserType,
-  trackGuestExit,
-  trackLoginPrompt,
-} from './utils/analytics';
+import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analytics';
 import Loader from './Components/Loader';
 
 import Axios from './Redux/APIs/Axios';
@@ -110,7 +106,6 @@ const isStandaloneMode = () => {
   return (
     window.matchMedia?.('(display-mode: standalone)')?.matches ||
     window.matchMedia?.('(display-mode: fullscreen)')?.matches ||
-    // iOS Safari legacy
     window.navigator?.standalone === true
   );
 };
@@ -119,7 +114,6 @@ const isIOSDevice = () => {
   if (typeof window === 'undefined') return false;
   const ua = window.navigator.userAgent || '';
   const isIOS = /iPhone|iPad|iPod/i.test(ua);
-  // iPadOS 13+ reports as Mac, but has touch points
   const isIpadOS = /Macintosh/i.test(ua) && window.navigator.maxTouchPoints > 1;
   return isIOS || isIpadOS;
 };
@@ -133,34 +127,23 @@ function App() {
   const hasShownPrompt = useRef(false);
   const aosInitialized = useRef(false);
 
-  // ✅ IMPORTANT: define userInfo BEFORE any useEffect that references it
   const { userInfo } = useSelector((state) => state.userLogin || {});
-  const { isError, isSuccess } = useSelector(
-    (state) => state.userLikeMovie || {}
-  );
+  const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
   const { isError: catError } = useSelector((state) => state.categoryGetAll || {});
 
-  // Channel URLs (set them in .env and Vercel)
   const TELEGRAM_CHANNEL_URL = process.env.REACT_APP_TELEGRAM_CHANNEL_URL || '';
   const WHATSAPP_CHANNEL_URL = process.env.REACT_APP_WHATSAPP_CHANNEL_URL || '';
 
-  // Timed popups state
   const [telegramPopupOpen, setTelegramPopupOpen] = useState(false);
   const [whatsappPopupOpen, setWhatsappPopupOpen] = useState(false);
 
-  // Q1 popup open state
   const [requestPopupOpen, setRequestPopupOpen] = useState(false);
 
-  /* ============================================================
-     ✅ NEW: PWA Install popup state (Q1)
-     ============================================================ */
   const [installPopupOpen, setInstallPopupOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-  // Capture the install prompt event (Chrome/Edge/Android/Desktop)
   useEffect(() => {
     const onBeforeInstallPrompt = (e) => {
-      // Stop browser from showing its own mini-infobar
       e.preventDefault();
       setDeferredPrompt(e);
     };
@@ -184,53 +167,39 @@ function App() {
     };
   }, []);
 
-  // Show install popup after 20 seconds (unless installed / excluded routes)
   useEffect(() => {
     const path = location.pathname;
 
-    // Don’t show on auth pages or watch page
     if (path === '/login' || path === '/register') return;
     if (path.startsWith('/watch')) return;
 
-    // Don’t show if already installed
     if (isStandaloneMode()) return;
 
     try {
       if (localStorage.getItem('pwaInstalled') === '1') return;
-    } catch {
-      // ignore
-    }
+    } catch {}
 
-    // Show once per session
     try {
       if (sessionStorage.getItem('pwaInstallPopupShown')) return;
-    } catch {
-      // ignore
-    }
+    } catch {}
 
     const t = setTimeout(() => {
       if (isStandaloneMode()) return;
       setInstallPopupOpen(true);
       try {
         sessionStorage.setItem('pwaInstallPopupShown', '1');
-      } catch {
-        // ignore
-      }
-    }, 20000);
+      } catch {}
+    }, 10000);
 
     return () => clearTimeout(t);
   }, [location.pathname]);
 
   const handleInstallClick = async () => {
-    // For Chrome/Edge install prompt
-    if (!deferredPrompt) {
-      // No prompt available (iOS / unsupported browsers) → just keep instructions visible
-      return;
-    }
+    if (!deferredPrompt) return;
 
     try {
       deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice; // { outcome: 'accepted'|'dismissed' }
+      const choice = await deferredPrompt.userChoice;
 
       setDeferredPrompt(null);
       setInstallPopupOpen(false);
@@ -239,9 +208,7 @@ function App() {
         toast.success('App installed!');
         try {
           localStorage.setItem('pwaInstalled', '1');
-        } catch {
-          // ignore
-        }
+        } catch {}
       }
     } catch (e) {
       console.error('Install prompt failed:', e);
@@ -249,7 +216,6 @@ function App() {
     }
   };
 
-  // Force a clean reload on /login or /register once
   useEffect(() => {
     const path = location.pathname;
     const isAuth = path === '/login' || path === '/register';
@@ -265,7 +231,6 @@ function App() {
     }
   }, [location.pathname, location.search, location.hash]);
 
-  // Initialize AOS once
   useEffect(() => {
     if (!aosInitialized.current) {
       import('aos').then((AOS) => {
@@ -279,12 +244,10 @@ function App() {
     }
   }, []);
 
-  // Track user type
   useEffect(() => {
     trackUserType(!!userInfo);
   }, [userInfo]);
 
-  // Track guest exit
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (!userInfo) {
@@ -300,14 +263,12 @@ function App() {
     pageEntryTime.current = Date.now();
   }, [location.pathname]);
 
-  // Disable right click
   useEffect(() => {
     const handleContextMenu = (e) => e.preventDefault();
     document.addEventListener('contextmenu', handleContextMenu);
     return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, []);
 
-  // Initial data load
   useEffect(() => {
     const load = () => {
       try {
@@ -327,7 +288,6 @@ function App() {
     }
   }, [dispatch, userInfo]);
 
-  // Like movie errors
   useEffect(() => {
     if (isError || catError) {
       toast.error(isError || catError);
@@ -338,7 +298,6 @@ function App() {
     }
   }, [dispatch, isError, catError, isSuccess]);
 
-  // Existing 30-min forced login prompt (kept)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!userInfo && !hasShownPrompt.current) {
@@ -362,7 +321,7 @@ function App() {
   }, [userInfo, navigate, location]);
 
   /* ============================================================
-     Telegram popup (after 40 seconds)
+     Telegram popup (after 30 seconds)
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
@@ -376,7 +335,7 @@ function App() {
     const t = setTimeout(() => {
       setTelegramPopupOpen(true);
       sessionStorage.setItem('telegramPopupShown', '1');
-    }, 40000);
+    }, 30000);
 
     return () => clearTimeout(t);
   }, [location.pathname, TELEGRAM_CHANNEL_URL]);
@@ -384,22 +343,22 @@ function App() {
   /* ============================================================
      WhatsApp popup (after 1minutes 20seconds)
      ============================================================ */
-  useEffect(() => {
-    const path = location.pathname;
+  // useEffect(() => {
+  //   const path = location.pathname;
 
-    if (!WHATSAPP_CHANNEL_URL) return;
-    if (path === '/login' || path === '/register') return;
-    if (path.startsWith('/watch')) return;
+  //   if (!WHATSAPP_CHANNEL_URL) return;
+  //   if (path === '/login' || path === '/register') return;
+  //   if (path.startsWith('/watch')) return;
 
-    if (sessionStorage.getItem('whatsappPopupShown')) return;
+  //   if (sessionStorage.getItem('whatsappPopupShown')) return;
 
-    const t = setTimeout(() => {
-      setWhatsappPopupOpen(true);
-      sessionStorage.setItem('whatsappPopupShown', '1');
-    }, 80000);
+  //   const t = setTimeout(() => {
+  //     setWhatsappPopupOpen(true);
+  //     sessionStorage.setItem('whatsappPopupShown', '1');
+  //   }, 80000);
 
-    return () => clearTimeout(t);
-  }, [location.pathname, WHATSAPP_CHANNEL_URL]);
+  //   return () => clearTimeout(t);
+  // }, [location.pathname, WHATSAPP_CHANNEL_URL]);
 
   /* ============================================================
      Movie Request popup (after 2 minutes)
@@ -420,7 +379,6 @@ function App() {
     return () => clearTimeout(t);
   }, [location.pathname]);
 
-  // After login: load notifications + ensure push subscription + auto-submit pending watch request
   useEffect(() => {
     const run = async () => {
       if (!userInfo?.token) return;
@@ -428,15 +386,10 @@ function App() {
       dispatch(getNotificationsAction(true));
 
       try {
-        if (
-          typeof Notification !== 'undefined' &&
-          Notification.permission === 'granted'
-        ) {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
           await ensurePushSubscription(userInfo.token);
         }
-      } catch {
-        // ignore push errors
-      }
+      } catch {}
 
       const raw = localStorage.getItem('pendingWatchRequest');
       if (!raw) return;
@@ -461,7 +414,6 @@ function App() {
     run();
   }, [userInfo?.token, dispatch]);
 
-  // Refresh notifications when SW push arrives
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
@@ -480,7 +432,6 @@ function App() {
       <DrawerContext>
         <ToastContainer />
 
-        {/* ✅ NEW: Install / Pin popup (after 10 seconds) */}
         <InstallPwaPopup
           open={installPopupOpen}
           onClose={() => setInstallPopupOpen(false)}
@@ -499,10 +450,11 @@ function App() {
             buttonText="Open Telegram"
             url={TELEGRAM_CHANNEL_URL}
             Icon={FaTelegramPlane}
+            showMaybeLater={false}  // ✅ Q1: removed "Maybe later" for Telegram
           />
         ) : null}
 
-        {/* ✅ WhatsApp popup */}
+        {/* ✅ WhatsApp popup (unchanged) */}
         {WHATSAPP_CHANNEL_URL ? (
           <ChannelPopup
             open={whatsappPopupOpen}
@@ -515,11 +467,7 @@ function App() {
           />
         ) : null}
 
-        {/* Movie request popup (after 3 minutes) */}
-        <MovieRequestPopup
-          open={requestPopupOpen}
-          onClose={() => setRequestPopupOpen(false)}
-        />
+        <MovieRequestPopup open={requestPopupOpen} onClose={() => setRequestPopupOpen(false)} />
 
         <ScrollOnTop>
           <Suspense fallback={<LoadingFallback />}>
