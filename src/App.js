@@ -402,7 +402,7 @@ function App() {
   }, [location.pathname, WHATSAPP_CHANNEL_URL]);
 
   /* ============================================================
-     Movie Request popup (after 3 minutes)
+     Movie Request popup (after 2 minutes)
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
@@ -415,7 +415,7 @@ function App() {
     const t = setTimeout(() => {
       setRequestPopupOpen(true);
       sessionStorage.setItem('movieRequestPopupShown', '1');
-    }, 180000);
+    }, 120000);
 
     return () => clearTimeout(t);
   }, [location.pathname]);
