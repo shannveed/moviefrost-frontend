@@ -376,7 +376,7 @@ function App() {
     const t = setTimeout(() => {
       setTelegramPopupOpen(true);
       sessionStorage.setItem('telegramPopupShown', '1');
-    }, 20000);
+    }, 30000);
 
     return () => clearTimeout(t);
   }, [location.pathname, TELEGRAM_CHANNEL_URL]);
@@ -396,7 +396,7 @@ function App() {
     const t = setTimeout(() => {
       setWhatsappPopupOpen(true);
       sessionStorage.setItem('whatsappPopupShown', '1');
-    }, 40000);
+    }, 60000);
 
     return () => clearTimeout(t);
   }, [location.pathname, WHATSAPP_CHANNEL_URL]);

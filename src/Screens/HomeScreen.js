@@ -424,7 +424,7 @@ function HomeScreen() {
             : 'bg-dry text-white hover:bg-customPurple/20 border border-border'
         }`}
       >
-        BrowseBy Industry
+        BrowseBy Film Industry
       </button>
     </div>
   );

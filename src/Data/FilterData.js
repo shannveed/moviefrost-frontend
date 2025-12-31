@@ -56,6 +56,8 @@ export const TimesData = [
 
 export const YearData = [
   { title: 'Sort By Year' },
+  { title: '2026' },
+  { title: '2025' },
   { title: '2024' },
   { title: '2023' },
   { title: '2022' },
