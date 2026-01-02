@@ -13,11 +13,11 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "https://moviefrost-backend.vercel.app/sitemap.xml"
+      "destination": "https://moviefrost-backend-alpha.vercel.app/sitemap.xml"
     },
     {
       "source": "/sitemap-videos.xml",
-      "destination": "https://moviefrost-backend.vercel.app/sitemap-videos.xml"
+      "destination": "https://moviefrost-backend-alpha.vercel.app/sitemap-videos.xml"
     },
     {
       "source": "/robots.txt",
