@@ -1,23 +1,27 @@
 export const AD_CONFIG = {
-  // Adsterra Ad Configuration - ALL DISABLED
   adsterra: {
-    /* === ALL ADSTERRA UNUSED RIGHT NOW === */
     banner: { 
       desktop: {}, 
       mobile: {} 
     },
-    native: {},
-    socialBar: {},
-    popunder: {},
-    directLink: ''
+    native: {
+       id: '26941009'
+    },
+    socialBar: {
+      id: '26910178'
+    },
+    popunder: {
+      id: '26909954'
+    },
+    directLink: '26910123'
   },
   
-  // PopAds Configuration - DISABLED
+  // PopAds Configuration - ENABLED
   popAds: {
-    enabled: false,  // Changed from true to false
+    enabled: true,  // Changed from false to true
     websiteId: 5214524,
-    popundersPerIP: '5',
-    delayBetween: 0,
+    popundersPerIP: '20',
+    delayBetween: 300,
     minBid: 0.001,
     frequency: 1,
   },
