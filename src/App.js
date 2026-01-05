@@ -10,7 +10,11 @@ import { getAllCategoriesAction } from './Redux/Actions/CategoriesActions';
 import { getAllMoviesAction } from './Redux/Actions/MoviesActions';
 import { getFavoriteMoviesAction } from './Redux/Actions/userActions';
 import toast from 'react-hot-toast';
-import { trackUserType, trackGuestExit, trackLoginPrompt } from './utils/analytics';
+import {
+  trackUserType,
+  trackGuestExit,
+  trackLoginPrompt,
+} from './utils/analytics';
 import Loader from './Components/Loader';
 
 import Axios from './Redux/APIs/Axios';
@@ -21,6 +25,9 @@ import { FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
 
 import { getNotificationsAction } from './Redux/Actions/notificationsActions';
 import { ensurePushSubscription } from './utils/pushNotifications';
+
+// ✅ NEW
+import { OPEN_WATCH_REQUEST_POPUP } from './utils/events';
 
 // Non-lazy route components you already had
 import HollywoodSection from './Components/Home/HollywoodSection';
@@ -34,6 +41,7 @@ import PunjabiSection from './Components/Home/PunjabiSection';
 import ChineseDramaSection from './Components/Home/ChineseDramaSection';
 import KoreanDramaSection from './Components/Home/KoreanDramaSection';
 import JapaneseAnimeSection from './Components/Home/JapaneseAnimeSection';
+import AdsProvider from './ads/AdsProvider';
 
 // Lazy load pages
 const HomeScreen = lazy(() => import('./Screens/HomeScreen'));
@@ -137,10 +145,29 @@ function App() {
   const [telegramPopupOpen, setTelegramPopupOpen] = useState(false);
   const [whatsappPopupOpen, setWhatsappPopupOpen] = useState(false);
 
+  // ✅ Movie Request popup (manual + auto)
   const [requestPopupOpen, setRequestPopupOpen] = useState(false);
 
   const [installPopupOpen, setInstallPopupOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  /* ============================================================
+     ✅ NEW: Allow Navbar/MobileFooter to open MovieRequestPopup
+     ============================================================ */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const openHandler = () => {
+      setRequestPopupOpen(true);
+      try {
+        // prevent the 1-minute auto popup from showing later in this session
+        sessionStorage.setItem('movieRequestPopupShown', '1');
+      } catch {}
+    };
+
+    window.addEventListener(OPEN_WATCH_REQUEST_POPUP, openHandler);
+    return () => window.removeEventListener(OPEN_WATCH_REQUEST_POPUP, openHandler);
+  }, []);
 
   useEffect(() => {
     const onBeforeInstallPrompt = (e) => {
@@ -335,33 +362,13 @@ function App() {
     const t = setTimeout(() => {
       setTelegramPopupOpen(true);
       sessionStorage.setItem('telegramPopupShown', '1');
-    }, 30000);
+    }, 25000);
 
     return () => clearTimeout(t);
   }, [location.pathname, TELEGRAM_CHANNEL_URL]);
 
   /* ============================================================
-     WhatsApp popup (after 1minutes 20seconds)
-     ============================================================ */
-  // useEffect(() => {
-  //   const path = location.pathname;
-
-  //   if (!WHATSAPP_CHANNEL_URL) return;
-  //   if (path === '/login' || path === '/register') return;
-  //   if (path.startsWith('/watch')) return;
-
-  //   if (sessionStorage.getItem('whatsappPopupShown')) return;
-
-  //   const t = setTimeout(() => {
-  //     setWhatsappPopupOpen(true);
-  //     sessionStorage.setItem('whatsappPopupShown', '1');
-  //   }, 80000);
-
-  //   return () => clearTimeout(t);
-  // }, [location.pathname, WHATSAPP_CHANNEL_URL]);
-
-  /* ============================================================
-     Movie Request popup (after 2 minutes)
+     Movie Request popup (after 45seconds) — existing
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
@@ -374,7 +381,7 @@ function App() {
     const t = setTimeout(() => {
       setRequestPopupOpen(true);
       sessionStorage.setItem('movieRequestPopupShown', '1');
-    }, 120000);
+    }, 45000);
 
     return () => clearTimeout(t);
   }, [location.pathname]);
@@ -431,7 +438,7 @@ function App() {
     <ErrorBoundary>
       <DrawerContext>
         <ToastContainer />
-
+        <AdsProvider />
         <InstallPwaPopup
           open={installPopupOpen}
           onClose={() => setInstallPopupOpen(false)}
@@ -450,11 +457,11 @@ function App() {
             buttonText="Open Telegram"
             url={TELEGRAM_CHANNEL_URL}
             Icon={FaTelegramPlane}
-            showMaybeLater={false}  // ✅ Q1: removed "Maybe later" for Telegram
+            showMaybeLater={false}
           />
         ) : null}
 
-        {/* ✅ WhatsApp popup (unchanged) */}
+        {/* ✅ WhatsApp popup */}
         {WHATSAPP_CHANNEL_URL ? (
           <ChannelPopup
             open={whatsappPopupOpen}
@@ -467,7 +474,11 @@ function App() {
           />
         ) : null}
 
-        <MovieRequestPopup open={requestPopupOpen} onClose={() => setRequestPopupOpen(false)} />
+        {/* ✅ Movie request popup (manual + auto) */}
+        <MovieRequestPopup
+          open={requestPopupOpen}
+          onClose={() => setRequestPopupOpen(false)}
+        />
 
         <ScrollOnTop>
           <Suspense fallback={<LoadingFallback />}>

@@ -2,11 +2,8 @@ const CACHE_PREFIX = 'moviefrost-cache-';
 const CACHE_NAME = `${CACHE_PREFIX}${Date.now()}`;
 
 const STATIC_ASSETS = [
-  // App icons (NEW)
   '/images/desktop-icon-192.jpeg',
   '/images/desktop-icon-512.jpeg',
-
-  // Existing assets
   '/images/MOVIEFROST.png',
   '/images/placeholder.jpg',
 ];
@@ -71,12 +68,22 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || 'MovieFrost';
+
   const options = {
     body: data.body || '',
     icon: data.icon || '/images/MOVIEFROST.png',
-    badge: '/images/MOVIEFROST.png',
+    badge: data.badge || '/images/MOVIEFROST.png',
     image: data.image,
-    data: { url: data.url || '/' },
+    tag: data.tag, // group notifications if same tag
+    renotify: !!data.renotify,
+    requireInteraction: !!data.requireInteraction, // desktop: keep until user closes/clicks
+    silent: !!data.silent,
+    data: {
+      url: data.url || '/',
+      ...(typeof data.data === 'object' && data.data ? data.data : {}),
+    },
+    // Optional (supported in some browsers)
+    actions: Array.isArray(data.actions) ? data.actions.slice(0, 2) : undefined,
   };
 
   event.waitUntil(
@@ -92,6 +99,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
   const url = event.notification?.data?.url || '/';
 
   event.waitUntil(

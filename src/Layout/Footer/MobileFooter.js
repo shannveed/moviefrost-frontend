@@ -19,6 +19,15 @@ import {
   markNotificationAsRead,
   getNotificationsAction,
 } from '../../Redux/Actions/notificationsActions';
+import {
+  ensurePushSubscription,
+  requestPermissionAndSubscribe,
+  isPushSupported,
+} from '../../utils/pushNotifications';
+
+
+// ✅ NEW
+import { OPEN_WATCH_REQUEST_POPUP } from '../../utils/events';
 
 function MobileFooter() {
   const {
@@ -49,10 +58,8 @@ function MobileFooter() {
   const [replyMessage, setReplyMessage] = useState('');
   const [replyLoading, setReplyLoading] = useState(false);
 
-  // Check if we're on the home page
   const isHomePage = location.pathname === '/';
 
-  // Close notifications panel helper
   const closeNotifications = () => {
     setNotifyOpen(false);
     setReplyOpenId(null);
@@ -60,25 +67,29 @@ function MobileFooter() {
     setReplyMessage('');
   };
 
-  // Optional: show notif errors as toast
+  // ✅ NEW: Open request popup from mobile notifications panel
+  const openWatchRequestPopup = () => {
+    closeNotifications();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(OPEN_WATCH_REQUEST_POPUP));
+    }
+  };
+
   useEffect(() => {
     if (notifError) toast.error(notifError);
   }, [notifError]);
 
-  // Close notifications when user logs out
   useEffect(() => {
     if (!userInfo?.token) closeNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo?.token]);
 
-  // Fetch notifications when panel opens
   useEffect(() => {
     if (notifyOpen && userInfo?.token) {
       dispatch(getNotificationsAction(true));
     }
   }, [notifyOpen, userInfo?.token, dispatch]);
 
-  // Handle Home tab click
   const handleHomeClick = (e) => {
     e.preventDefault();
     closeNotifications();
@@ -93,7 +104,6 @@ function MobileFooter() {
     }
   };
 
-  // Handle BrowseBy tab click
   const handleBrowseByClick = (e) => {
     e.preventDefault();
     closeNotifications();
@@ -113,24 +123,41 @@ function MobileFooter() {
     toggleDrawer();
   };
 
-  const handleNotificationsClick = (e) => {
-    e.preventDefault();
+  const handleNotificationsClick = async (e) => {
+  e.preventDefault();
 
-    // If drawer open, close it first
-    if (mobileDrawer) toggleDrawer();
+  if (mobileDrawer) toggleDrawer();
 
-    if (!userInfo?.token) {
-      toast.error('Please login to view notifications');
-      navigate('/login');
-      return;
+  if (!userInfo?.token) {
+    toast.error('Please login to view notifications');
+    navigate('/login');
+    return;
+  }
+
+  // ✅ NEW: Ask once per session (user gesture = bell click)
+  try {
+    if (isPushSupported()) {
+      if (Notification.permission === 'granted') {
+        await ensurePushSubscription(userInfo.token);
+      } else if (Notification.permission === 'default') {
+        const key = 'pushPermissionPrompted';
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          await requestPermissionAndSubscribe(userInfo.token);
+        }
+      }
     }
+  } catch (e2) {
+    console.warn('[push] enable failed:', e2);
+  }
 
-    setNotifyOpen((prev) => {
-      const next = !prev;
-      if (next) dispatch(getNotificationsAction(true));
-      return next;
-    });
-  };
+  setNotifyOpen((prev) => {
+    const next = !prev;
+    if (next) dispatch(getNotificationsAction(true));
+    return next;
+  });
+};
+
 
   const handleClearNotifications = () => {
     dispatch(clearNotifications());
@@ -160,7 +187,7 @@ function MobileFooter() {
     closeNotifications();
   };
 
-  // Admin: reply to watch request (notif.type === 'watch_request')
+  // Admin reply to watch request
   const handleAdminReplyRequest = async (notif) => {
     const requestId = notif?.meta?.requestId;
     if (!requestId) {
@@ -197,15 +224,12 @@ function MobileFooter() {
       setReplyLink('');
       setReplyMessage('');
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message || err?.message || 'Reply failed'
-      );
+      toast.error(err?.response?.data?.message || err?.message || 'Reply failed');
     } finally {
       setReplyLoading(false);
     }
   };
 
-  // NavLink styling
   const active = 'bg-customPurple text-white';
   const inActive =
     'transition duration-300 text-xl flex-colo text-white hover:bg-customPurple hover:text-white rounded-md px-3 py-1.5';
@@ -221,10 +245,9 @@ function MobileFooter() {
 
   return (
     <>
-      {/* Mobile menu drawer */}
       <MenuDrawer drawerOpen={mobileDrawer} toggleDrawer={toggleDrawer} />
 
-      {/* ✅ Mobile Notifications Panel */}
+      {/* Notifications Panel */}
       {notifyOpen && (
         <div
           className="fixed inset-0 z-[60]"
@@ -238,16 +261,29 @@ function MobileFooter() {
             className="absolute left-2 right-2 bottom-20 bg-black border border-customPurple rounded-lg shadow-xl z-[61] p-2 max-h-[70vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-2 py-1">
+            {/* ✅ UPDATED header */}
+            <div className="flex items-center justify-between px-2 py-1 gap-2">
               <h4 className="text-sm font-semibold text-white">
                 Notifications
               </h4>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {/* ✅ NEW: request button for normal users */}
+                {!userInfo?.isAdmin && (
+                  <button
+                    onClick={openWatchRequestPopup}
+                    className="text-xs text-customPurple hover:underline"
+                    type="button"
+                  >
+                    Request Movie
+                  </button>
+                )}
+
                 {sortedNotifications.length > 0 && (
                   <button
                     onClick={handleClearNotifications}
                     className="text-xs text-subMain hover:underline"
+                    type="button"
                   >
                     Clear all
                   </button>
@@ -257,6 +293,7 @@ function MobileFooter() {
                   onClick={closeNotifications}
                   className="text-gray-400 hover:text-white"
                   aria-label="Close notifications"
+                  type="button"
                 >
                   <IoClose size={18} />
                 </button>
@@ -268,9 +305,20 @@ function MobileFooter() {
             )}
 
             {!notifLoading && sortedNotifications.length === 0 && (
-              <p className="text-sm text-border px-2 py-2">
-                No notifications
-              </p>
+              <div className="px-2 py-2">
+                <p className="text-sm text-border mb-2">No notifications</p>
+
+                {/* ✅ NEW: CTA when empty */}
+                {!userInfo?.isAdmin && (
+                  <button
+                    onClick={openWatchRequestPopup}
+                    className="w-full border border-customPurple text-customPurple hover:bg-customPurple hover:text-white transitions rounded py-2 text-sm"
+                    type="button"
+                  >
+                    Request a Movie / Web‑Series
+                  </button>
+                )}
+              </div>
             )}
 
             {!notifLoading &&
@@ -302,12 +350,13 @@ function MobileFooter() {
                       className="p-1 text-gray-400 hover:text-red-500"
                       title="Remove notification"
                       aria-label="Remove notification"
+                      type="button"
                     >
                       <IoClose size={14} />
                     </button>
                   </div>
 
-                  {/* ✅ Admin reply UI (same as Navbar) */}
+                  {/* Admin reply UI */}
                   {userInfo?.isAdmin && notif.type === 'watch_request' && (
                     <div className="mt-2">
                       <button
@@ -319,6 +368,7 @@ function MobileFooter() {
                           setReplyMessage('');
                         }}
                         className="text-xs text-customPurple hover:underline"
+                        type="button"
                       >
                         {replyOpenId === notif._id ? 'Close Reply' : 'Reply'}
                       </button>
@@ -341,6 +391,7 @@ function MobileFooter() {
                             onClick={() => handleAdminReplyRequest(notif)}
                             className="w-full bg-customPurple text-white rounded py-2 text-xs disabled:opacity-60"
                             disabled={replyLoading}
+                            type="button"
                           >
                             {replyLoading ? 'Sending...' : 'Send'}
                           </button>
@@ -357,7 +408,6 @@ function MobileFooter() {
       {/* Bottom navigation bar */}
       <footer className="lg:hidden fixed z-50 bottom-0 w-full px-1">
         <div className="bg-dry rounded-md flex-btn w-full p-1">
-          {/* Home Tab */}
           <button
             onClick={handleHomeClick}
             className={isHomeActive ? `${active} ${inActive}` : inActive}
@@ -369,7 +419,6 @@ function MobileFooter() {
             </div>
           </button>
 
-          {/* BrowseBy Tab */}
           <button
             onClick={handleBrowseByClick}
             className={isBrowseByActive ? `${active} ${inActive}` : inActive}
@@ -381,7 +430,6 @@ function MobileFooter() {
             </div>
           </button>
 
-          {/* Movies Tab */}
           <NavLink
             to="/movies"
             onClick={() => {
@@ -399,7 +447,6 @@ function MobileFooter() {
             </div>
           </NavLink>
 
-          {/* ✅ NEW: Notifications Tab (between Movies and Menu) */}
           <button
             onClick={handleNotificationsClick}
             className={isNotifActive ? `${active} ${inActive}` : inActive}
@@ -418,7 +465,6 @@ function MobileFooter() {
             </div>
           </button>
 
-          {/* Menu Tab */}
           <button onClick={handleMenuClick} className={inActive} aria-label="Menu">
             <div className="flex flex-col items-center">
               <CgMenuBoxed className="text-lg" />

@@ -4,8 +4,7 @@ import NavBar from './Navbar/Navbar';
 import Footer from './Footer/Footer';
 import MobileFooter from './Footer/MobileFooter';
 import ScrollOnTop from '../ScrollOnTop';
-import { AdsterraSocialBar, AdsterraPopunder, MonetagPopunder, MonetagBanner, PopAdsPopunder } from '../Components/Ads/AdWrapper';
-import { AD_CONFIG } from '../Components/Ads/AdConfig';
+
 
 function Layout({ children }) {
   const adsLoadedRef = useRef(false);
@@ -39,23 +38,7 @@ function Layout({ children }) {
         {/* Mobile Footer Navigation - Fixed at bottom */}
         <MobileFooter />
 
-        {/* ---- ALL AD-COMPONENTS TEMPORARILY DISABLED ----
-        {adsLoadedRef.current && !isAuthRoute && (
-          <>
-            {AD_CONFIG.monetag.popunder.enabled && (
-              <MonetagPopunder />
-            )}
-
-            {AD_CONFIG.monetag.banner.enabled && (
-              <MonetagBanner />
-            )}
-
-            {AD_CONFIG.popAds.enabled && (
-              <PopAdsPopunder />
-            )}
-          </>
-        )}
-        */}
+        
       </div>
     </>
   );

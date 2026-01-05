@@ -17,6 +17,15 @@ import {
   getNotificationsAction,
 } from '../../Redux/Actions/notificationsActions';
 
+// ✅ NEW
+import { OPEN_WATCH_REQUEST_POPUP } from '../../utils/events';
+import {
+  ensurePushSubscription,
+  requestPermissionAndSubscribe,
+  isPushSupported,
+} from '../../utils/pushNotifications';
+
+
 function NavBar() {
   // Search
   const [search, setSearch] = useState('');
@@ -43,7 +52,7 @@ function NavBar() {
   );
   const { browseBy = [] } = useSelector((state) => state.browseByDistinct || {});
 
-  // ✅ NEW: server-based notifications state
+  // server-based notifications state
   const {
     notifications = [],
     unreadCount = 0,
@@ -56,7 +65,7 @@ function NavBar() {
     dispatch(getDistinctBrowseByAction());
   }, [dispatch]);
 
-  // ✅ Fetch notifications on login + poll
+  // Fetch notifications on login + poll
   useEffect(() => {
     if (!userInfo?.token) return;
 
@@ -66,7 +75,7 @@ function NavBar() {
     return () => clearInterval(id);
   }, [dispatch, userInfo?.token]);
 
-  // Notification errors (optional)
+  // Notification errors
   useEffect(() => {
     if (notifError) toast.error(notifError);
   }, [notifError]);
@@ -113,12 +122,9 @@ function NavBar() {
     const term = search.trim();
 
     if (term) {
-      trackSearch(term);
-
       if (!userInfo) {
         trackGuestAction('search', { search_term: term });
       }
-
       navigate(`/movies/${term}`);
       setShowDropdown(false);
     } else {
@@ -174,19 +180,37 @@ function NavBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleNotifyDropdown = () => {
-    if (!userInfo?.token) {
-      toast.error('Please login to view notifications');
-      navigate('/login');
-      return;
-    }
+  const toggleNotifyDropdown = async () => {
+  if (!userInfo?.token) {
+    toast.error('Please login to view notifications');
+    navigate('/login');
+    return;
+  }
 
-    setNotifyOpen((prev) => {
-      const next = !prev;
-      if (next) dispatch(getNotificationsAction(true));
-      return next;
-    });
-  };
+  // ✅ NEW: Ask once per session (user gesture = bell click)
+  try {
+    if (isPushSupported()) {
+      if (Notification.permission === 'granted') {
+        await ensurePushSubscription(userInfo.token);
+      } else if (Notification.permission === 'default') {
+        const key = 'pushPermissionPrompted';
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          await requestPermissionAndSubscribe(userInfo.token);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[push] enable failed:', e);
+  }
+
+  setNotifyOpen((prev) => {
+    const next = !prev;
+    if (next) dispatch(getNotificationsAction(true));
+    return next;
+  });
+};
+
 
   const handleClearNotifications = () => {
     dispatch(clearNotifications());
@@ -229,7 +253,18 @@ function NavBar() {
     window.location.href = '/movies';
   };
 
-  // ✅ Admin: reply to watch request (notif.type === 'watch_request')
+  // ✅ NEW: Open Movie/WebSeries request popup from notifications UI
+  const openWatchRequestPopup = () => {
+    setNotifyOpen(false);
+    setReplyOpenId(null);
+    setReplyLink('');
+    setReplyMessage('');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(OPEN_WATCH_REQUEST_POPUP));
+    }
+  };
+
+  // Admin: reply to watch request
   const handleAdminReplyRequest = async (notif) => {
     const requestId = notif?.meta?.requestId;
     if (!requestId) {
@@ -367,18 +402,6 @@ function NavBar() {
                       {movie.year} • {movie.category}
                     </p>
                   </div>
-
-                  {movie.type && (
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${
-                        movie.type === 'WebSeries'
-                          ? 'bg-green-600/20 text-green-400'
-                          : 'bg-customPurple/20 text-customPurple'
-                      }`}
-                    >
-                      {movie.type === 'WebSeries' ? 'Series' : 'Movie'}
-                    </span>
-                  )}
                 </Link>
               ))}
             </div>
@@ -411,13 +434,6 @@ function NavBar() {
               ) : (
                 <p className="px-3 py-2 text-sm opacity-80">No Hollywood data</p>
               )}
-
-              <NavLink
-                to="/movies?browseBy=Hollywood%20Web%20Series%20(Hindi%20Dubbed)"
-                className="block px-3 py-2 hover:text-customPurple"
-              >
-                Hollywood Web Series (Hindi Dubbed)
-              </NavLink>
             </div>
           </div>
 
@@ -440,19 +456,6 @@ function NavBar() {
               ) : (
                 <p className="px-3 py-2 text-sm opacity-80">No Indian data</p>
               )}
-
-              <NavLink
-                to="/movies?browseBy=South%20Indian%20(Hindi%20Dubbed)"
-                className="block px-3 py-2 hover:text-customPurple"
-              >
-                South Indian (Hindi Dubbed)
-              </NavLink>
-              <NavLink
-                to="/movies?browseBy=Bollywood%20Web%20Series"
-                className="block px-3 py-2 hover:text-customPurple"
-              >
-                Bollywood Web Series
-              </NavLink>
             </div>
           </div>
 
@@ -475,35 +478,9 @@ function NavBar() {
               ) : (
                 <p className="px-3 py-2 text-sm opacity-80">No data</p>
               )}
-
-              <NavLink
-                to="/movies?browseBy=Pakistani%20Movies"
-                className="block px-3 py-2 hover:text-customPurple"
-              >
-                Pakistani Movies
-              </NavLink>
-              <NavLink
-                to="/movies?browseBy=Indian%20Punjabi%20Movies"
-                className="block px-3 py-2 hover:text-customPurple"
-              >
-                Indian Punjabi Movies
-              </NavLink>
-              <NavLink
-                to="/movies?browseBy=WWE%20Wrestling"
-                className="block px-3 py-2 hover:text-customPurple"
-              >
-                WWE Wrestling
-              </NavLink>
-              <NavLink
-                to="/movies?browseBy=Indian%20Award%20Shows"
-                className="block px-3 py-2 hover:text-customPurple"
-              >
-                Indian Award Shows
-              </NavLink>
             </div>
           </div>
 
-          {/* Contact Us */}
           <NavLink to="/contact-us" className={Hover}>
             Contact Us
           </NavLink>
@@ -538,18 +515,33 @@ function NavBar() {
                 id="notifications-dropdown"
                 className="absolute right-0 mt-2 w-96 bg-black border border-customPurple rounded shadow-xl z-50 p-2 max-h-96 overflow-y-auto"
               >
-                <div className="flex items-center justify-between px-2 mb-2">
+                {/* ✅ UPDATED header */}
+                <div className="flex items-center justify-between px-2 mb-2 gap-2">
                   <h4 className="text-sm font-semibold text-white">
                     Notifications
                   </h4>
-                  {notifications.length > 0 && (
-                    <button
-                      onClick={handleClearNotifications}
-                      className="text-xs text-subMain hover:underline"
-                    >
-                      Clear all
-                    </button>
-                  )}
+
+                  <div className="flex items-center gap-3">
+                    {/* ✅ NEW: request button (hide for admin) */}
+                    {!userInfo?.isAdmin && (
+                      <button
+                        onClick={openWatchRequestPopup}
+                        className="text-xs text-customPurple hover:underline"
+                        type="button"
+                      >
+                        Request Movie
+                      </button>
+                    )}
+
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={handleClearNotifications}
+                        className="text-xs text-subMain hover:underline"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {notifLoading && (
@@ -557,9 +549,20 @@ function NavBar() {
                 )}
 
                 {!notifLoading && notifications.length === 0 && (
-                  <p className="text-sm text-border px-2 py-2">
-                    No notifications
-                  </p>
+                  <div className="px-2 py-2">
+                    <p className="text-sm text-border mb-2">No notifications</p>
+
+                    {/* ✅ NEW: CTA when empty */}
+                    {!userInfo?.isAdmin && (
+                      <button
+                        onClick={openWatchRequestPopup}
+                        className="w-full border border-customPurple text-customPurple hover:bg-customPurple hover:text-white transitions rounded py-2 text-sm"
+                        type="button"
+                      >
+                        Request a Movie / Web‑Series
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 {!notifLoading &&
@@ -601,7 +604,7 @@ function NavBar() {
                           </button>
                         </div>
 
-                        {/* ✅ Admin reply UI for watch requests */}
+                        {/* Admin reply UI */}
                         {userInfo?.isAdmin && notif.type === 'watch_request' && (
                           <div className="mt-2">
                             <button

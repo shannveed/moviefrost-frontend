@@ -10,10 +10,7 @@ import Layout from '../Layout/Layout';
 import { BiArrowBack } from 'react-icons/bi';
 import { FaCloudDownloadAlt, FaHeart, FaPlay, FaLock } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  getMovieByIdAction,
-  getAllMoviesAction,
-} from '../Redux/Actions/MoviesActions';
+import { getMovieByIdAction } from '../Redux/Actions/MoviesActions';
 import Loader from '../Components/Loader';
 import { RiMovie2Line } from 'react-icons/ri';
 import {
@@ -27,6 +24,11 @@ import Movie from '../Components/movie';
 import toast from 'react-hot-toast';
 import MetaTags from '../Components/SEO/MetaTags';
 import { FiLogIn } from 'react-icons/fi';
+
+import {
+  getRelatedMoviesService,
+  getRelatedMoviesAdminService,
+} from '../Redux/APIs/MoviesServices';
 
 function WatchPage() {
   const { id: routeParam } = useParams(); // can be slug or MongoId
@@ -46,6 +48,11 @@ function WatchPage() {
   const [currentServerIndex, setCurrentServerIndex] = useState(0);
   const [currentEpisode, setCurrentEpisode] = useState(null);
 
+  // ✅ NEW: related titles state (fetched from backend by category)
+  const [relatedTitles, setRelatedTitles] = useState([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [relatedError, setRelatedError] = useState(null);
+
   const sameClass = 'w-full gap-6 flex-colo min-h-screen';
 
   const { isLoading, isError, movie } = useSelector(
@@ -55,25 +62,11 @@ function WatchPage() {
     (state) => state.userLikeMovie
   );
   const { userInfo } = useSelector((state) => state.userLogin);
-  const { movies } = useSelector((state) => state.getAllMovies);
 
   const isLiked = IfMovieLiked(movie);
   const isNotFound = isError === 'Movie not found';
 
-  // ✅ Q2: Related movies (up to 20) + Show More link
-  const relatedMovies = useMemo(() => {
-    if (!Array.isArray(movies) || !movie?._id) return [];
-    return movies.filter(
-      (m) => m.category === movie?.category && m._id !== movie?._id
-    );
-  }, [movies, movie]);
-
-  const relatedMoviesToShow = useMemo(
-    () => relatedMovies.slice(0, 20),
-    [relatedMovies]
-  );
-
-  // ✅ Q1: Prevent background scroll (especially important for mobile landscape modal UX)
+  // ✅ Prevent background scroll while login modal is open
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
@@ -94,7 +87,6 @@ function WatchPage() {
   }, [isNotFound, isLoading, movie, navigate]);
 
   // Redirect old /watch/<id> URLs to /watch/<slug> once movie is known.
-  // IMPORTANT: only do this if the URL param looks like an ObjectId.
   useEffect(() => {
     if (
       looksLikeObjectId &&
@@ -109,9 +101,8 @@ function WatchPage() {
 
   // Helper to build SEO title without duplicate year from name
   const buildWatchSeoTitle = (movieObj) => {
-    if (!movieObj) {
-      return 'Watch Movie Online – MovieFrost';
-    }
+    if (!movieObj) return 'Watch Movie Online – MovieFrost';
+
     const baseName = (movieObj.name || 'Movie').trim();
     const yearStr = movieObj.year ? String(movieObj.year) : '';
     let nameWithYear = baseName;
@@ -129,22 +120,18 @@ function WatchPage() {
   // SEO configuration
   const pathSegmentForMeta = movie?.slug || routeParam;
   const pageUrl = `https://www.moviefrost.com/watch/${pathSegmentForMeta}`;
-  const seoTitle = movie
-    ? buildWatchSeoTitle(movie)
-    : 'Watch Movie Online – MovieFrost';
+  const seoTitle = movie ? buildWatchSeoTitle(movie) : 'Watch Movie Online – MovieFrost';
   const seoDescription = movie
     ? `${movie.desc?.substring(0, 150) || ''} Watch instantly in HD on MovieFrost.`
     : 'Watch free movies and web series online in HD on MovieFrost.';
-
   const shouldNoIndex = !movie || Boolean(isError);
 
-  const handleBackClick = () => {
-    navigate(-1);
-  };
+  const handleBackClick = () => navigate(-1);
 
   // Track guest watch time + show modal
   useEffect(() => {
     let interval;
+
     if (play && !userInfo) {
       interval = setInterval(() => {
         setGuestWatchTime((prev) => {
@@ -185,23 +172,70 @@ function WatchPage() {
     };
   }, [play, userInfo, hasShownLoginPrompt, routeParam, movie, location]);
 
+  // Fetch movie detail
   useEffect(() => {
-    if (routeParam) {
-      dispatch(getMovieByIdAction(routeParam));
-    }
-    dispatch(getAllMoviesAction({}));
+    if (routeParam) dispatch(getMovieByIdAction(routeParam));
   }, [dispatch, routeParam]);
 
+  // Set first episode for web series
   useEffect(() => {
-    if (
-      movie &&
-      movie.type === 'WebSeries' &&
-      movie.episodes &&
-      movie.episodes.length > 0
-    ) {
+    if (movie?.type === 'WebSeries' && Array.isArray(movie.episodes) && movie.episodes.length > 0) {
       setCurrentEpisode(movie.episodes[0]);
     }
   }, [movie]);
+
+  // ✅ Reset related when route changes
+  useEffect(() => {
+    setRelatedTitles([]);
+    setRelatedError(null);
+    setRelatedLoading(false);
+  }, [routeParam]);
+
+  // ✅ Fetch related titles from backend by category (returns up to 20)
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchRelated = async () => {
+      if (!movie?._id) return;
+
+      const idOrSlug = movie.slug || movie._id || routeParam;
+
+      try {
+        setRelatedLoading(true);
+        setRelatedError(null);
+
+        const data =
+          userInfo?.isAdmin && userInfo?.token
+            ? await getRelatedMoviesAdminService(userInfo.token, idOrSlug, 20)
+            : await getRelatedMoviesService(idOrSlug, 20);
+
+        const list = Array.isArray(data) ? data : [];
+        if (!cancelled) setRelatedTitles(list);
+      } catch (e) {
+        const msg =
+          e?.response?.data?.message ||
+          e?.message ||
+          'Failed to load related titles';
+        if (!cancelled) setRelatedError(msg);
+      } finally {
+        if (!cancelled) setRelatedLoading(false);
+      }
+    };
+
+    fetchRelated();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [movie?._id, movie?.slug, routeParam, userInfo?.isAdmin, userInfo?.token]);
+
+  // ✅ Always show up to 20 (backend already limits, this is just extra safety)
+  const relatedMoviesToShow = useMemo(() => {
+    if (!Array.isArray(relatedTitles)) return [];
+    return relatedTitles
+      .filter((m) => m && m._id !== movie?._id)
+      .slice(0, 20);
+  }, [relatedTitles, movie?._id]);
 
   const handlePlayClick = () => {
     if (!movie) return;
@@ -214,18 +248,10 @@ function WatchPage() {
       });
 
       setPlay(true);
-      trackVideoPlay(
-        movie.name,
-        movie._id,
-        currentEpisode?.episodeNumber || null
-      );
+      trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
     } else {
       setPlay(true);
-      trackVideoPlay(
-        movie.name,
-        movie._id,
-        currentEpisode?.episodeNumber || null
-      );
+      trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
     }
   };
 
@@ -239,10 +265,7 @@ function WatchPage() {
         hash: location.hash,
         scrollY: window.scrollY,
       };
-      localStorage.setItem(
-        'redirectAfterLogin',
-        JSON.stringify(redirectState)
-      );
+      localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
 
       trackGuestAction('download_attempt', {
         movie_name: movie?.name,
@@ -313,32 +336,15 @@ function WatchPage() {
         noindex={shouldNoIndex}
       />
 
-      {/* ✅ Q1: Guest Login Prompt Modal (Landscape-safe, scrollable, same layout) */}
+      {/* Guest Login Prompt Modal */}
       {!userInfo && showLoginModal && (
         <div
-          className="
-            fixed inset-0 z-50 bg-black/80
-            px-4 py-6 overflow-y-auto
-          "
+          className="fixed inset-0 z-50 bg-black/80 px-4 py-6 overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
-          <div
-            className="
-              min-h-full flex items-center justify-center
-              mobile:landscape:items-start
-            "
-          >
-            <div
-              className="
-                bg-dry rounded-lg shadow-xl border border-border
-                w-full max-w-md
-                max-h-[90vh] overflow-y-auto
-                p-6
-                mobile:landscape:max-w-lg
-                mobile:landscape:p-4
-              "
-            >
+          <div className="min-h-full flex items-center justify-center mobile:landscape:items-start">
+            <div className="bg-dry rounded-lg shadow-xl border border-border w-full max-w-md max-h-[90vh] overflow-y-auto p-6 mobile:landscape:max-w-lg mobile:landscape:p-4">
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-customPurple/20 flex items-center justify-center">
                   <FaLock className="text-customPurple text-2xl" />
@@ -361,32 +367,23 @@ function WatchPage() {
 
                   <ul className="space-y-2 text-sm text-white">
                     <li className="flex items-center gap-2">
-                      <span className="text-customPurple">✓</span>
-                      HD streaming
+                      <span className="text-customPurple">✓</span> HD streaming
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-customPurple">✓</span>
-                      Watch from where you left
+                      <span className="text-customPurple">✓</span> Watch from where you left
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-customPurple">✓</span>
-                      Download available
+                      <span className="text-customPurple">✓</span> Download available
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-customPurple">✓</span>
-                      Add to favorites
+                      <span className="text-customPurple">✓</span> Add to favorites
                     </li>
                   </ul>
                 </div>
 
                 <button
                   onClick={() => navigate('/login')}
-                  className="
-                    w-full sm:w-auto px-5 py-2 rounded-md
-                    bg-customPurple text-white hover:bg-opacity-90
-                    border-2 border-customPurple transitions
-                    flex items-center justify-center gap-2
-                  "
+                  className="w-full sm:w-auto px-5 py-2 rounded-md bg-customPurple text-white hover:bg-opacity-90 border-2 border-customPurple transitions flex items-center justify-center gap-2"
                 >
                   <FiLogIn />
                   Login now
@@ -411,6 +408,7 @@ function WatchPage() {
             <h1 className="sm:text-xl font-semibold truncate flex-1">
               {movie?.name}
             </h1>
+
             <button
               onClick={() => LikeMovie(movie, dispatch, userInfo)}
               disabled={isLiked || likeLoading}
@@ -502,9 +500,7 @@ function WatchPage() {
                   <div
                     className="w-full h-full rounded-lg overflow-hidden relative bg-main"
                     style={{
-                      backgroundImage: `url(${
-                        movie?.image || movie?.titleImage
-                      })`,
+                      backgroundImage: `url(${movie?.image || movie?.titleImage})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                     }}
@@ -525,7 +521,7 @@ function WatchPage() {
         ) : (
           <div className="w-full">
             <div className="flex flex-wrap gap-3 mb-4 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-main pr-2">
-              {movie.episodes && movie.episodes.length > 0 ? (
+              {Array.isArray(movie.episodes) && movie.episodes.length > 0 ? (
                 movie.episodes.map((ep) => (
                   <button
                     key={ep._id}
@@ -570,9 +566,7 @@ function WatchPage() {
                     <div
                       className="w-full h-full rounded-lg overflow-hidden relative bg-main"
                       style={{
-                        backgroundImage: `url(${
-                          movie?.image || movie?.titleImage
-                        })`,
+                        backgroundImage: `url(${movie?.image || movie?.titleImage})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                       }}
@@ -593,28 +587,37 @@ function WatchPage() {
           </div>
         )}
 
-        {/* ✅ Q2: Related Movies Section (show up to 20 + Show More button → /movies) */}
-        {relatedMoviesToShow.length > 0 && (
-          <div className="my-16">
-            <Titles title="Related Movies" Icon={BsCollectionFill} />
+        {/* ✅ Related Movies/WebSeries by CATEGORY from MongoDB (up to 20) */}
+        <div className="my-16">
+          <Titles title="Related Movies" Icon={BsCollectionFill} />
 
-            <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-5 gap-6">
-              {relatedMoviesToShow.map((relatedMovie) => (
-                <Movie key={relatedMovie?._id} movie={relatedMovie} />
-              ))}
+          {relatedLoading ? (
+            <div className="mt-8">
+              <Loader />
             </div>
+          ) : relatedError ? (
+            <p className="text-border text-sm mt-6">{relatedError}</p>
+          ) : relatedMoviesToShow.length > 0 ? (
+            <>
+              <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-5 gap-6">
+                {relatedMoviesToShow.map((relatedMovie) => (
+                  <Movie key={relatedMovie?._id} movie={relatedMovie} />
+                ))}
+              </div>
 
-            {/* Show More button */}
-            <div className="flex justify-center mt-10">
-              <Link
-                to="/movies"
-                className="bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white px-8 py-3 rounded font-medium"
-              >
-                Show More
-              </Link>
-            </div>
-          </div>
-        )}
+              <div className="flex justify-center mt-10">
+                <Link
+                  to="/movies"
+                  className="bg-customPurple hover:bg-transparent border-2 border-customPurple transitions text-white px-8 py-3 rounded font-medium"
+                >
+                  Show More
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p className="text-border text-sm mt-6">No related titles found.</p>
+          )}
+        </div>
       </div>
     </Layout>
   );

@@ -59,6 +59,24 @@ export const getMovieByIdAdminService = async (token, id) => {
   return data;
 };
 
+// ✅ NEW: PUBLIC related movies by category (backend reads category from DB)
+export const getRelatedMoviesService = async (idOrSlug, limit = 20) => {
+  const safe = encodeURIComponent(String(idOrSlug || '').trim());
+  const { data } = await Axios.get(`/movies/related/${safe}?limit=${limit}`);
+  return data; // array
+};
+
+// ✅ NEW: ADMIN related movies by category (includes drafts)
+export const getRelatedMoviesAdminService = async (token, idOrSlug, limit = 20) => {
+  const safe = encodeURIComponent(String(idOrSlug || '').trim());
+  const { data } = await Axios.get(`/movies/admin/related/${safe}?limit=${limit}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return data; // array
+};
+
 // PUBLIC: get random movies
 export const getRandomMoviesService = async () => {
   const { data } = await Axios.get('/movies/random/all');
