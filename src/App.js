@@ -362,13 +362,13 @@ function App() {
     const t = setTimeout(() => {
       setTelegramPopupOpen(true);
       sessionStorage.setItem('telegramPopupShown', '1');
-    }, 25000);
+    }, 30000);
 
     return () => clearTimeout(t);
   }, [location.pathname, TELEGRAM_CHANNEL_URL]);
 
   /* ============================================================
-     Movie Request popup (after 45seconds) — existing
+     Movie Request popup (after 1minute) — existing
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
@@ -381,7 +381,7 @@ function App() {
     const t = setTimeout(() => {
       setRequestPopupOpen(true);
       sessionStorage.setItem('movieRequestPopupShown', '1');
-    }, 45000);
+    }, 60000);
 
     return () => clearTimeout(t);
   }, [location.pathname]);
