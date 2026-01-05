@@ -41,7 +41,7 @@ import PunjabiSection from './Components/Home/PunjabiSection';
 import ChineseDramaSection from './Components/Home/ChineseDramaSection';
 import KoreanDramaSection from './Components/Home/KoreanDramaSection';
 import JapaneseAnimeSection from './Components/Home/JapaneseAnimeSection';
-import AdsProvider from './ads/AdsProvider';
+
 
 // Lazy load pages
 const HomeScreen = lazy(() => import('./Screens/HomeScreen'));
@@ -438,7 +438,7 @@ function App() {
     <ErrorBoundary>
       <DrawerContext>
         <ToastContainer />
-        <AdsProvider />
+        
         <InstallPwaPopup
           open={installPopupOpen}
           onClose={() => setInstallPopupOpen(false)}
