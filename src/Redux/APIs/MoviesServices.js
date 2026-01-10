@@ -59,14 +59,14 @@ export const getMovieByIdAdminService = async (token, id) => {
   return data;
 };
 
-// ✅ NEW: PUBLIC related movies by category (backend reads category from DB)
+// ✅ PUBLIC related movies
 export const getRelatedMoviesService = async (idOrSlug, limit = 20) => {
   const safe = encodeURIComponent(String(idOrSlug || '').trim());
   const { data } = await Axios.get(`/movies/related/${safe}?limit=${limit}`);
-  return data; // array
+  return data;
 };
 
-// ✅ NEW: ADMIN related movies by category (includes drafts)
+// ✅ ADMIN related movies
 export const getRelatedMoviesAdminService = async (token, idOrSlug, limit = 20) => {
   const safe = encodeURIComponent(String(idOrSlug || '').trim());
   const { data } = await Axios.get(`/movies/admin/related/${safe}?limit=${limit}`, {
@@ -74,7 +74,7 @@ export const getRelatedMoviesAdminService = async (token, idOrSlug, limit = 20) 
       Authorization: `Bearer ${token}`,
     },
   });
-  return data; // array
+  return data;
 };
 
 // PUBLIC: get random movies
@@ -92,6 +92,74 @@ export const getTopRatedMovieService = async () => {
 // PUBLIC: get latest
 export const getLatestMoviesService = async () => {
   const { data } = await Axios.get('/movies/latest');
+  return data;
+};
+
+/* ============================================================
+   ✅ Latest New (HomeScreen tab)
+   ============================================================ */
+
+// PUBLIC: latest-new (only published)
+export const getLatestNewMoviesService = async (limit = 100) => {
+  const { data } = await Axios.get(`/movies/latest-new?limit=${limit}`);
+  return data;
+};
+
+// ADMIN: latest-new (includes drafts/unpublished)
+export const getLatestNewMoviesAdminService = async (token, limit = 100) => {
+  const { data } = await Axios.get(`/movies/admin/latest-new?limit=${limit}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return data;
+};
+
+// ADMIN: set/unset latest-new flag
+export const setLatestNewMoviesService = async (token, movieIds = [], value = true) => {
+  const { data } = await Axios.post(
+    `/movies/admin/latest-new`,
+    { movieIds, value },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return data;
+};
+
+/* ============================================================
+   ✅ NEW: Banner (HomeScreen Banner.js slider)
+   ============================================================ */
+
+// PUBLIC: banner (only published)
+export const getBannerMoviesService = async (limit = 10) => {
+  const { data } = await Axios.get(`/movies/banner?limit=${limit}`);
+  return data;
+};
+
+// ADMIN: banner (includes drafts/unpublished)
+export const getBannerMoviesAdminService = async (token, limit = 10) => {
+  const { data } = await Axios.get(`/movies/admin/banner?limit=${limit}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return data;
+};
+
+// ADMIN: set/unset banner flag
+export const setBannerMoviesService = async (token, movieIds = [], value = true) => {
+  const { data } = await Axios.post(
+    `/movies/admin/banner`,
+    { movieIds, value },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   return data;
 };
 

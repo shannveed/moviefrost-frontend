@@ -17,13 +17,22 @@ const durationMatchMessage =
   'Duration must be format: 2Hr 35Min, 2Hr, or 35Min';
 
 const episodeSchema = yup.object().shape({
+  // ✅ NEW: season support
+  seasonNumber: yup
+    .number()
+    .typeError('Season number must be a number')
+    .required('Season number is required')
+    .min(1, 'Season number must be at least 1'),
+
   episodeNumber: yup
     .number()
     .typeError('Episode number must be a number')
     .required('Episode number is required')
     .min(1, 'Episode number must be at least 1'),
+
   title: yup.string().nullable(),
   desc: yup.string().nullable(),
+
   duration: yup
     .string()
     .required(durationRequiredMessage)
@@ -33,10 +42,22 @@ const episodeSchema = yup.object().shape({
       durationMatchMessage,
       (value) => !value || (durationRegex.test(value) && value.trim().length > 0)
     ),
+
+  // ✅ 3 servers per episode
   video: yup
     .string()
-    .url('Please enter a valid video URL')
-    .required('Episode video URL is required'),
+    .url('Please enter a valid video URL for Server 1')
+    .required('Episode server 1 URL is required'),
+
+  videoUrl2: yup
+    .string()
+    .url('Please enter a valid video URL for Server 2')
+    .required('Episode server 2 URL is required'),
+
+  videoUrl3: yup
+    .string()
+    .url('Please enter a valid video URL for Server 3')
+    .required('Episode server 3 URL is required'),
 });
 
 const movieValidation = yup
@@ -46,10 +67,12 @@ const movieValidation = yup
       .string()
       .oneOf(['Movie', 'WebSeries'], 'Invalid type selected')
       .required('Please select type (Movie or WebSeries)'),
+
     name: yup
       .string()
       .required('Please enter a name')
       .max(100, 'Name should be less than 100 characters'),
+
     time: yup
       .string()
       .required(durationRequiredMessage)
@@ -59,27 +82,33 @@ const movieValidation = yup
         durationMatchMessage,
         (value) => !value || (durationRegex.test(value) && value.trim().length > 0)
       ),
+
     language: yup.string().required('Please enter a language'),
+
     year: yup
       .number()
       .typeError('Please enter a valid year')
       .required('Please enter year of release')
       .min(1888, 'Year must be after 1888')
       .max(new Date().getFullYear() + 5, 'Year seems too far in the future'),
+
     category: yup.string().required('Please select category'),
+
     desc: yup
       .string()
       .required('Please enter a description')
       .max(1000, 'Description should be less than 1000 characters'),
+
     browseBy: yup
       .string()
       .required('Please select a "Browse By" value (e.g., Hollywood)'),
+
     thumbnailInfo: yup
       .string()
       .nullable()
       .max(50, 'Thumbnail info should be short (max 50 chars)'),
 
-    // Movie Specific Fields
+    // Movie Specific Fields (3 servers)
     video: yup.string().when('type', {
       is: 'Movie',
       then: (schema) =>
@@ -88,6 +117,7 @@ const movieValidation = yup
           .required('Movie server 1 URL is required'),
       otherwise: (schema) => schema.notRequired().nullable(),
     }),
+
     videoUrl2: yup.string().when('type', {
       is: 'Movie',
       then: (schema) =>
@@ -96,6 +126,17 @@ const movieValidation = yup
           .required('Movie server 2 URL is required'),
       otherwise: (schema) => schema.notRequired().nullable(),
     }),
+
+    // ✅ NEW: Movie Server 3
+    videoUrl3: yup.string().when('type', {
+      is: 'Movie',
+      then: (schema) =>
+        schema
+          .url('Please enter a valid third server URL')
+          .required('Movie server 3 URL is required'),
+      otherwise: (schema) => schema.notRequired().nullable(),
+    }),
+
     downloadUrl: yup.string().when('type', {
       is: 'Movie',
       then: (schema) =>
@@ -119,6 +160,7 @@ const movieValidation = yup
 
     // Flags
     latest: yup.boolean(),
+
     previousHit: yup
       .boolean()
       .test(
@@ -130,7 +172,7 @@ const movieValidation = yup
         }
       ),
 
-    // NEW: publish flag
+    // publish flag
     isPublished: yup.boolean().default(true),
   })
   .test(

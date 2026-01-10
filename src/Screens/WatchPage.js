@@ -4,11 +4,19 @@ import {
   trackGuestAction,
   trackLoginPrompt,
 } from '../utils/analytics';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import Layout from '../Layout/Layout';
 import { BiArrowBack } from 'react-icons/bi';
-import { FaCloudDownloadAlt, FaHeart, FaPlay, FaLock } from 'react-icons/fa';
+import {
+  FaCloudDownloadAlt,
+  FaHeart,
+  FaPlay,
+  FaLock,
+  FaListUl,
+} from 'react-icons/fa';
+import { TbPlayerTrackNext, TbPlayerTrackPrev } from 'react-icons/tb';
+import { IoClose } from 'react-icons/io5';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMovieByIdAction } from '../Redux/Actions/MoviesActions';
 import Loader from '../Components/Loader';
@@ -30,13 +38,41 @@ import {
   getRelatedMoviesAdminService,
 } from '../Redux/APIs/MoviesServices';
 
+// ---------------- Helpers ----------------
+const normalizeSeasonNumber = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+};
+
+const groupEpisodesBySeason = (episodes = []) => {
+  const map = new Map();
+
+  for (const ep of episodes || []) {
+    const season = normalizeSeasonNumber(ep?.seasonNumber);
+    if (!map.has(season)) map.set(season, []);
+    map.get(season).push(ep);
+  }
+
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([seasonNumber, eps]) => ({
+      seasonNumber,
+      episodes: (eps || [])
+        .slice()
+        .sort((a, b) => (a?.episodeNumber || 0) - (b?.episodeNumber || 0)),
+    }));
+};
+
+const getFirstAvailableServerIndex = (servers = []) =>
+  servers.findIndex((s) => s && typeof s.url === 'string' && s.url.trim());
+
+// ---------------- Component ----------------
 function WatchPage() {
   const { id: routeParam } = useParams(); // can be slug or MongoId
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Helper: does the current param look like a MongoDB ObjectId?
   const looksLikeObjectId = /^[0-9a-fA-F]{24}$/.test(routeParam || '');
 
   const [play, setPlay] = useState(false);
@@ -45,10 +81,16 @@ function WatchPage() {
   const [hasShownLoginPrompt, setHasShownLoginPrompt] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  // ✅ 3 servers (Movie + Episode)
   const [currentServerIndex, setCurrentServerIndex] = useState(0);
-  const [currentEpisode, setCurrentEpisode] = useState(null);
 
-  // ✅ NEW: related titles state (fetched from backend by category)
+  // ✅ Seasons & better episode UX
+  const [activeSeason, setActiveSeason] = useState(1);
+  const [currentEpisode, setCurrentEpisode] = useState(null);
+  const [episodeSearch, setEpisodeSearch] = useState('');
+  const [showEpisodePicker, setShowEpisodePicker] = useState(false);
+
+  // ✅ Related titles state (fetched from backend by category)
   const [relatedTitles, setRelatedTitles] = useState([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const [relatedError, setRelatedError] = useState(null);
@@ -66,18 +108,18 @@ function WatchPage() {
   const isLiked = IfMovieLiked(movie);
   const isNotFound = isError === 'Movie not found';
 
-  // ✅ Prevent background scroll while login modal is open
+  // ✅ Prevent background scroll while modals are open
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    if (showLoginModal) {
+    if (showLoginModal || showEpisodePicker) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = prev;
       };
     }
-  }, [showLoginModal]);
+  }, [showLoginModal, showEpisodePicker]);
 
   // Redirect hard 404s to /404
   useEffect(() => {
@@ -86,7 +128,7 @@ function WatchPage() {
     }
   }, [isNotFound, isLoading, movie, navigate]);
 
-  // Redirect old /watch/<id> URLs to /watch/<slug> once movie is known.
+  // Redirect old /watch/<id> URLs to /watch/<slug>
   useEffect(() => {
     if (
       looksLikeObjectId &&
@@ -99,7 +141,7 @@ function WatchPage() {
     }
   }, [looksLikeObjectId, movie, routeParam, navigate]);
 
-  // Helper to build SEO title without duplicate year from name
+  // SEO helpers
   const buildWatchSeoTitle = (movieObj) => {
     if (!movieObj) return 'Watch Movie Online – MovieFrost';
 
@@ -117,10 +159,11 @@ function WatchPage() {
     return `${nameWithYear} – Watch Online`;
   };
 
-  // SEO configuration
   const pathSegmentForMeta = movie?.slug || routeParam;
   const pageUrl = `https://www.moviefrost.com/watch/${pathSegmentForMeta}`;
-  const seoTitle = movie ? buildWatchSeoTitle(movie) : 'Watch Movie Online – MovieFrost';
+  const seoTitle = movie
+    ? buildWatchSeoTitle(movie)
+    : 'Watch Movie Online – MovieFrost';
   const seoDescription = movie
     ? `${movie.desc?.substring(0, 150) || ''} Watch instantly in HD on MovieFrost.`
     : 'Watch free movies and web series online in HD on MovieFrost.';
@@ -128,7 +171,7 @@ function WatchPage() {
 
   const handleBackClick = () => navigate(-1);
 
-  // Track guest watch time + show modal
+  // Guest watch time + login modal
   useEffect(() => {
     let interval;
 
@@ -139,7 +182,6 @@ function WatchPage() {
 
           if (newTime >= 780 && !hasShownLoginPrompt) {
             setHasShownLoginPrompt(true);
-            setPlay(false);
 
             const redirectState = {
               pathname: location.pathname,
@@ -172,26 +214,212 @@ function WatchPage() {
     };
   }, [play, userInfo, hasShownLoginPrompt, routeParam, movie, location]);
 
-  // Fetch movie detail
+  // Fetch movie
   useEffect(() => {
     if (routeParam) dispatch(getMovieByIdAction(routeParam));
   }, [dispatch, routeParam]);
 
-  // Set first episode for web series
-  useEffect(() => {
-    if (movie?.type === 'WebSeries' && Array.isArray(movie.episodes) && movie.episodes.length > 0) {
-      setCurrentEpisode(movie.episodes[0]);
-    }
-  }, [movie]);
+  // ✅ Build seasons from episodes
+  const seasons = useMemo(() => {
+    if (movie?.type !== 'WebSeries') return [];
+    const eps = Array.isArray(movie?.episodes) ? movie.episodes : [];
+    return groupEpisodesBySeason(eps);
+  }, [movie?.type, movie?.episodes]);
 
-  // ✅ Reset related when route changes
+  const activeSeasonEpisodes = useMemo(() => {
+    if (movie?.type !== 'WebSeries') return [];
+    const s = seasons.find((x) => x.seasonNumber === activeSeason);
+    return s?.episodes || [];
+  }, [movie?.type, seasons, activeSeason]);
+
+  const filteredEpisodes = useMemo(() => {
+    if (movie?.type !== 'WebSeries') return [];
+    const term = episodeSearch.trim().toLowerCase();
+    if (!term) return activeSeasonEpisodes;
+
+    return activeSeasonEpisodes.filter((ep) => {
+      const num = String(ep?.episodeNumber || '');
+      const title = String(ep?.title || '').toLowerCase();
+      return num.includes(term) || title.includes(term);
+    });
+  }, [movie?.type, activeSeasonEpisodes, episodeSearch]);
+
+  // Set initial season+episode on load
+  useEffect(() => {
+    if (movie?.type !== 'WebSeries') return;
+
+    if (!seasons.length) {
+      setActiveSeason(1);
+      setCurrentEpisode(null);
+      return;
+    }
+
+    const firstSeason = seasons[0]?.seasonNumber || 1;
+    setActiveSeason(firstSeason);
+
+    const firstEp = seasons[0]?.episodes?.[0] || null;
+    setCurrentEpisode(firstEp);
+
+    setEpisodeSearch('');
+    setCurrentServerIndex(0);
+  }, [movie?._id, movie?.type, seasons]);
+
+  // If user switches season, ensure current episode belongs to it
+  useEffect(() => {
+    if (movie?.type !== 'WebSeries') return;
+    const s = seasons.find((x) => x.seasonNumber === activeSeason);
+    if (!s) return;
+
+    const exists = s.episodes.some(
+      (ep) => String(ep?._id) === String(currentEpisode?._id)
+    );
+    if (!exists) {
+      setCurrentEpisode(s.episodes[0] || null);
+    }
+  }, [activeSeason, seasons, movie?.type, currentEpisode?._id]);
+
+  const selectEpisode = useCallback((ep) => {
+    if (!ep) return;
+    setCurrentEpisode(ep);
+    setShowEpisodePicker(false);
+
+    // keep playing if already playing
+    // (iframe src changes + key forces remount)
+    setPlay((prev) => prev);
+
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  const currentEpisodeIndex = useMemo(() => {
+    if (!currentEpisode) return -1;
+    return activeSeasonEpisodes.findIndex(
+      (ep) => String(ep?._id) === String(currentEpisode?._id)
+    );
+  }, [activeSeasonEpisodes, currentEpisode]);
+
+  const hasPrevEpisode = currentEpisodeIndex > 0;
+  const hasNextEpisode =
+    currentEpisodeIndex !== -1 &&
+    currentEpisodeIndex < activeSeasonEpisodes.length - 1;
+
+  const goPrevEpisode = () => {
+    if (!hasPrevEpisode) return;
+    selectEpisode(activeSeasonEpisodes[currentEpisodeIndex - 1]);
+  };
+
+  const goNextEpisode = () => {
+    if (!hasNextEpisode) return;
+    selectEpisode(activeSeasonEpisodes[currentEpisodeIndex + 1]);
+  };
+
+  // ✅ 3-server arrays
+  const movieServers = useMemo(
+    () => [
+      { label: 'Server 1', url: movie?.video || '' },
+      { label: 'Server 2', url: movie?.videoUrl2 || '' },
+      { label: 'Server 3', url: movie?.videoUrl3 || '' },
+    ],
+    [movie?.video, movie?.videoUrl2, movie?.videoUrl3]
+  );
+
+  const episodeServers = useMemo(
+    () => [
+      { label: 'Server 1', url: currentEpisode?.video || '' },
+      { label: 'Server 2', url: currentEpisode?.videoUrl2 || '' },
+      { label: 'Server 3', url: currentEpisode?.videoUrl3 || '' },
+    ],
+    [currentEpisode?.video, currentEpisode?.videoUrl2, currentEpisode?.videoUrl3]
+  );
+
+  const activeServers = movie?.type === 'Movie' ? movieServers : episodeServers;
+
+  // Ensure selected server is valid; otherwise jump to first available
+  useEffect(() => {
+    if (!activeServers?.length) return;
+
+    const curUrl = activeServers[currentServerIndex]?.url;
+    if (curUrl && curUrl.trim()) return;
+
+    const first = getFirstAvailableServerIndex(activeServers);
+    if (first !== -1 && first !== currentServerIndex) {
+      setCurrentServerIndex(first);
+    }
+  }, [activeServers, currentServerIndex]);
+
+  const activeVideoUrl =
+    activeServers[currentServerIndex]?.url ||
+    activeServers[getFirstAvailableServerIndex(activeServers)]?.url ||
+    '';
+
+  const handleServerSelect = (idx) => {
+    const url = activeServers[idx]?.url;
+    if (!url) return;
+    setCurrentServerIndex(idx);
+    setPlay((prev) => prev); // keep playing if already playing
+  };
+
+  const handlePlayClick = () => {
+    if (!movie) return;
+
+    if (movie.type === 'WebSeries' && !currentEpisode) {
+      toast.error('No episode selected');
+      return;
+    }
+
+    if (!activeVideoUrl) {
+      toast.error('No playable server available for this title');
+      return;
+    }
+
+    if (!userInfo) {
+      trackGuestAction('play_attempt', {
+        movie_name: movie?.name,
+        movie_id: movie?._id,
+        episode: currentEpisode?.episodeNumber || null,
+        season: movie?.type === 'WebSeries' ? activeSeason : null,
+      });
+    }
+
+    setPlay(true);
+    trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
+  };
+
+  const DownloadMovieVideo = () => {
+    if (!movie) return;
+
+    if (!userInfo) {
+      const redirectState = {
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+        scrollY: window.scrollY,
+      };
+      localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
+
+      trackGuestAction('download_attempt', {
+        movie_name: movie?.name,
+        movie_id: movie?._id,
+      });
+      toast.error('Please login to download');
+      navigate('/login');
+      return;
+    }
+
+    if (movie.type === 'Movie') {
+      DownloadVideo(movie?.downloadUrl, userInfo);
+    }
+  };
+
+  // Reset related when route changes
   useEffect(() => {
     setRelatedTitles([]);
     setRelatedError(null);
     setRelatedLoading(false);
   }, [routeParam]);
 
-  // ✅ Fetch related titles from backend by category (returns up to 20)
+  // Fetch related titles from backend by category
   useEffect(() => {
     let cancelled = false;
 
@@ -229,62 +457,12 @@ function WatchPage() {
     };
   }, [movie?._id, movie?.slug, routeParam, userInfo?.isAdmin, userInfo?.token]);
 
-  // ✅ Always show up to 20 (backend already limits, this is just extra safety)
   const relatedMoviesToShow = useMemo(() => {
     if (!Array.isArray(relatedTitles)) return [];
     return relatedTitles
       .filter((m) => m && m._id !== movie?._id)
       .slice(0, 20);
   }, [relatedTitles, movie?._id]);
-
-  const handlePlayClick = () => {
-    if (!movie) return;
-
-    if (!userInfo) {
-      trackGuestAction('play_attempt', {
-        movie_name: movie?.name,
-        movie_id: movie?._id,
-        episode: currentEpisode?.episodeNumber || null,
-      });
-
-      setPlay(true);
-      trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
-    } else {
-      setPlay(true);
-      trackVideoPlay(movie.name, movie._id, currentEpisode?.episodeNumber || null);
-    }
-  };
-
-  const DownloadMovieVideo = () => {
-    if (!movie) return;
-
-    if (!userInfo) {
-      const redirectState = {
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash,
-        scrollY: window.scrollY,
-      };
-      localStorage.setItem('redirectAfterLogin', JSON.stringify(redirectState));
-
-      trackGuestAction('download_attempt', {
-        movie_name: movie?.name,
-        movie_id: movie?._id,
-      });
-      toast.error('Please login to download');
-      navigate('/login');
-      return;
-    }
-
-    if (movie.type === 'Movie') {
-      DownloadVideo(movie?.downloadUrl, userInfo);
-    }
-  };
-
-  const servers = [
-    { label: 'Server 1', url: movie?.video },
-    { label: 'Server 2', url: movie?.videoUrl2 },
-  ];
 
   // Early returns
   if (isNotFound && !isLoading && !movie) {
@@ -394,8 +572,99 @@ function WatchPage() {
         </div>
       )}
 
-      <div className="container mx-auto bg-dry p-6 mb-12">
-        {/* Back Button */}
+      {/* ✅ Mobile Episode Picker (bottom sheet) */}
+      {movie?.type === 'WebSeries' && showEpisodePicker && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70"
+          onClick={() => setShowEpisodePicker(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-dry border-t border-border rounded-t-2xl p-4 max-h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="min-w-0">
+                <h3 className="text-white font-semibold truncate">
+                  Select Episode
+                </h3>
+                <p className="text-xs text-dryGray truncate">
+                  Season {activeSeason} • {activeSeasonEpisodes.length} episodes
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEpisodePicker(false)}
+                className="w-10 h-10 flex-colo rounded-md bg-main border border-border text-white"
+                aria-label="Close"
+              >
+                <IoClose />
+              </button>
+            </div>
+
+            <div className="flex gap-2 mb-3">
+              <select
+                value={activeSeason}
+                onChange={(e) => {
+                  setEpisodeSearch('');
+                  setActiveSeason(Number(e.target.value));
+                }}
+                className="flex-1 bg-main border border-border rounded px-3 py-2 text-sm text-white outline-none focus:border-customPurple"
+              >
+                {seasons.map((s) => (
+                  <option key={s.seasonNumber} value={s.seasonNumber}>
+                    Season {s.seasonNumber} ({s.episodes.length})
+                  </option>
+                ))}
+              </select>
+
+              <input
+                value={episodeSearch}
+                onChange={(e) => setEpisodeSearch(e.target.value)}
+                placeholder="Search ep..."
+                className="flex-1 bg-main border border-border rounded px-3 py-2 text-sm text-white outline-none focus:border-customPurple"
+              />
+            </div>
+
+            <div className="overflow-y-auto max-h-[62vh] pr-1">
+              <div className="grid grid-cols-2 gap-2">
+                {filteredEpisodes.map((ep) => {
+                  const active = String(ep._id) === String(currentEpisode?._id);
+                  return (
+                    <button
+                      key={ep._id}
+                      type="button"
+                      onClick={() => selectEpisode(ep)}
+                      className={`text-left p-3 rounded-lg border transitions ${
+                        active
+                          ? 'bg-customPurple border-customPurple text-white'
+                          : 'bg-main border-border text-white hover:border-customPurple'
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">
+                        Ep {ep.episodeNumber}
+                      </p>
+                      {ep.title ? (
+                        <p className="text-xs text-dryGray line-clamp-2 mt-1">
+                          {ep.title}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-dryGray mt-1">
+                          Tap to play
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="container mx-auto bg-dry p-6 mobile:p-4 mb-12">
+        {/* Header */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <button
             onClick={handleBackClick}
@@ -409,6 +678,7 @@ function WatchPage() {
               {movie?.name}
             </h1>
 
+            {/* Mobile Like */}
             <button
               onClick={() => LikeMovie(movie, dispatch, userInfo)}
               disabled={isLiked || likeLoading}
@@ -457,137 +727,202 @@ function WatchPage() {
           )}
         </div>
 
-        {/* Player Section */}
-        {movie.type === 'Movie' ? (
-          <div className="w-full">
-            <div className="flex flex-wrap gap-3 mb-4">
-              {servers.map((server, idx) => (
+        {/* ✅ WebSeries season + episode controls */}
+        {movie.type === 'WebSeries' && (
+          <div className="mb-4 space-y-3">
+            {/* Season selector (desktop pills) */}
+            <div className="hidden sm:flex flex-wrap gap-2">
+              {seasons.map((s) => (
                 <button
-                  key={idx}
+                  key={s.seasonNumber}
+                  type="button"
                   onClick={() => {
-                    setCurrentServerIndex(idx);
-                    setPlay(false);
+                    setEpisodeSearch('');
+                    setActiveSeason(s.seasonNumber);
                   }}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-md font-medium transitions
-                    ${
-                      currentServerIndex === idx
-                        ? 'bg-customPurple text-white'
-                        : 'bg-dry border border-border text-white hover:border-customPurple'
-                    }
-                  `}
+                  className={`px-4 py-2 rounded-md font-medium border transitions ${
+                    activeSeason === s.seasonNumber
+                      ? 'bg-customPurple text-white border-customPurple'
+                      : 'bg-main text-white border-border hover:border-customPurple'
+                  }`}
                 >
-                  <span className="text-[10px] px-1.5 py-0.5 bg-main rounded">
-                    HD
-                  </span>
-                  {server.label}
+                  Season {s.seasonNumber} ({s.episodes.length})
                 </button>
               ))}
             </div>
 
-            <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-              {play ? (
-                <iframe
-                  title={servers[currentServerIndex].label}
-                  src={servers[currentServerIndex].url}
-                  frameBorder="0"
-                  allowFullScreen
-                  className="absolute top-0 left-0 w-full h-full rounded-lg"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
-              ) : (
-                <div className="absolute top-0 left-0 w-full h-full">
-                  <div
-                    className="w-full h-full rounded-lg overflow-hidden relative bg-main"
-                    style={{
-                      backgroundImage: `url(${movie?.image || movie?.titleImage})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
-                  >
-                    <div className="absolute inset-0 flex-colo bg-black/40">
-                      <button
-                        onClick={handlePlayClick}
-                        className="bg-white text-customPurple flex-colo border border-customPurple rounded-full w-20 h-20 font-medium text-xl hover:bg-customPurple hover:text-white transitions"
-                      >
-                        <FaPlay />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="w-full">
-            <div className="flex flex-wrap gap-3 mb-4 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-main pr-2">
-              {Array.isArray(movie.episodes) && movie.episodes.length > 0 ? (
-                movie.episodes.map((ep) => (
-                  <button
-                    key={ep._id}
-                    onClick={() => {
-                      setCurrentEpisode(ep);
-                      setPlay(false);
-                    }}
-                    className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-md font-medium transitions
-                      ${
-                        currentEpisode && currentEpisode._id === ep._id
-                          ? 'bg-customPurple text-white'
-                          : 'bg-dry border border-border text-white hover:border-customPurple'
-                      }
-                    `}
-                  >
-                    <span className="text-[10px] px-1.5 py-0.5 bg-main rounded">
-                      HD
-                    </span>
-                    Episode {ep.episodeNumber}
-                    {ep.title && ` - ${ep.title}`}
-                  </button>
-                ))
-              ) : (
-                <p className="text-border">No episodes available.</p>
-              )}
+            {/* Season selector (mobile dropdown) + Episodes button */}
+            <div className="sm:hidden flex gap-2">
+              <select
+                value={activeSeason}
+                onChange={(e) => {
+                  setEpisodeSearch('');
+                  setActiveSeason(Number(e.target.value));
+                }}
+                className="flex-1 bg-main border border-border rounded px-3 py-2 text-sm text-white outline-none focus:border-customPurple"
+              >
+                {seasons.map((s) => (
+                  <option key={s.seasonNumber} value={s.seasonNumber}>
+                    Season {s.seasonNumber} ({s.episodes.length})
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => setShowEpisodePicker(true)}
+                className="px-3 py-2 rounded bg-main border border-border text-white flex items-center gap-2"
+              >
+                <FaListUl />
+                Episodes
+              </button>
             </div>
 
-            {currentEpisode && (
-              <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-                {play ? (
-                  <iframe
-                    title={`Episode ${currentEpisode.episodeNumber}`}
-                    src={currentEpisode.video}
-                    frameBorder="0"
-                    allowFullScreen
-                    className="absolute top-0 left-0 w-full h-full rounded-lg"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  />
-                ) : (
-                  <div className="absolute top-0 left-0 w-full h-full">
-                    <div
-                      className="w-full h-full rounded-lg overflow-hidden relative bg-main"
-                      style={{
-                        backgroundImage: `url(${movie?.image || movie?.titleImage})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      }}
-                    >
-                      <div className="absolute inset-0 flex-colo bg-black/40">
-                        <button
-                          onClick={handlePlayClick}
-                          className="bg-white text-customPurple flex-colo border border-customPurple rounded-full w-20 h-20 font-medium text-xl hover:bg-customPurple hover:text-white transitions"
-                        >
-                          <FaPlay />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            {/* Current episode + prev/next */}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-dryGray truncate">
+                {currentEpisode
+                  ? `Season ${activeSeason} • Episode ${currentEpisode.episodeNumber}${currentEpisode.title ? ` — ${currentEpisode.title}` : ''}`
+                  : `Season ${activeSeason}`}
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={goPrevEpisode}
+                  disabled={!hasPrevEpisode}
+                  className={`px-3 py-2 rounded bg-main border border-border text-white flex items-center gap-2 disabled:opacity-50`}
+                >
+                  <TbPlayerTrackPrev />
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  onClick={goNextEpisode}
+                  disabled={!hasNextEpisode}
+                  className={`px-3 py-2 rounded bg-main border border-border text-white flex items-center gap-2 disabled:opacity-50`}
+                >
+                  Next
+                  <TbPlayerTrackNext />
+                </button>
               </div>
-            )}
+            </div>
           </div>
         )}
 
-        {/* ✅ Related Movies/WebSeries by CATEGORY from MongoDB (up to 20) */}
+        {/* ✅ 3-Server buttons (Movie + WebSeries) */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          {activeServers.map((server, idx) => {
+            const enabled = !!server.url;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleServerSelect(idx)}
+                disabled={!enabled}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md font-medium transitions border
+                  ${
+                    currentServerIndex === idx
+                      ? 'bg-customPurple text-white border-customPurple'
+                      : 'bg-dry text-white border-border hover:border-customPurple'
+                  }
+                  ${enabled ? '' : 'opacity-50 cursor-not-allowed'}
+                `}
+              >
+                <span className="text-[10px] px-1.5 py-0.5 bg-main rounded">
+                  HD
+                </span>
+                {server.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Player */}
+        <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+          {play ? (
+            <iframe
+              key={`${movie?._id}:${movie?.type}:${activeSeason}:${currentEpisode?._id || 'movie'}:${currentServerIndex}:${activeVideoUrl}`}
+              title={movie?.type === 'WebSeries'
+                ? `S${activeSeason}E${currentEpisode?.episodeNumber || ''}`
+                : activeServers[currentServerIndex]?.label}
+              src={activeVideoUrl}
+              frameBorder="0"
+              allowFullScreen
+              className="absolute top-0 left-0 w-full h-full rounded-lg"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          ) : (
+            <div className="absolute top-0 left-0 w-full h-full">
+              <div
+                className="w-full h-full rounded-lg overflow-hidden relative bg-main"
+                style={{
+                  backgroundImage: `url(${movie?.image || movie?.titleImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div className="absolute inset-0 flex-colo bg-black/40">
+                  <button
+                    onClick={handlePlayClick}
+                    className="bg-white text-customPurple flex-colo border border-customPurple rounded-full w-20 h-20 font-medium text-xl hover:bg-customPurple hover:text-white transitions"
+                  >
+                    <FaPlay />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop episode list */}
+        {movie.type === 'WebSeries' && (
+          <div className="hidden sm:block mt-6 bg-main border border-border rounded-lg p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h3 className="text-white font-semibold">
+                Episodes — Season {activeSeason}
+              </h3>
+              <input
+                value={episodeSearch}
+                onChange={(e) => setEpisodeSearch(e.target.value)}
+                placeholder="Search episode..."
+                className="bg-dry border border-border rounded px-3 py-2 text-sm text-white outline-none focus:border-customPurple w-64"
+              />
+            </div>
+
+            <div className="grid md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-64 overflow-y-auto pr-1">
+              {filteredEpisodes.map((ep) => {
+                const active = String(ep._id) === String(currentEpisode?._id);
+                return (
+                  <button
+                    key={ep._id}
+                    type="button"
+                    onClick={() => selectEpisode(ep)}
+                    className={`text-left p-3 rounded-lg border transitions ${
+                      active
+                        ? 'bg-customPurple border-customPurple text-white'
+                        : 'bg-dry border-border text-white hover:border-customPurple'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold">
+                      Ep {ep.episodeNumber}
+                    </p>
+                    {ep.title ? (
+                      <p className="text-xs text-dryGray line-clamp-2 mt-1">
+                        {ep.title}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-dryGray mt-1">Tap to play</p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Related Movies/WebSeries */}
         <div className="my-16">
           <Titles title="Related Movies" Icon={BsCollectionFill} />
 
@@ -599,7 +934,7 @@ function WatchPage() {
             <p className="text-border text-sm mt-6">{relatedError}</p>
           ) : relatedMoviesToShow.length > 0 ? (
             <>
-              <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-5 gap-6">
+              <div className="grid sm:mt-10 mt-6 xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-5 mobile:grid-cols-2 mobile:gap-2 mobile:px-4 gap-4">
                 {relatedMoviesToShow.map((relatedMovie) => (
                   <Movie key={relatedMovie?._id} movie={relatedMovie} />
                 ))}

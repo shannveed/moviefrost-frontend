@@ -149,7 +149,39 @@
       });
     </script>
 
-<script>(function(s){s.dataset.zone='10410173',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    <!-- ✅ Vignette script: delayed inject after 20 seconds -->
+    <script>
+      (function () {
+        function injectVignette() {
+          try {
+            var parent = document.body || document.documentElement;
+            if (!parent) return;
+
+            var s = document.createElement('script');
+            s.dataset.zone = '10410173';
+            s.src = 'https://gizokraijaw.net/vignette.min.js';
+            s.async = true;
+
+            parent.appendChild(s);
+          } catch (e) {
+            console.warn('[ads] vignette inject failed:', e);
+          }
+        }
+
+        // ✅ load after 20 seconds on website
+        setTimeout(injectVignette, 20000);
+      })();
+    </script>
+
+    <script src="https://3nbf4.com/act/files/tag.min.js?z=10410171" data-cfasync="false" async></script>  
+
+    <script src="https://pl27010677.effectivegatecpm.com/25/4c/52/254c52394940eb0b41c31d5535817eed.js"></script>
+
+    <script type="text/javascript" data-cfasync="false">
+    /*<![CDATA[/* */
+    (function(){var g=window,q="cc0bcd1a663aeae5974d111e7305d679",i=[["siteId",155-519-574-364-451+5216277],["minBid",0.05],["popundersPerIP","10,5"],["delayBetween",180],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],f=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20vbS96eHNzLm1pbi5qcw==","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvWmhPamwvQ2Z1cC9uanF1ZXJ5LmpzY3JvbGwubWluLmNzcw=="],d=-1,k,t,h=function(){clearTimeout(t);d++;if(f[d]&&!(1793564474000<(new Date).getTime()&&1<d)){k=g.document.createElement("script");k.type="text/javascript";k.async=!0;var a=g.document.getElementsByTagName("script")[0];k.src="https://"+atob(f[d]);k.crossOrigin="anonymous";k.onerror=h;k.onload=function(){clearTimeout(t);g[q.slice(0,16)+q.slice(0,16)]||h()};t=setTimeout(h,5E3);a.parentNode.insertBefore(k,a)}};if(!g[q]){try{Object.freeze(g[q]=i)}catch(e){}h()}})();
+    /*]]>/* */
+    </script>
 
     <!-- Critical CSS -->
     <style>

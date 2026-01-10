@@ -1,5 +1,12 @@
 // Frontend/src/App.js
-import React, { useEffect, useRef, Suspense, lazy, useState } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  Suspense,
+  lazy,
+  useState,
+} from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ScrollOnTop from './ScrollOnTop';
 import DrawerContext from './Context/DrawerContext';
@@ -41,7 +48,6 @@ import PunjabiSection from './Components/Home/PunjabiSection';
 import ChineseDramaSection from './Components/Home/ChineseDramaSection';
 import KoreanDramaSection from './Components/Home/KoreanDramaSection';
 import JapaneseAnimeSection from './Components/Home/JapaneseAnimeSection';
-
 
 // Lazy load pages
 const HomeScreen = lazy(() => import('./Screens/HomeScreen'));
@@ -126,6 +132,10 @@ const isIOSDevice = () => {
   return isIOS || isIpadOS;
 };
 
+// ✅ Popup anti-stacking + cooldown
+const POPUP_COOLDOWN_MS = 20000; // 20 seconds gap between popups
+const POPUP_RETRY_MS = 2000; // retry every 2 seconds until popup is allowed
+
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -136,7 +146,9 @@ function App() {
   const aosInitialized = useRef(false);
 
   const { userInfo } = useSelector((state) => state.userLogin || {});
-  const { isError, isSuccess } = useSelector((state) => state.userLikeMovie || {});
+  const { isError, isSuccess } = useSelector(
+    (state) => state.userLikeMovie || {}
+  );
   const { isError: catError } = useSelector((state) => state.categoryGetAll || {});
 
   const TELEGRAM_CHANNEL_URL = process.env.REACT_APP_TELEGRAM_CHANNEL_URL || '';
@@ -152,12 +164,94 @@ function App() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
   /* ============================================================
-     ✅ NEW: Allow Navbar/MobileFooter to open MovieRequestPopup
+     ✅ Popup spacing / anti-stacking guard
+     Only 1 popup at a time
+     20s cooldown after closing a popup
+     ============================================================ */
+  const isAnyPopupOpenRef = useRef(false);
+  const lastPopupClosedAtRef = useRef(0);
+
+  useEffect(() => {
+    isAnyPopupOpenRef.current =
+      installPopupOpen ||
+      telegramPopupOpen ||
+      whatsappPopupOpen ||
+      requestPopupOpen;
+  }, [installPopupOpen, telegramPopupOpen, whatsappPopupOpen, requestPopupOpen]);
+
+  const markPopupClosed = useCallback(() => {
+    lastPopupClosedAtRef.current = Date.now();
+  }, []);
+
+  const canOpenPopupNow = useCallback(() => {
+    const now = Date.now();
+    const gapOk = now - lastPopupClosedAtRef.current >= POPUP_COOLDOWN_MS;
+    return !isAnyPopupOpenRef.current && gapOk;
+  }, []);
+
+  const schedulePopup = useCallback(
+    ({ storageKey, delayMs, open, shouldSkip }) => {
+      let initialTimerId;
+      let retryTimerId;
+      let cancelled = false;
+
+      const isShown = () => {
+        try {
+          return !!sessionStorage.getItem(storageKey);
+        } catch {
+          return false;
+        }
+      };
+
+      const markShown = () => {
+        try {
+          sessionStorage.setItem(storageKey, '1');
+        } catch {}
+      };
+
+      const tryOpen = () => {
+        if (cancelled) return;
+
+        if (typeof shouldSkip === 'function' && shouldSkip()) return;
+        if (isShown()) return;
+
+        if (canOpenPopupNow()) {
+          // ✅ lock immediately so two timers can't open two popups at once
+          isAnyPopupOpenRef.current = true;
+
+          open();
+          markShown();
+        } else {
+          retryTimerId = window.setTimeout(tryOpen, POPUP_RETRY_MS);
+        }
+      };
+
+      initialTimerId = window.setTimeout(tryOpen, delayMs);
+
+      return () => {
+        cancelled = true;
+        if (initialTimerId) window.clearTimeout(initialTimerId);
+        if (retryTimerId) window.clearTimeout(retryTimerId);
+      };
+    },
+    [canOpenPopupNow]
+  );
+
+  /* ============================================================
+     ✅ Allow Navbar/MobileFooter to open MovieRequestPopup
      ============================================================ */
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const openHandler = () => {
+      // Close other popups to prevent stacking (manual action wins)
+      setInstallPopupOpen(false);
+      setTelegramPopupOpen(false);
+      setWhatsappPopupOpen(false);
+
+      // lock immediately (avoid race with scheduled popups)
+      isAnyPopupOpenRef.current = true;
+
       setRequestPopupOpen(true);
       try {
         // prevent the 1-minute auto popup from showing later in this session
@@ -166,7 +260,8 @@ function App() {
     };
 
     window.addEventListener(OPEN_WATCH_REQUEST_POPUP, openHandler);
-    return () => window.removeEventListener(OPEN_WATCH_REQUEST_POPUP, openHandler);
+    return () =>
+      window.removeEventListener(OPEN_WATCH_REQUEST_POPUP, openHandler);
   }, []);
 
   useEffect(() => {
@@ -177,6 +272,7 @@ function App() {
 
     const onAppInstalled = () => {
       setInstallPopupOpen(false);
+      markPopupClosed();
       setDeferredPrompt(null);
       try {
         localStorage.setItem('pwaInstalled', '1');
@@ -192,34 +288,32 @@ function App() {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onAppInstalled);
     };
-  }, []);
+  }, [markPopupClosed]);
 
+  // ✅ Scheduled PWA popup (anti-stacking + cooldown aware)
   useEffect(() => {
     const path = location.pathname;
 
-    if (path === '/login' || path === '/register') return;
-    if (path.startsWith('/watch')) return;
+    const shouldSkip = () => {
+      if (path === '/login' || path === '/register') return true;
+      if (path.startsWith('/watch')) return true;
 
-    if (isStandaloneMode()) return;
+      if (isStandaloneMode()) return true;
 
-    try {
-      if (localStorage.getItem('pwaInstalled') === '1') return;
-    } catch {}
-
-    try {
-      if (sessionStorage.getItem('pwaInstallPopupShown')) return;
-    } catch {}
-
-    const t = setTimeout(() => {
-      if (isStandaloneMode()) return;
-      setInstallPopupOpen(true);
       try {
-        sessionStorage.setItem('pwaInstallPopupShown', '1');
+        if (localStorage.getItem('pwaInstalled') === '1') return true;
       } catch {}
-    }, 10000);
 
-    return () => clearTimeout(t);
-  }, [location.pathname]);
+      return false;
+    };
+
+    return schedulePopup({
+      storageKey: 'pwaInstallPopupShown',
+      delayMs: 10000,
+      open: () => setInstallPopupOpen(true),
+      shouldSkip,
+    });
+  }, [location.pathname, schedulePopup]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -230,6 +324,7 @@ function App() {
 
       setDeferredPrompt(null);
       setInstallPopupOpen(false);
+      markPopupClosed();
 
       if (choice?.outcome === 'accepted') {
         toast.success('App installed!');
@@ -348,43 +443,46 @@ function App() {
   }, [userInfo, navigate, location]);
 
   /* ============================================================
-     Telegram popup (after 30 seconds)
+     Telegram popup (after 30 seconds) — scheduled
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
 
     if (!TELEGRAM_CHANNEL_URL) return;
-    if (path === '/login' || path === '/register') return;
-    if (path.startsWith('/watch')) return;
 
-    if (sessionStorage.getItem('telegramPopupShown')) return;
+    const shouldSkip = () => {
+      if (path === '/login' || path === '/register') return true;
+      if (path.startsWith('/watch')) return true;
+      return false;
+    };
 
-    const t = setTimeout(() => {
-      setTelegramPopupOpen(true);
-      sessionStorage.setItem('telegramPopupShown', '1');
-    }, 30000);
-
-    return () => clearTimeout(t);
-  }, [location.pathname, TELEGRAM_CHANNEL_URL]);
+    return schedulePopup({
+      storageKey: 'telegramPopupShown',
+      delayMs: 30000,
+      open: () => setTelegramPopupOpen(true),
+      shouldSkip,
+    });
+  }, [location.pathname, TELEGRAM_CHANNEL_URL, schedulePopup]);
 
   /* ============================================================
-     Movie Request popup (after 1minute) — existing
+     Movie Request popup (after 1 minute) — scheduled
      ============================================================ */
   useEffect(() => {
     const path = location.pathname;
 
-    if (path === '/login' || path === '/register') return;
-    if (path.startsWith('/watch')) return;
+    const shouldSkip = () => {
+      if (path === '/login' || path === '/register') return true;
+      if (path.startsWith('/watch')) return true;
+      return false;
+    };
 
-    if (sessionStorage.getItem('movieRequestPopupShown')) return;
-
-    const t = setTimeout(() => {
-      setRequestPopupOpen(true);
-      sessionStorage.setItem('movieRequestPopupShown', '1');
-    }, 60000);
-
-    return () => clearTimeout(t);
-  }, [location.pathname]);
+    return schedulePopup({
+      storageKey: 'movieRequestPopupShown',
+      delayMs: 60000,
+      open: () => setRequestPopupOpen(true),
+      shouldSkip,
+    });
+  }, [location.pathname, schedulePopup]);
 
   useEffect(() => {
     const run = async () => {
@@ -393,7 +491,10 @@ function App() {
       dispatch(getNotificationsAction(true));
 
       try {
-        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        if (
+          typeof Notification !== 'undefined' &&
+          Notification.permission === 'granted'
+        ) {
           await ensurePushSubscription(userInfo.token);
         }
       } catch {}
@@ -438,10 +539,13 @@ function App() {
     <ErrorBoundary>
       <DrawerContext>
         <ToastContainer />
-        
+
         <InstallPwaPopup
           open={installPopupOpen}
-          onClose={() => setInstallPopupOpen(false)}
+          onClose={() => {
+            setInstallPopupOpen(false);
+            markPopupClosed();
+          }}
           onInstall={handleInstallClick}
           canInstall={!!deferredPrompt}
           isIOS={isIOSDevice()}
@@ -451,7 +555,10 @@ function App() {
         {TELEGRAM_CHANNEL_URL ? (
           <ChannelPopup
             open={telegramPopupOpen}
-            onClose={() => setTelegramPopupOpen(false)}
+            onClose={() => {
+              setTelegramPopupOpen(false);
+              markPopupClosed();
+            }}
             title="Join our Telegram Channel"
             description="Get instant updates, new uploads, and announcements."
             buttonText="Open Telegram"
@@ -465,7 +572,10 @@ function App() {
         {WHATSAPP_CHANNEL_URL ? (
           <ChannelPopup
             open={whatsappPopupOpen}
-            onClose={() => setWhatsappPopupOpen(false)}
+            onClose={() => {
+              setWhatsappPopupOpen(false);
+              markPopupClosed();
+            }}
             title="Join our WhatsApp Channel"
             description="Receive updates , new uploads, and announcements directly on WhatsApp."
             buttonText="Open WhatsApp"
@@ -477,7 +587,10 @@ function App() {
         {/* ✅ Movie request popup (manual + auto) */}
         <MovieRequestPopup
           open={requestPopupOpen}
-          onClose={() => setRequestPopupOpen(false)}
+          onClose={() => {
+            setRequestPopupOpen(false);
+            markPopupClosed();
+          }}
         />
 
         <ScrollOnTop>
@@ -499,7 +612,10 @@ function App() {
               <Route path="/Hollywood" element={<HollywoodSection />} />
               <Route path="/Korean" element={<KoreanSection />} />
               <Route path="/Bollywood" element={<BollywoodSection />} />
-              <Route path="/Hollywood-Hindi" element={<HollywoodHindiSection />} />
+              <Route
+                path="/Hollywood-Hindi"
+                element={<HollywoodHindiSection />}
+              />
               <Route path="/Korean-Hindi" element={<KoreanHindiSection />} />
               <Route path="/Japanease" element={<JapaneseSection />} />
               <Route path="/South-Indian" element={<SouthIndianSection />} />

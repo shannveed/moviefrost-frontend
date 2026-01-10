@@ -1,12 +1,6 @@
 // src/Screens/Movies.js
 import { trackGuestAction } from '../utils/analytics';
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import Filters from '../Components/Filters';
 import Layout from '../Layout/Layout';
 import { TbPlayerTrackNext, TbPlayerTrackPrev } from 'react-icons/tb';
@@ -33,6 +27,8 @@ import MetaTags from '../Components/SEO/MetaTags';
 import {
   reorderMoviesInPageService,
   moveMoviesToPageService,
+  setLatestNewMoviesService,
+  setBannerMoviesService, // ✅ NEW
 } from '../Redux/APIs/MoviesServices';
 
 const MOVIES_PAGE_STATE_KEY = 'moviesPageState';
@@ -78,6 +74,12 @@ function MoviesPage() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [movingPage, setMovingPage] = useState(false);
 
+  // ✅ Latest New state
+  const [settingLatestNew, setSettingLatestNew] = useState(false);
+
+  // ✅ NEW: Banner state
+  const [settingBanner, setSettingBanner] = useState(false);
+
   // Sync localOrder with Redux movies when page changes
   useEffect(() => {
     if (isAdmin && adminMode && Array.isArray(movies)) {
@@ -114,16 +116,19 @@ function MoviesPage() {
   const handleDragEnter = (e, targetId) => {
     e.preventDefault();
     if (!draggedId || draggedId === targetId) return;
+
     setLocalOrder((prev) => {
       if (!Array.isArray(prev) || !prev.length) return prev;
       const currentIndex = prev.findIndex((m) => m._id === draggedId);
       const targetIndex = prev.findIndex((m) => m._id === targetId);
       if (currentIndex === -1 || targetIndex === -1) return prev;
+
       const updated = [...prev];
       const [moved] = updated.splice(currentIndex, 1);
       updated.splice(targetIndex, 0, moved);
       return updated;
     });
+
     setHasPendingReorder(true);
   };
 
@@ -152,22 +157,26 @@ function MoviesPage() {
   const handleSaveOrder = async () => {
     if (!isAdmin || !adminMode) return;
     if (!Array.isArray(localOrder) || !localOrder.length) return;
+
     if (!userInfo?.token) {
       toast.error('You must be logged in as admin.');
       return;
     }
+
     try {
       setSavingOrder(true);
       const orderedIds = localOrder.map((m) => m._id);
       await reorderMoviesInPageService(userInfo.token, page, orderedIds);
       toast.success('Order updated for this page');
       setHasPendingReorder(false);
-      // Refresh data
+
       const queries = buildQueries();
       dispatch(getAllMoviesAction({ ...queries, pageNumber: page }));
     } catch (error) {
       const msg =
-        error?.response?.data?.message || error?.message || 'Failed to save order';
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to save order';
       toast.error(msg);
     } finally {
       setSavingOrder(false);
@@ -181,6 +190,7 @@ function MoviesPage() {
       toast.error('You must be logged in as admin.');
       return;
     }
+
     const idsToMove =
       selectedIds && selectedIds.length > 0 ? selectedIds : [baseMovieId];
 
@@ -191,7 +201,7 @@ function MoviesPage() {
         `Moved ${idsToMove.length} item${idsToMove.length > 1 ? 's' : ''} to page ${targetPage}`
       );
       clearSelection();
-      // After move we reload current page data
+
       const queries = buildQueries();
       dispatch(getAllMoviesAction({ ...queries, pageNumber: page }));
     } catch (error) {
@@ -202,6 +212,65 @@ function MoviesPage() {
       toast.error(msg);
     } finally {
       setMovingPage(false);
+    }
+  };
+
+  // ✅ Add selected (or single) movies to "Latest New" (no move/removal from Movies)
+  const handleAddToLatestNew = async (baseMovieId) => {
+    if (!isAdmin) return;
+    if (!userInfo?.token) {
+      toast.error('You must be logged in as admin.');
+      return;
+    }
+
+    const idsToUpdate =
+      selectedIds && selectedIds.length > 0 ? selectedIds : [baseMovieId];
+
+    try {
+      setSettingLatestNew(true);
+      await setLatestNewMoviesService(userInfo.token, idsToUpdate, true);
+      toast.success(
+        `Added ${idsToUpdate.length} item${idsToUpdate.length > 1 ? 's' : ''} to Latest New`
+      );
+      clearSelection();
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to add to Latest New';
+      toast.error(msg);
+    } finally {
+      setSettingLatestNew(false);
+    }
+  };
+
+  // ✅ NEW: Add selected (or single) movies to "Banner" (no move/removal from Movies)
+  const handleAddToBanner = async (baseMovieId) => {
+    if (!isAdmin) return;
+    if (!userInfo?.token) {
+      toast.error('You must be logged in as admin.');
+      return;
+    }
+
+    const idsToUpdate =
+      selectedIds && selectedIds.length > 0 ? selectedIds : [baseMovieId];
+
+    try {
+      setSettingBanner(true);
+      await setBannerMoviesService(userInfo.token, idsToUpdate, true);
+
+      toast.success(
+        `Added ${idsToUpdate.length} item${idsToUpdate.length > 1 ? 's' : ''} to Banner`
+      );
+      clearSelection();
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to add to Banner';
+      toast.error(msg);
+    } finally {
+      setSettingBanner(false);
     }
   };
 
@@ -225,9 +294,7 @@ function MoviesPage() {
         MOVIES_PAGE_STATE_KEY,
         JSON.stringify(navigationState)
       );
-    } catch {
-      // ignore quota errors
-    }
+    } catch {}
   }, [
     page,
     currentPage,
@@ -277,23 +344,17 @@ function MoviesPage() {
   }, [navigationType, location.state]);
 
   // Build query parameters
-  const queries = useMemo(() => {
-    return buildQueries();
-  }, [buildQueries]);
+  const queries = useMemo(() => buildQueries(), [buildQueries]);
 
   const getPageNumber = useCallback(() => {
-    if (hasRestoredState.current && currentPage > 1) {
-      return currentPage;
-    }
+    if (hasRestoredState.current && currentPage > 1) return currentPage;
     const pageFromUrl = searchParams.get('page');
     return pageFromUrl ? Number(pageFromUrl) : 1;
   }, [currentPage, searchParams]);
 
   // Fetch movies
   useEffect(() => {
-    if (isError) {
-      toast.error(isError);
-    }
+    if (isError) toast.error(isError);
 
     if (!userInfo && Object.values(queries).some((val) => val)) {
       trackGuestAction('filter_usage', {
@@ -333,12 +394,7 @@ function MoviesPage() {
     const newPage = page + 1;
     setCurrentPage(newPage);
     updatePageInUrl(newPage);
-    dispatch(
-      getAllMoviesAction({
-        ...queries,
-        pageNumber: newPage,
-      })
-    );
+    dispatch(getAllMoviesAction({ ...queries, pageNumber: newPage }));
     window.scrollTo(0, 0);
   };
 
@@ -346,24 +402,14 @@ function MoviesPage() {
     const newPage = page - 1;
     setCurrentPage(newPage);
     updatePageInUrl(newPage);
-    dispatch(
-      getAllMoviesAction({
-        ...queries,
-        pageNumber: newPage,
-      })
-    );
+    dispatch(getAllMoviesAction({ ...queries, pageNumber: newPage }));
     window.scrollTo(0, 0);
   };
 
   const goToPage = (pageNum) => {
     setCurrentPage(pageNum);
     updatePageInUrl(pageNum);
-    dispatch(
-      getAllMoviesAction({
-        ...queries,
-        pageNumber: pageNum,
-      })
-    );
+    dispatch(getAllMoviesAction({ ...queries, pageNumber: pageNum }));
     window.scrollTo(0, 0);
   };
 
@@ -451,7 +497,8 @@ function MoviesPage() {
               {adminMode && (
                 <>
                   <span className="text-xs text-dryGray">
-                    Drag cards to reorder. Use dropdown to move to another page.
+                    Drag cards to reorder. Use dropdown to move to another page,
+                    add to Latest New, or add to Banner.
                   </span>
 
                   {selectedIds.length > 0 && (
@@ -482,11 +529,8 @@ function MoviesPage() {
                   {hasPendingReorder && (
                     <button
                       onClick={() => {
-                        if (Array.isArray(movies)) {
-                          setLocalOrder([...movies]);
-                        } else {
-                          setLocalOrder([]);
-                        }
+                        if (Array.isArray(movies)) setLocalOrder([...movies]);
+                        else setLocalOrder([]);
                         setHasPendingReorder(false);
                         setDraggedId(null);
                       }}
@@ -496,9 +540,13 @@ function MoviesPage() {
                     </button>
                   )}
 
-                  {movingPage && (
+                  {(movingPage || settingLatestNew || settingBanner) && (
                     <span className="text-xs text-customPurple animate-pulse">
-                      Moving...
+                      {movingPage
+                        ? 'Moving...'
+                        : settingLatestNew
+                        ? 'Updating Latest New...'
+                        : 'Updating Banner...'}
                     </span>
                   )}
                 </>
@@ -507,7 +555,6 @@ function MoviesPage() {
           </div>
         )}
 
-        {/* Header text */}
         <p className="text-md font-medium my-4 mobile:px-4">
           Total{' '}
           <span className="font-bold text-customPurple">
@@ -537,6 +584,10 @@ function MoviesPage() {
                   onMoveToPageClick={(movieId, targetPage) =>
                     handleMoveToPage(movieId, targetPage)
                   }
+                  onMoveToLatestNewClick={(movieId) =>
+                    handleAddToLatestNew(movieId)
+                  }
+                  onMoveToBannerClick={(movieId) => handleAddToBanner(movieId)} // ✅ NEW
                   adminDraggable={isAdmin && adminMode}
                   onAdminDragStart={handleDragStart}
                   onAdminDragEnter={handleDragEnter}
@@ -560,15 +611,10 @@ function MoviesPage() {
               <div className="flex gap-1.5">
                 {[...Array(Math.min(5, pages))].map((_, index) => {
                   let pageNum;
-                  if (pages <= 5) {
-                    pageNum = index + 1;
-                  } else if (page <= 3) {
-                    pageNum = index + 1;
-                  } else if (page >= pages - 2) {
-                    pageNum = pages - 4 + index;
-                  } else {
-                    pageNum = page - 2 + index;
-                  }
+                  if (pages <= 5) pageNum = index + 1;
+                  else if (page <= 3) pageNum = index + 1;
+                  else if (page >= pages - 2) pageNum = pages - 4 + index;
+                  else pageNum = page - 2 + index;
 
                   return (
                     <button
