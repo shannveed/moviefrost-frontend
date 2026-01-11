@@ -129,6 +129,20 @@ export const setLatestNewMoviesService = async (token, movieIds = [], value = tr
   return data;
 };
 
+// ✅ NEW: reorder latest-new list (Trending tab)
+export const reorderLatestNewMoviesService = async (token, orderedIds = []) => {
+  const { data } = await Axios.post(
+    `/movies/admin/latest-new/reorder`,
+    { orderedIds },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return data;
+};
+
 /* ============================================================
    ✅ NEW: Banner (HomeScreen Banner.js slider)
    ============================================================ */

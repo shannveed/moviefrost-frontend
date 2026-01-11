@@ -1,4 +1,4 @@
-// MobileFooter.js
+// Frontend/src/Layout/Footer/MobileFooter.js
 import React, { useContext, useEffect, useState } from 'react';
 import { BsCollectionPlay } from 'react-icons/bs';
 import { CgMenuBoxed } from 'react-icons/cg';
@@ -25,7 +25,6 @@ import {
   isPushSupported,
 } from '../../utils/pushNotifications';
 
-
 // ✅ NEW
 import { OPEN_WATCH_REQUEST_POPUP } from '../../utils/events';
 
@@ -35,6 +34,9 @@ function MobileFooter() {
     toggleDrawer,
     activeMobileTab,
     setActiveMobileTab,
+
+    // ✅ NEW
+    setActiveMobileHomeTab,
   } = useContext(SidebarContext);
 
   const dispatch = useDispatch();
@@ -95,11 +97,13 @@ function MobileFooter() {
     closeNotifications();
     if (mobileDrawer) toggleDrawer();
 
+    // ✅ Always open Trending tab when Home is pressed
+    setActiveMobileHomeTab('latestNew');
+    setActiveMobileTab('home');
+
     if (isHomePage) {
-      setActiveMobileTab('home');
       window.scrollTo(0, 0);
     } else {
-      setActiveMobileTab('home');
       navigate('/');
     }
   };
@@ -124,40 +128,39 @@ function MobileFooter() {
   };
 
   const handleNotificationsClick = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (mobileDrawer) toggleDrawer();
+    if (mobileDrawer) toggleDrawer();
 
-  if (!userInfo?.token) {
-    toast.error('Please login to view notifications');
-    navigate('/login');
-    return;
-  }
+    if (!userInfo?.token) {
+      toast.error('Please login to view notifications');
+      navigate('/login');
+      return;
+    }
 
-  // ✅ NEW: Ask once per session (user gesture = bell click)
-  try {
-    if (isPushSupported()) {
-      if (Notification.permission === 'granted') {
-        await ensurePushSubscription(userInfo.token);
-      } else if (Notification.permission === 'default') {
-        const key = 'pushPermissionPrompted';
-        if (!sessionStorage.getItem(key)) {
-          sessionStorage.setItem(key, '1');
-          await requestPermissionAndSubscribe(userInfo.token);
+    // ✅ Ask once per session (user gesture = bell click)
+    try {
+      if (isPushSupported()) {
+        if (Notification.permission === 'granted') {
+          await ensurePushSubscription(userInfo.token);
+        } else if (Notification.permission === 'default') {
+          const key = 'pushPermissionPrompted';
+          if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            await requestPermissionAndSubscribe(userInfo.token);
+          }
         }
       }
+    } catch (e2) {
+      console.warn('[push] enable failed:', e2);
     }
-  } catch (e2) {
-    console.warn('[push] enable failed:', e2);
-  }
 
-  setNotifyOpen((prev) => {
-    const next = !prev;
-    if (next) dispatch(getNotificationsAction(true));
-    return next;
-  });
-};
-
+    setNotifyOpen((prev) => {
+      const next = !prev;
+      if (next) dispatch(getNotificationsAction(true));
+      return next;
+    });
+  };
 
   const handleClearNotifications = () => {
     dispatch(clearNotifications());
@@ -261,14 +264,13 @@ function MobileFooter() {
             className="absolute left-2 right-2 bottom-20 bg-black border border-customPurple rounded-lg shadow-xl z-[61] p-2 max-h-[70vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ✅ UPDATED header */}
+            {/* header */}
             <div className="flex items-center justify-between px-2 py-1 gap-2">
               <h4 className="text-sm font-semibold text-white">
                 Notifications
               </h4>
 
               <div className="flex items-center gap-2 flex-wrap justify-end">
-                {/* ✅ NEW: request button for normal users */}
                 {!userInfo?.isAdmin && (
                   <button
                     onClick={openWatchRequestPopup}
@@ -308,7 +310,6 @@ function MobileFooter() {
               <div className="px-2 py-2">
                 <p className="text-sm text-border mb-2">No notifications</p>
 
-                {/* ✅ NEW: CTA when empty */}
                 {!userInfo?.isAdmin && (
                   <button
                     onClick={openWatchRequestPopup}

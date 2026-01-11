@@ -36,13 +36,13 @@ import { SidebarContext } from '../Context/DrawerContext';
 
 import { IoClose } from 'react-icons/io5';
 
-// ✅ Latest New APIs + ✅ Banner APIs
+// ✅ Latest New APIs + ✅ Banner APIs + ✅ NEW reorder
 import {
   getLatestNewMoviesService,
   getLatestNewMoviesAdminService,
   setLatestNewMoviesService,
+  reorderLatestNewMoviesService, // ✅ NEW
 
-  // ✅ NEW Banner APIs
   getBannerMoviesService,
   getBannerMoviesAdminService,
   setBannerMoviesService,
@@ -52,17 +52,15 @@ function HomeScreen() {
   const dispatch = useDispatch();
   const navigationType = useNavigationType();
 
-  // Mobile main tab from context (home / browseBy)
-  const { activeMobileTab } = useContext(SidebarContext);
+  // Mobile main tab + mobile home sub-tab from context
+  const { activeMobileTab, activeMobileHomeTab, setActiveMobileHomeTab } =
+    useContext(SidebarContext);
 
-  // Logged-in user (needed for admin remove)
+  // Logged-in user (needed for admin remove + reorder)
   const { userInfo } = useSelector((state) => state.userLogin || {});
+  const isAdmin = !!userInfo?.isAdmin;
 
-  // ✅ Mobile HOME sub-tabs (ONLY on mobile UI)
-  // Latest New (default) | Latest Movies
-  const [activeMobileHomeTab, setActiveMobileHomeTab] = useState('latestNew');
-
-  // Desktop tab state (your existing behavior) — keep as-is
+  // Desktop tab state (existing)
   const [activeDesktopTab, setActiveDesktopTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = sessionStorage.getItem('homeDesktopTab');
@@ -101,13 +99,21 @@ function HomeScreen() {
     isLoading: topLoading,
   } = useSelector((state) => state.getTopRatedMovie || {});
 
-  // ✅ Latest New data (used by desktop tab + mobile tab)
+  // ✅ Latest New data (Trending)
   const [latestNewMovies, setLatestNewMovies] = useState([]);
   const [latestNewLoading, setLatestNewLoading] = useState(false);
   const [latestNewError, setLatestNewError] = useState(null);
   const [removingLatestNewId, setRemovingLatestNewId] = useState(null);
 
-  // ✅ NEW: Banner data (HomeScreen Banner.js slider)
+  // ✅ NEW: Admin drag-to-reorder Trending (Latest New)
+  const [latestNewAdminMode, setLatestNewAdminMode] = useState(false);
+  const [latestNewLocalOrder, setLatestNewLocalOrder] = useState([]);
+  const [latestNewDraggedId, setLatestNewDraggedId] = useState(null);
+  const [latestNewHasPendingReorder, setLatestNewHasPendingReorder] =
+    useState(false);
+  const [savingLatestNewOrder, setSavingLatestNewOrder] = useState(false);
+
+  // ✅ Banner data (HomeScreen Banner.js slider)
   const [bannerMovies, setBannerMovies] = useState([]);
   const [bannerLoading, setBannerLoading] = useState(false);
   const [bannerError, setBannerError] = useState(null);
@@ -121,10 +127,8 @@ function HomeScreen() {
     initializedRef.current = true;
 
     try {
-      // Critical: first page of movies (fallback banner + latest movies grid)
       dispatch(getAllMoviesAction({ pageNumber: 1 }));
 
-      // Non-critical widgets
       const loadSecondaryData = () => {
         try {
           dispatch(getLatestMoviesAction());
@@ -156,7 +160,7 @@ function HomeScreen() {
         setBannerError(null);
 
         const data =
-          userInfo?.isAdmin && userInfo?.token
+          isAdmin && userInfo?.token
             ? await getBannerMoviesAdminService(userInfo.token, 10)
             : await getBannerMoviesService(10);
 
@@ -176,16 +180,13 @@ function HomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [userInfo?.isAdmin, userInfo?.token]);
+  }, [isAdmin, userInfo?.token]);
 
-  // Optional (recommended): show banner error toast
   useEffect(() => {
     if (bannerError) toast.error(bannerError);
   }, [bannerError]);
 
-  // ✅ Fetch Latest New when:
-  // - Desktop: activeDesktopTab === 'latestNew' (sm+ UI)
-  // - Mobile: activeMobileTab === 'home' AND activeMobileHomeTab === 'latestNew' (mobile UI)
+  // ✅ Fetch Latest New when Trending tab is active (desktop or mobile)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -207,7 +208,7 @@ function HomeScreen() {
         setLatestNewError(null);
 
         const data =
-          userInfo?.isAdmin && userInfo?.token
+          isAdmin && userInfo?.token
             ? await getLatestNewMoviesAdminService(userInfo.token, 100)
             : await getLatestNewMoviesService(100);
 
@@ -217,7 +218,7 @@ function HomeScreen() {
         const msg =
           e?.response?.data?.message ||
           e?.message ||
-          'Failed to load Latest New titles';
+          'Failed to load Trending titles';
         if (!cancelled) setLatestNewError(msg);
       } finally {
         if (!cancelled) setLatestNewLoading(false);
@@ -231,13 +232,92 @@ function HomeScreen() {
     activeDesktopTab,
     activeMobileTab,
     activeMobileHomeTab,
-    userInfo?.isAdmin,
+    isAdmin,
     userInfo?.token,
   ]);
 
-  // ✅ Admin-only: remove from Latest New (NOT delete from DB)
+  // ✅ Keep local reorder list in sync (same pattern as Movies.js admin reorder)
+  useEffect(() => {
+    if (isAdmin && latestNewAdminMode && Array.isArray(latestNewMovies)) {
+      setLatestNewLocalOrder([...latestNewMovies]);
+      setLatestNewHasPendingReorder(false);
+      setLatestNewDraggedId(null);
+    } else {
+      setLatestNewLocalOrder([]);
+      setLatestNewHasPendingReorder(false);
+      setLatestNewDraggedId(null);
+    }
+  }, [isAdmin, latestNewAdminMode, latestNewMovies]);
+
+  const trendingDisplayMovies =
+    isAdmin && latestNewAdminMode && latestNewLocalOrder.length
+      ? latestNewLocalOrder
+      : latestNewMovies;
+
+  // ✅ Drag handlers (same style as Movies.js)
+  const handleLatestNewDragStart = (e, id) => {
+    e.dataTransfer.effectAllowed = 'move';
+    setLatestNewDraggedId(id);
+  };
+
+  const handleLatestNewDragEnter = (e, targetId) => {
+    e.preventDefault();
+    if (!latestNewDraggedId || latestNewDraggedId === targetId) return;
+
+    setLatestNewLocalOrder((prev) => {
+      if (!Array.isArray(prev) || !prev.length) return prev;
+
+      const currentIndex = prev.findIndex((m) => m._id === latestNewDraggedId);
+      const targetIndex = prev.findIndex((m) => m._id === targetId);
+      if (currentIndex === -1 || targetIndex === -1) return prev;
+
+      const updated = [...prev];
+      const [moved] = updated.splice(currentIndex, 1);
+      updated.splice(targetIndex, 0, moved);
+      return updated;
+    });
+
+    setLatestNewHasPendingReorder(true);
+  };
+
+  const handleLatestNewDragEnd = () => setLatestNewDraggedId(null);
+
+  const resetLatestNewOrder = () => {
+    if (Array.isArray(latestNewMovies)) setLatestNewLocalOrder([...latestNewMovies]);
+    setLatestNewHasPendingReorder(false);
+    setLatestNewDraggedId(null);
+  };
+
+  const handleSaveLatestNewOrder = async () => {
+    if (!isAdmin || !userInfo?.token) return;
+    if (!latestNewLocalOrder.length) return;
+
+    try {
+      setSavingLatestNewOrder(true);
+
+      const orderedIds = latestNewLocalOrder.map((m) => m._id);
+      await reorderLatestNewMoviesService(userInfo.token, orderedIds);
+
+      toast.success('Trending order updated');
+      setLatestNewHasPendingReorder(false);
+
+      // reload from server to ensure UI matches DB
+      const data = await getLatestNewMoviesAdminService(userInfo.token, 100);
+      setLatestNewMovies(Array.isArray(data) ? data.slice(0, 100) : []);
+    } catch (e) {
+      toast.error(
+        e?.response?.data?.message ||
+          e?.message ||
+          'Failed to save Trending order'
+      );
+    } finally {
+      setSavingLatestNewOrder(false);
+    }
+  };
+
+  // ✅ Admin-only: remove from Trending (Latest New)
   const handleRemoveFromLatestNew = async (movieId) => {
-    if (!userInfo?.isAdmin || !userInfo?.token) return;
+    if (!isAdmin || !userInfo?.token) return;
 
     try {
       setRemovingLatestNewId(movieId);
@@ -245,21 +325,22 @@ function HomeScreen() {
       await setLatestNewMoviesService(userInfo.token, [movieId], false);
 
       setLatestNewMovies((prev) => prev.filter((m) => m._id !== movieId));
-      toast.success('Removed from Latest New');
+      setLatestNewLocalOrder((prev) => prev.filter((m) => m._id !== movieId));
+      toast.success('Removed from Trending');
     } catch (e) {
       toast.error(
         e?.response?.data?.message ||
           e?.message ||
-          'Failed to remove from Latest New'
+          'Failed to remove from Trending'
       );
     } finally {
       setRemovingLatestNewId(null);
     }
   };
 
-  // ✅ Admin-only: remove from Banner (NOT delete / NOT remove from Movies list)
+  // ✅ Admin-only: remove from Banner
   const handleRemoveFromBanner = async (movieId) => {
-    if (!userInfo?.isAdmin || !userInfo?.token) return;
+    if (!isAdmin || !userInfo?.token) return;
 
     try {
       setRemovingBannerId(movieId);
@@ -307,9 +388,7 @@ function HomeScreen() {
     }
   }, [isError, randomError, topError, latestError]);
 
-  // ✅ Banner feed:
-  // - If curated bannerMovies exists -> use it (10 max)
-  // - else fallback to page-1 movies (keeps home alive if no banner titles yet)
+  // Banner feed
   const bannerFeed = useMemo(() => {
     const curated = Array.isArray(bannerMovies) ? bannerMovies : [];
     if (curated.length > 0) return curated;
@@ -329,6 +408,61 @@ function HomeScreen() {
     description:
       'Watch thousands of movies and web series online for free in HD quality',
     url: 'https://moviefrost.com',
+  };
+
+  // ✅ Trending reorder bar (admin-only)
+  const TrendingReorderBar = () => {
+    if (!isAdmin) return null;
+
+    const baseBtn =
+      'px-4 py-2 text-sm rounded border transitions disabled:opacity-60';
+    const activeBtn = 'bg-customPurple border-customPurple text-white';
+    const inactiveBtn =
+      'border-customPurple text-white hover:bg-customPurple';
+
+    return (
+      <div className="my-4 p-4 bg-dry rounded-lg border border-border">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setLatestNewAdminMode((prev) => !prev)}
+            className={`${baseBtn} ${
+              latestNewAdminMode ? activeBtn : inactiveBtn
+            }`}
+          >
+            {latestNewAdminMode ? 'Exit Edit Trending' : 'Edit Trending Order'}
+          </button>
+
+          {latestNewAdminMode && (
+            <span className="text-xs text-dryGray">
+              Drag cards to reorder Trending, then press Save.
+            </span>
+          )}
+
+          {latestNewAdminMode && latestNewHasPendingReorder && (
+            <>
+              <button
+                type="button"
+                onClick={handleSaveLatestNewOrder}
+                disabled={savingLatestNewOrder}
+                className="px-4 py-2 text-sm rounded bg-green-600 hover:bg-green-700 text-white transitions disabled:opacity-60"
+              >
+                {savingLatestNewOrder ? 'Saving...' : 'Save Order'}
+              </button>
+
+              <button
+                type="button"
+                onClick={resetLatestNewOrder}
+                disabled={savingLatestNewOrder}
+                className="px-3 py-2 text-sm rounded border border-border text-white bg-main hover:bg-dry transitions disabled:opacity-60"
+              >
+                Reset
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
   };
 
   /* ================================
@@ -367,7 +501,7 @@ function HomeScreen() {
     );
   };
 
-  // ✅ Mobile Latest New Tab content (shows 100 items)
+  // ✅ Mobile Trending Tab content
   const MobileLatestNewTab = () => (
     <div className="sm:hidden">
       {latestNewLoading ? (
@@ -376,13 +510,14 @@ function HomeScreen() {
         </div>
       ) : latestNewError ? (
         <p className="text-red-500 text-sm">{latestNewError}</p>
-      ) : latestNewMovies.length > 0 ? (
+      ) : trendingDisplayMovies.length > 0 ? (
         <>
+          <TrendingReorderBar />
+
           <div className="grid grid-cols-2 gap-2">
-            {latestNewMovies.slice(0, 100).map((m) => (
+            {trendingDisplayMovies.slice(0, 100).map((m) => (
               <div key={m._id} className="relative">
-                {/* Admin-only remove button */}
-                {userInfo?.isAdmin && (
+                {isAdmin && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -392,8 +527,8 @@ function HomeScreen() {
                     }}
                     disabled={removingLatestNewId === m._id}
                     className="absolute top-2 right-2 z-30 w-9 h-9 flex-colo rounded-full bg-red-600/85 hover:bg-red-600 text-white disabled:opacity-60"
-                    title="Remove from Latest New"
-                    aria-label="Remove from Latest New"
+                    title="Remove from Trending"
+                    aria-label="Remove from Trending"
                   >
                     {removingLatestNewId === m._id ? (
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -403,7 +538,13 @@ function HomeScreen() {
                   </button>
                 )}
 
-                <Movie movie={m} />
+                <Movie
+                  movie={m}
+                  adminDraggable={isAdmin && latestNewAdminMode}
+                  onAdminDragStart={(e) => handleLatestNewDragStart(e, m._id)}
+                  onAdminDragEnter={(e) => handleLatestNewDragEnter(e, m._id)}
+                  onAdminDragEnd={handleLatestNewDragEnd}
+                />
               </div>
             ))}
           </div>
@@ -422,15 +563,13 @@ function HomeScreen() {
           <div className="flex-colo w-24 h-24 p-5 mb-4 rounded-full bg-dry text-customPurple text-4xl">
             <RiMovie2Line />
           </div>
-          <p className="text-border text-sm">
-            No titles added to Latest New yet.
-          </p>
+          <p className="text-border text-sm">No Trending titles yet.</p>
         </div>
       )}
     </div>
   );
 
-  // Mobile Latest Movies Tab content (existing behavior)
+  // Mobile Latest Movies Tab content
   const MobileLatestMoviesTab = () => (
     <div className="sm:hidden">
       {isLoading ? (
@@ -467,11 +606,10 @@ function HomeScreen() {
     </div>
   );
 
-  // ✅ Mobile Home Content (Latest New + Latest Movies tabs)
+  // ✅ Mobile Home Content
   const MobileHomeContent = () => (
     <div className="my-4 mobile:px-4">
       <MobileHomeTabs />
-
       {activeMobileHomeTab === 'latestNew' ? (
         <MobileLatestNewTab />
       ) : (
@@ -528,7 +666,7 @@ function HomeScreen() {
     </div>
   );
 
-  // Desktop Latest New content (keep your existing behavior)
+  // Desktop Trending content
   const DesktopLatestNewContent = () => (
     <div className="my-8">
       {latestNewLoading ? (
@@ -537,12 +675,14 @@ function HomeScreen() {
         </div>
       ) : latestNewError ? (
         <p className="text-red-500 text-sm">{latestNewError}</p>
-      ) : latestNewMovies.length > 0 ? (
+      ) : trendingDisplayMovies.length > 0 ? (
         <>
+          <TrendingReorderBar />
+
           <div className="grid xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 gap-4">
-            {latestNewMovies.slice(0, 100).map((m) => (
+            {trendingDisplayMovies.slice(0, 100).map((m) => (
               <div key={m._id} className="relative">
-                {userInfo?.isAdmin && (
+                {isAdmin && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -552,8 +692,8 @@ function HomeScreen() {
                     }}
                     disabled={removingLatestNewId === m._id}
                     className="absolute top-2 right-2 z-30 w-9 h-9 flex-colo rounded-full bg-red-600/80 hover:bg-red-600 text-white disabled:opacity-60"
-                    title="Remove from Latest New"
-                    aria-label="Remove from Latest New"
+                    title="Remove from Trending"
+                    aria-label="Remove from Trending"
                   >
                     {removingLatestNewId === m._id ? (
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -563,7 +703,13 @@ function HomeScreen() {
                   </button>
                 )}
 
-                <Movie movie={m} />
+                <Movie
+                  movie={m}
+                  adminDraggable={isAdmin && latestNewAdminMode}
+                  onAdminDragStart={(e) => handleLatestNewDragStart(e, m._id)}
+                  onAdminDragEnter={(e) => handleLatestNewDragEnter(e, m._id)}
+                  onAdminDragEnd={handleLatestNewDragEnd}
+                />
               </div>
             ))}
           </div>
@@ -582,9 +728,7 @@ function HomeScreen() {
           <div className="flex-colo w-24 h-24 p-5 mb-4 rounded-full bg-dry text-customPurple text-4xl">
             <RiMovie2Line />
           </div>
-          <p className="text-border text-sm">
-            No titles added to Latest New yet.
-          </p>
+          <p className="text-border text-sm">No Trending titles yet.</p>
         </div>
       )}
     </div>
@@ -725,7 +869,7 @@ function HomeScreen() {
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
       <div className="container mx-auto min-h-screen px-8 mobile:px-0 mb-6">
-        {/* Banner – desktop always; on mobile only on Home tab */}
+        {/* Banner */}
         <div className={activeMobileTab === 'browseBy' ? 'hidden sm:block' : ''}>
           <Banner
             movies={bannerFeed}
