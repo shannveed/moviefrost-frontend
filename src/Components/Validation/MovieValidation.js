@@ -97,7 +97,18 @@ const movieValidation = yup
     desc: yup
       .string()
       .required('Please enter a description')
-      .max(1000, 'Description should be less than 1000 characters'),
+        .max(5000, 'Description should be less than 5000 characters'),
+
+        seoTitle: yup
+  .string()
+  .nullable()
+  .max(100, 'SEO title should be less than 100 characters'),
+
+seoDescription: yup
+  .string()
+  .nullable()
+  .max(300, 'SEO description should be less than 300 characters'),
+
 
     browseBy: yup
       .string()

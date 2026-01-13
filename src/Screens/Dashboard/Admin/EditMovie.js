@@ -450,7 +450,23 @@ function EditMovie() {
             />
             {errors.desc && <InlineError text={errors.desc.message} />}
           </div>
+<Input
+  label="SEO Title (optional)"
+  placeholder="Max 100 characters"
+  type="text"
+  bg={true}
+  name="seoTitle"
+  register={register('seoTitle')}
+/>
 
+<Input
+  label="SEO Description (optional)"
+  placeholder="Max 300 characters"
+  type="text"
+  bg={true}
+  name="seoDescription"
+  register={register('seoDescription')}
+/>
           {/* Category & Browse By */}
           <div className="w-full grid md:grid-cols-2 gap-6 mt-4">
             <div className="w-full">
