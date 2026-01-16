@@ -1,4 +1,4 @@
-// src/Screens/Movies.js
+// Frontend/src/Screens/Movies.js
 import { trackGuestAction } from '../utils/analytics';
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import Filters from '../Components/Filters';
@@ -17,29 +17,23 @@ import {
   YearData,
   browseByData,
 } from '../Data/FilterData';
-import {
-  useParams,
-  useSearchParams,
-  useLocation,
-  useNavigationType,
-} from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import MetaTags from '../Components/SEO/MetaTags';
 import {
   reorderMoviesInPageService,
   moveMoviesToPageService,
   setLatestNewMoviesService,
-  setBannerMoviesService, // ✅ NEW
+  setBannerMoviesService,
 } from '../Redux/APIs/MoviesServices';
 
 const MOVIES_PAGE_STATE_KEY = 'moviesPageState';
+const MOVIES_PAGE_RESTORE_KEY = 'moviesPageRestorePending';
 
 function MoviesPage() {
   const { search } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const browseByParam = searchParams.get('browseBy') || '';
-  const navigationType = useNavigationType();
 
-  const location = useLocation();
   const dispatch = useDispatch();
 
   const hasRestoredState = useRef(false);
@@ -52,7 +46,12 @@ function MoviesPage() {
   const [rates, setRates] = useState(RatesData[0]);
   const [language, setLanguage] = useState(LanguageData[0]);
   const [browseBy, setBrowseBy] = useState(browseByData[0]);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Keep this aligned with URL (helps state consistency)
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = Number(searchParams.get('page') || 1);
+    return Number.isFinite(p) && p > 0 ? p : 1;
+  });
 
   const sameClass =
     'text-white py-2 px-4 rounded font-semibold border-2 border-customPurple hover:bg-customPurple';
@@ -77,7 +76,7 @@ function MoviesPage() {
   // ✅ Latest New state
   const [settingLatestNew, setSettingLatestNew] = useState(false);
 
-  // ✅ NEW: Banner state
+  // ✅ Banner state
   const [settingBanner, setSettingBanner] = useState(false);
 
   // Sync localOrder with Redux movies when page changes
@@ -97,6 +96,64 @@ function MoviesPage() {
     isAdmin && adminMode && Array.isArray(localOrder) && localOrder.length
       ? localOrder
       : movies;
+
+  // ========== ✅ FIX: only restore state when we explicitly came back from movie click ==========
+  useEffect(() => {
+    if (hasRestoredState.current) return;
+
+    let restorePending = false;
+    try {
+      restorePending = sessionStorage.getItem(MOVIES_PAGE_RESTORE_KEY) === '1';
+    } catch {
+      restorePending = false;
+    }
+
+    // If NOT coming back from a movie click, do NOT restore old session state.
+    // This keeps Google deep-links like /movies?page=45 working perfectly.
+    if (!restorePending) {
+      const urlPage = Number(searchParams.get('page') || 1);
+      if (Number.isFinite(urlPage) && urlPage > 0) {
+        setCurrentPage(urlPage);
+      }
+      return;
+    }
+
+    // One-shot: clear the restore flag immediately
+    try {
+      sessionStorage.removeItem(MOVIES_PAGE_RESTORE_KEY);
+    } catch {}
+
+    let savedStateRaw = null;
+    try {
+      savedStateRaw = sessionStorage.getItem(MOVIES_PAGE_STATE_KEY);
+    } catch {
+      savedStateRaw = null;
+    }
+
+    if (!savedStateRaw) {
+      hasRestoredState.current = true;
+      return;
+    }
+
+    try {
+      const state = JSON.parse(savedStateRaw);
+
+      if (Date.now() - state.timestamp < 30 * 60 * 1000) {
+        setCategory(state.category || { title: 'All Categories' });
+        setYear(state.year || YearData[0]);
+        setTimes(state.times || TimesData[0]);
+        setRates(state.rates || RatesData[0]);
+        setLanguage(state.language || LanguageData[0]);
+        setBrowseBy(state.browseBy || browseByData[0]);
+        setCurrentPage(state.page || 1);
+        scrollPositionRef.current = state.scrollPosition || 0;
+      }
+    } catch (e) {
+      console.error('Error restoring movies page state:', e);
+    } finally {
+      hasRestoredState.current = true;
+    }
+  }, [searchParams]);
 
   // Selected IDs toggling
   const toggleSelect = useCallback((id) => {
@@ -132,9 +189,7 @@ function MoviesPage() {
     setHasPendingReorder(true);
   };
 
-  const handleDragEnd = () => {
-    setDraggedId(null);
-  };
+  const handleDragEnd = () => setDraggedId(null);
 
   // Build queries helper
   const buildQueries = useCallback(() => {
@@ -183,7 +238,7 @@ function MoviesPage() {
     }
   };
 
-  // Move selected (or single) movie(s) to a target page via backend
+  // Move selected (or single) movie(s) to a target page
   const handleMoveToPage = async (baseMovieId, targetPage) => {
     if (!isAdmin) return;
     if (!userInfo?.token) {
@@ -215,7 +270,7 @@ function MoviesPage() {
     }
   };
 
-  // ✅ Add selected (or single) movies to "Latest New" (no move/removal from Movies)
+  // Add to Latest New
   const handleAddToLatestNew = async (baseMovieId) => {
     if (!isAdmin) return;
     if (!userInfo?.token) {
@@ -244,7 +299,7 @@ function MoviesPage() {
     }
   };
 
-  // ✅ NEW: Add selected (or single) movies to "Banner" (no move/removal from Movies)
+  // Add to Banner
   const handleAddToBanner = async (baseMovieId) => {
     if (!isAdmin) return;
     if (!userInfo?.token) {
@@ -258,7 +313,6 @@ function MoviesPage() {
     try {
       setSettingBanner(true);
       await setBannerMoviesService(userInfo.token, idsToUpdate, true);
-
       toast.success(
         `Added ${idsToUpdate.length} item${idsToUpdate.length > 1 ? 's' : ''} to Banner`
       );
@@ -307,41 +361,6 @@ function MoviesPage() {
     browseByParam,
     search,
   ]);
-
-  // Restore state when navigating back
-  useEffect(() => {
-    if (hasRestoredState.current) return;
-
-    let savedStateRaw = null;
-    try {
-      savedStateRaw = sessionStorage.getItem(MOVIES_PAGE_STATE_KEY);
-    } catch {
-      savedStateRaw = null;
-    }
-
-    if (
-      savedStateRaw &&
-      (navigationType === 'POP' || location.state?.fromMovieDetail)
-    ) {
-      try {
-        const state = JSON.parse(savedStateRaw);
-        if (Date.now() - state.timestamp < 30 * 60 * 1000) {
-          setCategory(state.category || { title: 'All Categories' });
-          setYear(state.year || YearData[0]);
-          setTimes(state.times || TimesData[0]);
-          setRates(state.rates || RatesData[0]);
-          setLanguage(state.language || LanguageData[0]);
-          setBrowseBy(state.browseBy || browseByData[0]);
-          setCurrentPage(state.page || 1);
-          scrollPositionRef.current = state.scrollPosition || 0;
-          hasRestoredState.current = true;
-        }
-      } catch (e) {
-        console.error('Error restoring movies page state:', e);
-      }
-      window.history.replaceState({}, document.title);
-    }
-  }, [navigationType, location.state]);
 
   // Build query parameters
   const queries = useMemo(() => buildQueries(), [buildQueries]);
@@ -452,7 +471,8 @@ function MoviesPage() {
     return desc;
   };
 
-  const handleMovieClick = () => {
+  const handleMovieGridClick = () => {
+    // Save state right before navigation (click on a movie card bubbles here)
     saveNavigationState();
   };
 
@@ -571,14 +591,14 @@ function MoviesPage() {
           <>
             <div
               className="grid sm:mt-8 mt-6 xl:grid-cols-5 above-1000:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 mobile:grid-cols-2 grid-cols-1 gap-4 mobile:gap-2 mobile:px-4"
-              onClick={handleMovieClick}
+              onClick={handleMovieGridClick}
             >
-              {displayMovies.map((movie, index) => (
+              {displayMovies.map((movieItem, index) => (
                 <Movie
-                  key={movie._id || index}
-                  movie={movie}
+                  key={movieItem._id || index}
+                  movie={movieItem}
                   showAdminControls={isAdmin && adminMode}
-                  isSelected={selectedIds.includes(movie._id)}
+                  isSelected={selectedIds.includes(movieItem._id)}
                   onSelectToggle={toggleSelect}
                   totalPages={pages}
                   onMoveToPageClick={(movieId, targetPage) =>
@@ -587,7 +607,7 @@ function MoviesPage() {
                   onMoveToLatestNewClick={(movieId) =>
                     handleAddToLatestNew(movieId)
                   }
-                  onMoveToBannerClick={(movieId) => handleAddToBanner(movieId)} // ✅ NEW
+                  onMoveToBannerClick={(movieId) => handleAddToBanner(movieId)}
                   adminDraggable={isAdmin && adminMode}
                   onAdminDragStart={handleDragStart}
                   onAdminDragEnter={handleDragEnter}

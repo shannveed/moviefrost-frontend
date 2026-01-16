@@ -14,7 +14,6 @@ import ToastContainer from './Components/Notifications/ToastContainer';
 import { AdminProtectedRouter, ProtectedRouter } from './ProtectedRoutes';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllCategoriesAction } from './Redux/Actions/CategoriesActions';
-import { getAllMoviesAction } from './Redux/Actions/MoviesActions';
 import { getFavoriteMoviesAction } from './Redux/Actions/userActions';
 import toast from 'react-hot-toast';
 import {
@@ -69,6 +68,7 @@ const Categories = lazy(() => import('./Screens/Dashboard/Admin/Categories'));
 const Users = lazy(() => import('./Screens/Dashboard/Admin/Users'));
 const NotFound = lazy(() => import('./Screens/NotFound'));
 const GoogleAnalytics = lazy(() => import('./Components/GoogleAnalytics'));
+const BulkCreate = lazy(() => import('./Screens/Dashboard/Admin/BulkCreate'));
 
 // Error Boundary
 class ErrorBoundary extends React.Component {
@@ -165,8 +165,6 @@ function App() {
 
   /* ============================================================
      ✅ Popup spacing / anti-stacking guard
-     Only 1 popup at a time
-     20s cooldown after closing a popup
      ============================================================ */
   const isAnyPopupOpenRef = useRef(false);
   const lastPopupClosedAtRef = useRef(0);
@@ -216,9 +214,7 @@ function App() {
         if (isShown()) return;
 
         if (canOpenPopupNow()) {
-          // ✅ lock immediately so two timers can't open two popups at once
           isAnyPopupOpenRef.current = true;
-
           open();
           markShown();
         } else {
@@ -244,17 +240,14 @@ function App() {
     if (typeof window === 'undefined') return;
 
     const openHandler = () => {
-      // Close other popups to prevent stacking (manual action wins)
       setInstallPopupOpen(false);
       setTelegramPopupOpen(false);
       setWhatsappPopupOpen(false);
 
-      // lock immediately (avoid race with scheduled popups)
       isAnyPopupOpenRef.current = true;
 
       setRequestPopupOpen(true);
       try {
-        // prevent the 1-minute auto popup from showing later in this session
         sessionStorage.setItem('movieRequestPopupShown', '1');
       } catch {}
     };
@@ -276,9 +269,7 @@ function App() {
       setDeferredPrompt(null);
       try {
         localStorage.setItem('pwaInstalled', '1');
-      } catch {
-        // ignore
-      }
+      } catch {}
     };
 
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
@@ -391,11 +382,16 @@ function App() {
     return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, []);
 
+  /**
+   * ✅ IMPORTANT FIX:
+   * We NO LONGER dispatch getAllMoviesAction({}) globally here.
+   * That call was overwriting the Movies page Redux state (page=45 → flicker → page=1).
+   * Each screen (HomeScreen, MoviesPage, etc.) already fetches its own movies.
+   */
   useEffect(() => {
     const load = () => {
       try {
         dispatch(getAllCategoriesAction());
-        dispatch(getAllMoviesAction({}));
         if (userInfo) dispatch(getFavoriteMoviesAction());
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -612,10 +608,7 @@ function App() {
               <Route path="/Hollywood" element={<HollywoodSection />} />
               <Route path="/Korean" element={<KoreanSection />} />
               <Route path="/Bollywood" element={<BollywoodSection />} />
-              <Route
-                path="/Hollywood-Hindi"
-                element={<HollywoodHindiSection />}
-              />
+              <Route path="/Hollywood-Hindi" element={<HollywoodHindiSection />} />
               <Route path="/Korean-Hindi" element={<KoreanHindiSection />} />
               <Route path="/Japanease" element={<JapaneseSection />} />
               <Route path="/South-Indian" element={<SouthIndianSection />} />
@@ -641,6 +634,7 @@ function App() {
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/addmovie" element={<AddMovie />} />
+                <Route path="/bulk-create" element={<BulkCreate />} />
               </Route>
             </Routes>
           </Suspense>

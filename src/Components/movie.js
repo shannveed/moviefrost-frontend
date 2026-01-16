@@ -2,10 +2,12 @@
 import React, { memo, useCallback, useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import { TbChevronDown } from 'react-icons/tb';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { IfMovieLiked, LikeMovie } from '../Context/Functionalities';
 import { useDispatch, useSelector } from 'react-redux';
 import OptimizedImage from './OptimizedImage';
+
+const MOVIES_PAGE_RESTORE_KEY = 'moviesPageRestorePending';
 
 const Movie = memo(
   ({
@@ -19,10 +21,10 @@ const Movie = memo(
     totalPages,
     onMoveToPageClick,
 
-    // ✅ NEW: add to HomeScreen "Latest New" tab
+    // ✅ add to HomeScreen "Latest New" tab
     onMoveToLatestNewClick,
 
-    // ✅ NEW: add to HomeScreen Banner.js slider
+    // ✅ add to HomeScreen Banner.js slider
     onMoveToBannerClick,
 
     adminDraggable = false,
@@ -34,13 +36,29 @@ const Movie = memo(
     const dispatch = useDispatch();
     const { userInfo } = useSelector((state) => state.userLogin);
     const navigate = useNavigate();
+    const location = useLocation();
+
     const [showPageDropdown, setShowPageDropdown] = useState(false);
 
     const isLiked = IfMovieLiked(movie);
 
+    // ✅ Only treat "/movies" and "/movies/..." as the Movies page
+    // (prevents matching "/movieslist")
+    const isMoviesRoute =
+      location.pathname === '/movies' || location.pathname.startsWith('/movies/');
+
     const handleMovieClick = useCallback(
       (e) => {
         e.preventDefault();
+
+        // ✅ Mark that the next time Movies page mounts, it can restore scroll/page state
+        if (isMoviesRoute) {
+          try {
+            sessionStorage.setItem(MOVIES_PAGE_RESTORE_KEY, '1');
+          } catch {
+            // ignore
+          }
+        }
 
         // Save current scroll position and page state before navigating
         const currentState = sessionStorage.getItem('moviesPageState');
@@ -58,7 +76,7 @@ const Movie = memo(
         const pathSegment = movie?.slug || movie?._id;
         navigate(`/movie/${pathSegment}`, { state: { fromMoviesPage: true } });
       },
-      [navigate, movie]
+      [navigate, movie, isMoviesRoute]
     );
 
     const handleLikeClick = useCallback(
@@ -80,14 +98,12 @@ const Movie = memo(
       if (onMoveToPageClick) onMoveToPageClick(movie._id, page);
     };
 
-    // ✅ Latest New click
     const handleMoveLatestNewClick = (e) => {
       e.stopPropagation();
       setShowPageDropdown(false);
       if (onMoveToLatestNewClick) onMoveToLatestNewClick(movie._id);
     };
 
-    // ✅ Banner click
     const handleMoveBannerClick = (e) => {
       e.stopPropagation();
       setShowPageDropdown(false);
@@ -160,7 +176,6 @@ const Movie = memo(
                     className="absolute right-0 top-full mt-1 bg-dry border border-border rounded shadow-lg max-h-56 overflow-y-auto z-30 min-w-[140px]"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {/* ✅ NEW: Banner (must be ABOVE Page 1) */}
                     {canShowBanner && (
                       <>
                         <button
@@ -175,7 +190,6 @@ const Movie = memo(
                       </>
                     )}
 
-                    {/* Latest New */}
                     {canShowLatestNew && (
                       <>
                         <button
@@ -190,7 +204,6 @@ const Movie = memo(
                       </>
                     )}
 
-                    {/* Existing pages */}
                     {typeof totalPages === 'number' && totalPages > 0 && (
                       <>
                         {Array.from({ length: totalPages }).map((_, idx) => (
@@ -212,7 +225,6 @@ const Movie = memo(
           </div>
         )}
 
-        {/* Thumbnail info */}
         {movie?.thumbnailInfo && (
           <div className="absolute top-2 left-2 bg-customPurple text-white text-xs above-1000:text-[10px] mobile:text-[11px] px-2 mobile:px-1.5 py-0.5 mobile:py-0.5 rounded font-semibold z-10">
             {movie.thumbnailInfo}
@@ -242,7 +254,6 @@ const Movie = memo(
             {movie?.name}
           </h3>
 
-          {/* Like button – hidden on mobiles (keep existing behavior) */}
           <button
             onClick={handleLikeClick}
             disabled={isLiked || isLoading}
