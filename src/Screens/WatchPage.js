@@ -32,6 +32,7 @@ import Movie from '../Components/movie';
 import toast from 'react-hot-toast';
 import MetaTags from '../Components/SEO/MetaTags';
 import { FiLogIn } from 'react-icons/fi';
+import { Helmet } from 'react-helmet-async';
 
 import {
   getRelatedMoviesService,
@@ -39,6 +40,16 @@ import {
 } from '../Redux/APIs/MoviesServices';
 
 // ---------------- Helpers ----------------
+const FRONTEND_BASE_URL = 'https://www.moviefrost.com';
+
+const toAbsoluteUrl = (value, base = FRONTEND_BASE_URL) => {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v)) return v;
+  if (v.startsWith('//')) return `https:${v}`;
+  return `${base}${v.startsWith('/') ? '' : '/'}${v}`;
+};
+
 const normalizeSeasonNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
@@ -160,7 +171,8 @@ function WatchPage() {
   };
 
   const pathSegmentForMeta = movie?.slug || routeParam;
-  const pageUrl = `https://www.moviefrost.com/watch/${pathSegmentForMeta}`;
+  const pageUrl = `${FRONTEND_BASE_URL}/watch/${pathSegmentForMeta}`;
+
   const seoTitle = movie
     ? buildWatchSeoTitle(movie)
     : 'Watch Movie Online – MovieFrost';
@@ -168,6 +180,9 @@ function WatchPage() {
     ? `${movie.desc?.substring(0, 150) || ''} Watch instantly in HD on MovieFrost.`
     : 'Watch free movies and web series online in HD on MovieFrost.';
   const shouldNoIndex = !movie || Boolean(isError);
+
+  const ogType =
+    movie?.type === 'WebSeries' ? 'video.episode' : 'video.movie';
 
   const handleBackClick = () => navigate(-1);
 
@@ -283,8 +298,6 @@ function WatchPage() {
     setCurrentEpisode(ep);
     setShowEpisodePicker(false);
 
-    // keep playing if already playing
-    // (iframe src changes + key forces remount)
     setPlay((prev) => prev);
 
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
@@ -357,7 +370,7 @@ function WatchPage() {
     const url = activeServers[idx]?.url;
     if (!url) return;
     setCurrentServerIndex(idx);
-    setPlay((prev) => prev); // keep playing if already playing
+    setPlay((prev) => prev);
   };
 
   const handlePlayClick = () => {
@@ -411,6 +424,102 @@ function WatchPage() {
       DownloadVideo(movie?.downloadUrl, userInfo);
     }
   };
+
+  // ✅ NEW: thumbnailUrl list for VideoObject schema
+  const thumbnailUrls = useMemo(() => {
+    const candidates = [
+      movie?.image,
+      movie?.titleImage,
+      `${FRONTEND_BASE_URL}/og-image.jpg`,
+      `${FRONTEND_BASE_URL}/images/MOVIEFROST.png`,
+    ];
+    const abs = candidates.map((u) => toAbsoluteUrl(u)).filter(Boolean);
+    return Array.from(new Set(abs));
+  }, [movie?.image, movie?.titleImage]);
+
+  // ✅ NEW: VideoObject schema (this fixes "No thumbnail URL provided")
+  const videoSchema = useMemo(() => {
+    if (!movie) return null;
+
+    const uploadDate =
+      movie.createdAt || movie.updatedAt
+        ? new Date(movie.createdAt || movie.updatedAt).toISOString()
+        : new Date().toISOString();
+
+    const publisher = {
+      '@type': 'Organization',
+      name: 'MovieFrost',
+      url: FRONTEND_BASE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${FRONTEND_BASE_URL}/images/MOVIEFROST.png`,
+      },
+    };
+
+    const base = {
+      '@context': 'https://schema.org',
+      '@type': 'VideoObject',
+      url: pageUrl,
+      embedUrl: pageUrl, // the page that contains the player
+      thumbnailUrl:
+        thumbnailUrls.length > 0
+          ? thumbnailUrls
+          : [`${FRONTEND_BASE_URL}/images/MOVIEFROST.png`],
+      uploadDate,
+      publisher,
+      isFamilyFriendly: true,
+      inLanguage: movie.language || 'en',
+      genre: movie.category || undefined,
+    };
+
+    // Movie
+    if (movie.type === 'Movie') {
+      const contentUrlRaw =
+        movie.downloadUrl || movie.video || movie.videoUrl2 || movie.videoUrl3;
+
+      return {
+        ...base,
+        name: `${movie.name} | MovieFrost`,
+        description:
+          movie.seoDescription ||
+          movie.desc ||
+          'Watch free movies online on MovieFrost.',
+        duration: movie.time ? `PT${movie.time}M` : undefined,
+        contentUrl: contentUrlRaw ? toAbsoluteUrl(contentUrlRaw) : undefined,
+        potentialAction: { '@type': 'WatchAction', target: pageUrl },
+      };
+    }
+
+    // WebSeries: represent current episode (or first episode) as the main video
+    const ep = currentEpisode || activeSeasonEpisodes?.[0] || null;
+    const season = normalizeSeasonNumber(ep?.seasonNumber || activeSeason);
+    const epNum = ep?.episodeNumber ? Number(ep.episodeNumber) : null;
+    const episodeLabel = epNum ? `S${season}E${epNum}` : `Season ${season}`;
+    const epTitlePart = ep?.title ? ` - ${ep.title}` : '';
+
+    const contentUrlRaw = ep?.video || ep?.videoUrl2 || ep?.videoUrl3;
+
+    return {
+      ...base,
+      name: `${movie.name} ${episodeLabel}${epTitlePart} | MovieFrost`,
+      description:
+        ep?.desc ||
+        movie.seoDescription ||
+        movie.desc ||
+        'Watch free web series online on MovieFrost.',
+      duration: ep?.duration ? `PT${ep.duration}M` : undefined,
+      contentUrl: contentUrlRaw ? toAbsoluteUrl(contentUrlRaw) : undefined,
+      partOfSeries: { '@type': 'TVSeries', name: movie.name },
+      potentialAction: { '@type': 'WatchAction', target: pageUrl },
+    };
+  }, [
+    movie,
+    pageUrl,
+    thumbnailUrls,
+    currentEpisode,
+    activeSeason,
+    activeSeasonEpisodes,
+  ]);
 
   // Reset related when route changes
   useEffect(() => {
@@ -508,11 +617,18 @@ function WatchPage() {
       <MetaTags
         title={seoTitle}
         description={seoDescription}
-        image={movie?.titleImage || movie?.image}
+        image={movie?.image || movie?.titleImage}
         url={pageUrl}
-        type="video.movie"
+        type={ogType}
         noindex={shouldNoIndex}
       />
+
+      {/* ✅ NEW: VideoObject Schema in <head> */}
+      {videoSchema && (
+        <Helmet>
+          <script type="application/ld+json">{JSON.stringify(videoSchema)}</script>
+        </Helmet>
+      )}
 
       {/* Guest Login Prompt Modal */}
       {!userInfo && showLoginModal && (
@@ -844,9 +960,11 @@ function WatchPage() {
           {play ? (
             <iframe
               key={`${movie?._id}:${movie?.type}:${activeSeason}:${currentEpisode?._id || 'movie'}:${currentServerIndex}:${activeVideoUrl}`}
-              title={movie?.type === 'WebSeries'
-                ? `S${activeSeason}E${currentEpisode?.episodeNumber || ''}`
-                : activeServers[currentServerIndex]?.label}
+              title={
+                movie?.type === 'WebSeries'
+                  ? `S${activeSeason}E${currentEpisode?.episodeNumber || ''}`
+                  : activeServers[currentServerIndex]?.label
+              }
               src={activeVideoUrl}
               frameBorder="0"
               allowFullScreen
