@@ -22,6 +22,7 @@ import {
   trackLoginPrompt,
 } from './utils/analytics';
 import Loader from './Components/Loader';
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 import Axios from './Redux/APIs/Axios';
 import MovieRequestPopup from './Components/Modals/MovieRequestPopup';
@@ -535,7 +536,7 @@ function App() {
     <ErrorBoundary>
       <DrawerContext>
         <ToastContainer />
-
+        <SpeedInsights /> 
         <InstallPwaPopup
           open={installPopupOpen}
           onClose={() => {
