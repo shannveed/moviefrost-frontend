@@ -993,17 +993,7 @@ function WatchPage() {
           )}
         </div>
 
-        {/* ✅ ADS BELOW PLAYER
-            - Desktop: 4:1
-            - Mobile: 1:1 (requested)
-        */}
-        <EffectiveGateNativeBanner
-          refreshKey={`watch-desktop-${movie?.slug || movie?._id || routeParam}`}
-        />
-        <EffectiveGateSquareAd
-          refreshKey={`watch-mobile-${movie?.slug || movie?._id || routeParam}`}
-          className="sm:hidden"
-        />
+       
 
         {/* Desktop episode list */}
         {movie.type === 'WebSeries' && (
@@ -1048,6 +1038,18 @@ function WatchPage() {
             </div>
           </div>
         )}
+
+         {/* ✅ ADS BELOW PLAYER
+            - Desktop: 4:1
+            - Mobile: 1:1 (requested)
+        */}
+        <EffectiveGateNativeBanner
+          refreshKey={`watch-desktop-${movie?.slug || movie?._id || routeParam}`}
+        />
+        <EffectiveGateSquareAd
+          refreshKey={`watch-mobile-${movie?.slug || movie?._id || routeParam}`}
+          className="sm:hidden"
+        />
 
         {/* Related Movies/WebSeries */}
         <div className="my-16">
