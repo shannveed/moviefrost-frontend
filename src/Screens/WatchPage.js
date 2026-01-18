@@ -39,8 +39,10 @@ import {
   getRelatedMoviesAdminService,
 } from '../Redux/APIs/MoviesServices';
 
-// ✅ NEW: Native Banner Ad
-import EffectiveGateNativeBanner from '../Components/Ads/EffectiveGateNativeBanner';
+// ✅ Ads (desktop 4:1 + mobile 1:1)
+import EffectiveGateNativeBanner, {
+  EffectiveGateSquareAd,
+} from '../Components/Ads/EffectiveGateNativeBanner';
 
 // ---------------- Helpers ----------------
 const FRONTEND_BASE_URL = 'https://www.moviefrost.com';
@@ -463,7 +465,7 @@ function WatchPage() {
       '@context': 'https://schema.org',
       '@type': 'VideoObject',
       url: pageUrl,
-      embedUrl: pageUrl, // the page that contains the player
+      embedUrl: pageUrl,
       thumbnailUrl:
         thumbnailUrls.length > 0
           ? thumbnailUrls
@@ -475,7 +477,6 @@ function WatchPage() {
       genre: movie.category || undefined,
     };
 
-    // Movie
     if (movie.type === 'Movie') {
       const contentUrlRaw =
         movie.downloadUrl || movie.video || movie.videoUrl2 || movie.videoUrl3;
@@ -493,7 +494,6 @@ function WatchPage() {
       };
     }
 
-    // WebSeries: represent current episode (or first episode) as the main video
     const ep = currentEpisode || activeSeasonEpisodes?.[0] || null;
     const season = normalizeSeasonNumber(ep?.seasonNumber || activeSeason);
     const epNum = ep?.episodeNumber ? Number(ep.episodeNumber) : null;
@@ -531,7 +531,7 @@ function WatchPage() {
     setRelatedLoading(false);
   }, [routeParam]);
 
-  // Fetch related titles from backend by category
+  // Fetch related titles
   useEffect(() => {
     let cancelled = false;
 
@@ -576,7 +576,6 @@ function WatchPage() {
       .slice(0, 20);
   }, [relatedTitles, movie?._id]);
 
-  // Early returns
   if (isNotFound && !isLoading && !movie) {
     return (
       <Layout>
@@ -626,7 +625,6 @@ function WatchPage() {
         noindex={shouldNoIndex}
       />
 
-      {/* ✅ NEW: VideoObject Schema in <head> */}
       {videoSchema && (
         <Helmet>
           <script type="application/ld+json">{JSON.stringify(videoSchema)}</script>
@@ -691,7 +689,7 @@ function WatchPage() {
         </div>
       )}
 
-      {/* ✅ Mobile Episode Picker (bottom sheet) */}
+      {/* ✅ Mobile Episode Picker */}
       {movie?.type === 'WebSeries' && showEpisodePicker && (
         <div
           className="fixed inset-0 z-50 bg-black/70"
@@ -769,9 +767,7 @@ function WatchPage() {
                           {ep.title}
                         </p>
                       ) : (
-                        <p className="text-xs text-dryGray mt-1">
-                          Tap to play
-                        </p>
+                        <p className="text-xs text-dryGray mt-1">Tap to play</p>
                       )}
                     </button>
                   );
@@ -929,7 +925,7 @@ function WatchPage() {
           </div>
         )}
 
-        {/* ✅ 3-Server buttons (Movie + WebSeries) */}
+        {/* ✅ 3-Server buttons */}
         <div className="flex flex-wrap gap-3 mb-4">
           {activeServers.map((server, idx) => {
             const enabled = !!server.url;
@@ -997,7 +993,17 @@ function WatchPage() {
           )}
         </div>
 
-
+        {/* ✅ ADS BELOW PLAYER
+            - Desktop: 4:1
+            - Mobile: 1:1 (requested)
+        */}
+        <EffectiveGateNativeBanner
+          refreshKey={`watch-desktop-${movie?.slug || movie?._id || routeParam}`}
+        />
+        <EffectiveGateSquareAd
+          refreshKey={`watch-mobile-${movie?.slug || movie?._id || routeParam}`}
+          className="sm:hidden"
+        />
 
         {/* Desktop episode list */}
         {movie.type === 'WebSeries' && (
@@ -1028,9 +1034,7 @@ function WatchPage() {
                         : 'bg-dry border-border text-white hover:border-customPurple'
                     }`}
                   >
-                    <p className="text-sm font-semibold">
-                      Ep {ep.episodeNumber}
-                    </p>
+                    <p className="text-sm font-semibold">Ep {ep.episodeNumber}</p>
                     {ep.title ? (
                       <p className="text-xs text-dryGray line-clamp-2 mt-1">
                         {ep.title}
@@ -1044,8 +1048,7 @@ function WatchPage() {
             </div>
           </div>
         )}
-        {/* ✅ Ad under Player */}
-        <EffectiveGateNativeBanner />
+
         {/* Related Movies/WebSeries */}
         <div className="my-16">
           <Titles title="Related Movies" Icon={BsCollectionFill} />

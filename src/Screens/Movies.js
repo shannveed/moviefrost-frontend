@@ -26,8 +26,10 @@ import {
   setBannerMoviesService,
 } from '../Redux/APIs/MoviesServices';
 
-// ✅ NEW: Native Banner Ad
-import EffectiveGateNativeBanner from '../Components/Ads/EffectiveGateNativeBanner';
+// ✅ Ads
+import EffectiveGateNativeBanner, {
+  EffectiveGateSquareAd,
+} from '../Components/Ads/EffectiveGateNativeBanner';
 
 const MOVIES_PAGE_STATE_KEY = 'moviesPageState';
 const MOVIES_PAGE_RESTORE_KEY = 'moviesPageRestorePending';
@@ -42,7 +44,7 @@ function MoviesPage() {
   const hasRestoredState = useRef(false);
   const scrollPositionRef = useRef(0);
 
-  // Filter states with default values
+  // Filter states
   const [category, setCategory] = useState({ title: 'All Categories' });
   const [year, setYear] = useState(YearData[0]);
   const [times, setTimes] = useState(TimesData[0]);
@@ -50,7 +52,6 @@ function MoviesPage() {
   const [language, setLanguage] = useState(LanguageData[0]);
   const [browseBy, setBrowseBy] = useState(browseByData[0]);
 
-  // Keep this aligned with URL (helps state consistency)
   const [currentPage, setCurrentPage] = useState(() => {
     const p = Number(searchParams.get('page') || 1);
     return Number.isFinite(p) && p > 0 ? p : 1;
@@ -76,10 +77,7 @@ function MoviesPage() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [movingPage, setMovingPage] = useState(false);
 
-  // ✅ Latest New state
   const [settingLatestNew, setSettingLatestNew] = useState(false);
-
-  // ✅ Banner state
   const [settingBanner, setSettingBanner] = useState(false);
 
   // Sync localOrder with Redux movies when page changes
@@ -100,7 +98,7 @@ function MoviesPage() {
       ? localOrder
       : movies;
 
-  // ========== ✅ FIX: only restore state when we explicitly came back from movie click ==========
+  // Restore state only when coming back from a movie click
   useEffect(() => {
     if (hasRestoredState.current) return;
 
@@ -111,8 +109,6 @@ function MoviesPage() {
       restorePending = false;
     }
 
-    // If NOT coming back from a movie click, do NOT restore old session state.
-    // This keeps Google deep-links like /movies?page=45 working perfectly.
     if (!restorePending) {
       const urlPage = Number(searchParams.get('page') || 1);
       if (Number.isFinite(urlPage) && urlPage > 0) {
@@ -121,7 +117,6 @@ function MoviesPage() {
       return;
     }
 
-    // One-shot: clear the restore flag immediately
     try {
       sessionStorage.removeItem(MOVIES_PAGE_RESTORE_KEY);
     } catch {}
@@ -194,7 +189,6 @@ function MoviesPage() {
 
   const handleDragEnd = () => setDraggedId(null);
 
-  // Build queries helper
   const buildQueries = useCallback(() => {
     return {
       category:
@@ -211,7 +205,7 @@ function MoviesPage() {
     };
   }, [category, times, language, rates, year, browseBy, browseByParam, search]);
 
-  // Save page order to backend
+  // Save page order
   const handleSaveOrder = async () => {
     if (!isAdmin || !adminMode) return;
     if (!Array.isArray(localOrder) || !localOrder.length) return;
@@ -241,7 +235,6 @@ function MoviesPage() {
     }
   };
 
-  // Move selected (or single) movie(s) to a target page
   const handleMoveToPage = async (baseMovieId, targetPage) => {
     if (!isAdmin) return;
     if (!userInfo?.token) {
@@ -273,7 +266,6 @@ function MoviesPage() {
     }
   };
 
-  // Add to Latest New
   const handleAddToLatestNew = async (baseMovieId) => {
     if (!isAdmin) return;
     if (!userInfo?.token) {
@@ -302,7 +294,6 @@ function MoviesPage() {
     }
   };
 
-  // Add to Banner
   const handleAddToBanner = async (baseMovieId) => {
     if (!isAdmin) return;
     if (!userInfo?.token) {
@@ -331,7 +322,6 @@ function MoviesPage() {
     }
   };
 
-  // Save navigation state to sessionStorage
   const saveNavigationState = useCallback(() => {
     const navigationState = {
       page: page || currentPage,
@@ -365,7 +355,6 @@ function MoviesPage() {
     search,
   ]);
 
-  // Build query parameters
   const queries = useMemo(() => buildQueries(), [buildQueries]);
 
   const getPageNumber = useCallback(() => {
@@ -374,7 +363,6 @@ function MoviesPage() {
     return pageFromUrl ? Number(pageFromUrl) : 1;
   }, [currentPage, searchParams]);
 
-  // Fetch movies
   useEffect(() => {
     if (isError) toast.error(isError);
 
@@ -389,7 +377,6 @@ function MoviesPage() {
     dispatch(getAllMoviesAction({ ...queries, pageNumber }));
   }, [dispatch, isError, queries, userInfo, getPageNumber]);
 
-  // Restore scroll position after movies are loaded
   useEffect(() => {
     if (
       !isLoading &&
@@ -404,14 +391,12 @@ function MoviesPage() {
     }
   }, [isLoading, displayMovies]);
 
-  // Update URL with page number
   const updatePageInUrl = (pageNum) => {
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('page', pageNum);
     setSearchParams(newSearchParams);
   };
 
-  // Pagination handlers
   const nextPage = () => {
     const newPage = page + 1;
     setCurrentPage(newPage);
@@ -451,7 +436,6 @@ function MoviesPage() {
     setBrowseBy,
   };
 
-  // SEO helpers
   const generateSEOTitle = () => {
     let title = 'Watch Movies Online Free';
     if (search) title = `Search Results for "${search}"`;
@@ -475,9 +459,12 @@ function MoviesPage() {
   };
 
   const handleMovieGridClick = () => {
-    // Save state right before navigation (click on a movie card bubbles here)
     saveNavigationState();
   };
+
+  // ✅ Keep ad mounted even when loading so it doesn’t disappear on pagination
+  const showAd =
+    isLoading || (Array.isArray(displayMovies) && displayMovies.length > 0);
 
   return (
     <Layout>
@@ -497,7 +484,7 @@ function MoviesPage() {
       <div className="min-height-screen container mx-auto px-8 mobile:px-0 my-2">
         <Filters data={datas} />
 
-        {/* ADMIN ORDERING BAR */}
+        {/* ADMIN BAR */}
         {isAdmin && (
           <div className="my-4 p-4 bg-dry rounded-lg border border-border">
             <div className="flex flex-wrap items-center gap-3">
@@ -586,6 +573,7 @@ function MoviesPage() {
           Items Found On This Page
         </p>
 
+        {/* CONTENT */}
         {isLoading ? (
           <div className="w-full gap-6 flex-colo min-h-screen">
             <Loader />
@@ -665,9 +653,6 @@ function MoviesPage() {
                 <TbPlayerTrackNext className="text-md" />
               </button>
             </div>
-
-            {/* ✅ Ad under pagination */}
-            <EffectiveGateNativeBanner />
           </>
         ) : (
           <div className="w-full gap-6 flex-colo min-h-screen">
@@ -678,6 +663,17 @@ function MoviesPage() {
               It seems like we don't have any movies
             </p>
           </div>
+        )}
+
+        {/* ✅ Ads below pagination (desktop 4:1 + mobile 1:1), kept mounted */}
+        {showAd && (
+          <>
+            <EffectiveGateNativeBanner refreshKey="movies-page-bottom-desktop" />
+            <EffectiveGateSquareAd
+              refreshKey="movies-page-bottom-mobile"
+              className="px-4 sm:px-0"
+            />
+          </>
         )}
       </div>
     </Layout>

@@ -1,5 +1,5 @@
 // Frontend/src/Components/Ads/EffectiveGateNativeBanner.js
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const DEFAULT_SCRIPT_SRC =
   'https://pl27041508.effectivegatecpm.com/019a973cec8ffe0b4ea36cff849dc6cf/invoke.js';
@@ -7,11 +7,10 @@ const DEFAULT_SCRIPT_SRC =
 const DEFAULT_CONTAINER_ID = 'container-019a973cec8ffe0b4ea36cff849dc6cf';
 
 /**
- * EffectiveGate / ProfitablerateCPM "Native Banner" (4:1)
- *
- * ✅ Loads ONLY on screens >= 640px (Tailwind "sm" breakpoint by default).
- * ✅ Injects script dynamically (SPA-safe).
- * ✅ Stable 4:1 bordered slot so layout doesn't jump.
+ * EffectiveGate / ProfitablerateCPM iframe wrapper (SPA safe)
+ * - Runs ad script inside isolated iframe srcDoc (prevents SPA "stuck" ads)
+ * - Supports minWidthPx / maxWidthPx so we can target desktop vs mobile
+ * - Supports aspectRatio so we can do 4:1 (desktop) and 1:1 (mobile)
  */
 
 const useMediaQuery = (query) => {
@@ -26,10 +25,8 @@ const useMediaQuery = (query) => {
     const mql = window.matchMedia(query);
     const handler = (e) => setMatches(e.matches);
 
-    // keep correct initial
     setMatches(mql.matches);
 
-    // Safari fallback
     if (mql.addEventListener) mql.addEventListener('change', handler);
     else mql.addListener(handler);
 
@@ -42,88 +39,155 @@ const useMediaQuery = (query) => {
   return matches;
 };
 
-export default function EffectiveGateNativeBanner({
+const buildSrcDoc = ({ containerId, scriptSrc }) => `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+      }
+      #${containerId} {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="${containerId}"></div>
+    <script async data-cfasync="false" src="${scriptSrc}"></script>
+  </body>
+</html>`;
+
+const buildMediaQuery = ({ minWidthPx, maxWidthPx }) => {
+  const parts = [];
+
+  const min = Number(minWidthPx);
+  const max = Number(maxWidthPx);
+
+  if (Number.isFinite(min) && min >= 0) parts.push(`(min-width: ${min}px)`);
+  if (Number.isFinite(max) && max >= 0) parts.push(`(max-width: ${max}px)`);
+
+  return parts.length ? parts.join(' and ') : '(min-width: 0px)';
+};
+
+function EffectiveGateIframeAd({
   scriptSrc = DEFAULT_SCRIPT_SRC,
   containerId = DEFAULT_CONTAINER_ID,
-  minWidthPx = 640,
+
+  // responsive gating
+  minWidthPx,
+  maxWidthPx,
+
+  // layout
+  aspectRatio = '4 / 1',
+  minHeight = 90,
+
+  // UI
   className = '',
   label = 'Advertisement',
+
+  // forces iframe reload when changed
+  refreshKey = '',
+
+  // optional aria/title
+  iframeTitle,
 }) {
-  const query = useMemo(() => {
-    const w = Number(minWidthPx);
-    const safe = Number.isFinite(w) && w > 0 ? w : 640;
-    return `(min-width: ${safe}px)`;
-  }, [minWidthPx]);
+  const query = useMemo(
+    () => buildMediaQuery({ minWidthPx, maxWidthPx }),
+    [minWidthPx, maxWidthPx]
+  );
 
-  const isDesktop = useMediaQuery(query);
+  const matches = useMediaQuery(query);
 
-  const mountRef = useRef(null);
-  const scriptRef = useRef(null);
+  const srcDoc = useMemo(() => {
+    return buildSrcDoc({ containerId, scriptSrc });
+  }, [containerId, scriptSrc]);
 
-  useEffect(() => {
-    if (!isDesktop) return;
+  const iframeKey = useMemo(() => {
+    // include everything that should trigger a hard iframe refresh
+    return `${containerId}:${String(refreshKey)}:${scriptSrc}:${query}:${aspectRatio}`;
+  }, [containerId, refreshKey, scriptSrc, query, aspectRatio]);
 
-    const mount = mountRef.current;
-    if (!mount) return;
+  if (!matches) return null;
 
-    const container = mount.querySelector(`#${containerId}`);
-    if (!container) return;
-
-    // clear old ad content (important for SPA route/tab switches)
-    container.innerHTML = '';
-
-    // remove old script if any
-    if (scriptRef.current) {
-      try {
-        scriptRef.current.remove();
-      } catch {}
-      scriptRef.current = null;
-    }
-
-    // inject script exactly like provider snippet
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = scriptSrc;
-    script.setAttribute('data-cfasync', 'false');
-
-    // Insert script right before the container div (stable)
-    mount.insertBefore(script, container);
-    scriptRef.current = script;
-
-    // cleanup on unmount (route/tab change)
-    return () => {
-      try {
-        container.innerHTML = '';
-      } catch {}
-      try {
-        scriptRef.current?.remove();
-      } catch {}
-      scriptRef.current = null;
-    };
-  }, [isDesktop, scriptSrc, containerId]);
-
-  // ✅ nothing on mobile → no network request, no script load
-  if (!isDesktop) return null;
+  const title = iframeTitle || `effectivegate-ad-${String(refreshKey || 'default')}`;
 
   return (
-    <section className={`w-full my-8 ${className}`} aria-label="Advertisement">
+    <section className={`w-full my-8 ${className}`} aria-label={label || 'Advertisement'}>
       <div className="border border-border bg-dry rounded-lg p-3 sm:p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-dryGray">{label}</span>
-        </div>
+        {label ? (
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-dryGray">{label}</span>
+          </div>
+        ) : null}
 
-        {/* Stable 4:1 slot (prevents ugly jumps) */}
         <div
-          ref={mountRef}
           className="w-full overflow-hidden rounded-md bg-main"
           style={{
-            aspectRatio: '4 / 1',
-            minHeight: 90,
+            aspectRatio,
+            minHeight,
           }}
         >
-          <div id={containerId} className="w-full h-full" />
+          <iframe
+            key={iframeKey}
+            title={title}
+            srcDoc={srcDoc}
+            className="w-full h-full"
+            style={{ border: 0, display: 'block' }}
+            scrolling="no"
+            loading="eager"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * ✅ Desktop default (4:1)
+ * - Only shows on screens >= 640px
+ */
+export default function EffectiveGateNativeBanner({
+  minWidthPx = 640,
+  aspectRatio = '4 / 1',
+  minHeight = 90,
+  ...props
+}) {
+  return (
+    <EffectiveGateIframeAd
+      {...props}
+      minWidthPx={minWidthPx}
+      aspectRatio={aspectRatio}
+      minHeight={minHeight}
+    />
+  );
+}
+
+/**
+ * ✅ Mobile default (1:1)
+ * - Only shows on screens <= 639px
+ * NOTE: For a "true" square ad, your ad network may require a separate zone/script.
+ */
+export function EffectiveGateSquareAd({
+  maxWidthPx = 639,
+  aspectRatio = '1 / 1',
+  minHeight = 260,
+  ...props
+}) {
+  return (
+    <EffectiveGateIframeAd
+      {...props}
+      maxWidthPx={maxWidthPx}
+      aspectRatio={aspectRatio}
+      minHeight={minHeight}
+    />
   );
 }

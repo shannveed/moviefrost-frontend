@@ -47,8 +47,10 @@ import {
   setBannerMoviesService,
 } from '../Redux/APIs/MoviesServices';
 
-// ✅ Native Banner Ad
-import EffectiveGateNativeBanner from '../Components/Ads/EffectiveGateNativeBanner';
+// ✅ Ads
+import EffectiveGateNativeBanner, {
+  EffectiveGateSquareAd,
+} from '../Components/Ads/EffectiveGateNativeBanner';
 
 function HomeScreen() {
   const dispatch = useDispatch();
@@ -238,7 +240,7 @@ function HomeScreen() {
     userInfo?.token,
   ]);
 
-  // ✅ Keep local reorder list in sync (same pattern as Movies.js admin reorder)
+  // ✅ Keep local reorder list in sync
   useEffect(() => {
     if (isAdmin && latestNewAdminMode && Array.isArray(latestNewMovies)) {
       setLatestNewLocalOrder([...latestNewMovies]);
@@ -304,7 +306,6 @@ function HomeScreen() {
       toast.success('Trending order updated');
       setLatestNewHasPendingReorder(false);
 
-      // reload from server to ensure UI matches DB
       const data = await getLatestNewMoviesAdminService(userInfo.token, 100);
       setLatestNewMovies(Array.isArray(data) ? data.slice(0, 100) : []);
     } catch (e) {
@@ -414,9 +415,7 @@ function HomeScreen() {
   };
 
   /* ============================================================
-     ✅ RENDER HELPERS (IMPORTANT FIX)
-     These are functions (NOT inner React components), so React won’t
-     unmount/mount them on every HomeScreen re-render.
+     ✅ Render helpers
      ============================================================ */
 
   const renderTrendingReorderBar = () => {
@@ -552,13 +551,21 @@ function HomeScreen() {
             ))}
           </div>
 
-          <div className="flex justify-center mt-8 mb-20">
-            <Link
-              to="/movies"
-              className="bg-customPurple hover:bg-transparent border-2 border-customPurple text-white px-8 py-3 rounded-md font-semibold text-base transitions"
-            >
-              Show More
-            </Link>
+          {/* ✅ Show More + Mobile 1:1 Ad BELOW it */}
+          <div className="mt-8 mb-20">
+            <div className="flex justify-center">
+              <Link
+                to="/movies"
+                className="bg-customPurple hover:bg-transparent border-2 border-customPurple text-white px-8 py-3 rounded-md font-semibold text-base transitions"
+              >
+                Show More
+              </Link>
+            </div>
+
+            <EffectiveGateSquareAd
+              refreshKey="home-mobile-trending"
+              className="px-0"
+            />
           </div>
         </>
       ) : (
@@ -586,13 +593,21 @@ function HomeScreen() {
             ))}
           </div>
 
-          <div className="flex justify-center mt-8 mb-20">
-            <Link
-              to="/movies"
-              className="bg-customPurple hover:bg-transparent border-2 border-customPurple text-white px-8 py-3 rounded-md font-semibold text-base transitions"
-            >
-              Show More
-            </Link>
+          {/* ✅ Show More + Mobile 1:1 Ad BELOW it */}
+          <div className="mt-8 mb-20">
+            <div className="flex justify-center">
+              <Link
+                to="/movies"
+                className="bg-customPurple hover:bg-transparent border-2 border-customPurple text-white px-8 py-3 rounded-md font-semibold text-base transitions"
+              >
+                Show More
+              </Link>
+            </div>
+
+            <EffectiveGateSquareAd
+              refreshKey="home-mobile-newreleases"
+              className="px-0"
+            />
           </div>
         </>
       ) : (
@@ -654,6 +669,12 @@ function HomeScreen() {
       <LazyLoadSection>
         <PunjabiSection />
       </LazyLoadSection>
+
+      {/* ✅ Mobile 1:1 Ad BELOW Punjabi (BrowseBy tab) */}
+      <EffectiveGateSquareAd
+        refreshKey="home-mobile-browseby"
+        className="px-4"
+      />
 
       <LazyLoadSection height="400px">
         <Promos />
@@ -720,8 +741,11 @@ function HomeScreen() {
             </Link>
           </div>
 
-          {/* ✅ Ad under Trending "Show More" */}
-          <EffectiveGateNativeBanner />
+          {/* ✅ Desktop 4:1 Ad under Trending "Show More" */}
+          <EffectiveGateNativeBanner
+            refreshKey="home-desktop-trending"
+            key="home-desktop-trending"
+          />
         </>
       ) : (
         <div className="w-full gap-6 flex-colo py-12">
@@ -757,8 +781,11 @@ function HomeScreen() {
             </Link>
           </div>
 
-          {/* ✅ Ad under New Releases "Show More" */}
-          <EffectiveGateNativeBanner />
+          {/* ✅ Desktop 4:1 Ad under New Releases "Show More" */}
+          <EffectiveGateNativeBanner
+            refreshKey="home-desktop-newreleases"
+            key="home-desktop-newreleases"
+          />
         </>
       ) : (
         <div className="w-full gap-6 flex-colo py-12">
@@ -812,8 +839,11 @@ function HomeScreen() {
         <PunjabiSection />
       </LazyLoadSection>
 
-      {/* ✅ AD BELOW PUNJABI (requested) */}
-      <EffectiveGateNativeBanner />
+      {/* ✅ Desktop 4:1 AD BELOW PUNJABI */}
+      <EffectiveGateNativeBanner
+        refreshKey="home-desktop-browseby"
+        key="home-desktop-browseby"
+      />
 
       <LazyLoadSection height="400px">
         <Promos />
@@ -822,7 +852,6 @@ function HomeScreen() {
         <TopRated movies={topMovies} isLoading={topLoading} />
       </LazyLoadSection>
 
-      {/* Bottom "Show More" button stays */}
       <div className="flex justify-center my-10">
         <Link
           to="/movies"
