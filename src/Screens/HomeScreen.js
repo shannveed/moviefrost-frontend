@@ -42,11 +42,13 @@ import {
   getLatestNewMoviesAdminService,
   setLatestNewMoviesService,
   reorderLatestNewMoviesService, // ✅ NEW
-
   getBannerMoviesService,
   getBannerMoviesAdminService,
   setBannerMoviesService,
 } from '../Redux/APIs/MoviesServices';
+
+// ✅ Native Banner Ad
+import EffectiveGateNativeBanner from '../Components/Ads/EffectiveGateNativeBanner';
 
 function HomeScreen() {
   const dispatch = useDispatch();
@@ -254,7 +256,7 @@ function HomeScreen() {
       ? latestNewLocalOrder
       : latestNewMovies;
 
-  // ✅ Drag handlers (same style as Movies.js)
+  // ✅ Drag handlers
   const handleLatestNewDragStart = (e, id) => {
     e.dataTransfer.effectAllowed = 'move';
     setLatestNewDraggedId(id);
@@ -283,7 +285,8 @@ function HomeScreen() {
   const handleLatestNewDragEnd = () => setLatestNewDraggedId(null);
 
   const resetLatestNewOrder = () => {
-    if (Array.isArray(latestNewMovies)) setLatestNewLocalOrder([...latestNewMovies]);
+    if (Array.isArray(latestNewMovies))
+      setLatestNewLocalOrder([...latestNewMovies]);
     setLatestNewHasPendingReorder(false);
     setLatestNewDraggedId(null);
   };
@@ -315,7 +318,7 @@ function HomeScreen() {
     }
   };
 
-  // ✅ Admin-only: remove from Trending (Latest New)
+  // ✅ Admin-only: remove from Trending
   const handleRemoveFromLatestNew = async (movieId) => {
     if (!isAdmin || !userInfo?.token) return;
 
@@ -395,7 +398,7 @@ function HomeScreen() {
     return Array.isArray(movies) ? movies : [];
   }, [bannerMovies, movies]);
 
-  // Latest Movies grid for home (page 1 slice)
+  // Latest Movies grid for home
   const latestGridMovies = useMemo(
     () => (Array.isArray(movies) ? movies.slice(0, 50) : []),
     [movies]
@@ -410,15 +413,19 @@ function HomeScreen() {
     url: 'https://moviefrost.com',
   };
 
-  // ✅ Trending reorder bar (admin-only)
-  const TrendingReorderBar = () => {
+  /* ============================================================
+     ✅ RENDER HELPERS (IMPORTANT FIX)
+     These are functions (NOT inner React components), so React won’t
+     unmount/mount them on every HomeScreen re-render.
+     ============================================================ */
+
+  const renderTrendingReorderBar = () => {
     if (!isAdmin) return null;
 
     const baseBtn =
       'px-4 py-2 text-sm rounded border transitions disabled:opacity-60';
     const activeBtn = 'bg-customPurple border-customPurple text-white';
-    const inactiveBtn =
-      'border-customPurple text-white hover:bg-customPurple';
+    const inactiveBtn = 'border-customPurple text-white hover:bg-customPurple';
 
     return (
       <div className="my-4 p-4 bg-dry rounded-lg border border-border">
@@ -465,10 +472,7 @@ function HomeScreen() {
     );
   };
 
-  /* ================================
-     MOBILE Home Tabs UI
-     ================================ */
-  const MobileHomeTabs = () => {
+  const renderMobileHomeTabs = () => {
     const tabBase =
       'flex-1 px-3 py-2 rounded-md text-sm font-semibold transitions border';
     const active = 'bg-customPurple text-white border-customPurple';
@@ -501,8 +505,7 @@ function HomeScreen() {
     );
   };
 
-  // ✅ Mobile Trending Tab content
-  const MobileLatestNewTab = () => (
+  const renderMobileLatestNewTab = () => (
     <div className="sm:hidden">
       {latestNewLoading ? (
         <div className="w-full flex-colo py-12">
@@ -512,7 +515,7 @@ function HomeScreen() {
         <p className="text-red-500 text-sm">{latestNewError}</p>
       ) : trendingDisplayMovies.length > 0 ? (
         <>
-          <TrendingReorderBar />
+          {renderTrendingReorderBar()}
 
           <div className="grid grid-cols-2 gap-2">
             {trendingDisplayMovies.slice(0, 100).map((m) => (
@@ -569,8 +572,7 @@ function HomeScreen() {
     </div>
   );
 
-  // Mobile Latest Movies Tab content
-  const MobileLatestMoviesTab = () => (
+  const renderMobileLatestMoviesTab = () => (
     <div className="sm:hidden">
       {isLoading ? (
         <div className="w-full flex-colo py-12">
@@ -606,20 +608,16 @@ function HomeScreen() {
     </div>
   );
 
-  // ✅ Mobile Home Content
-  const MobileHomeContent = () => (
+  const renderMobileHomeContent = () => (
     <div className="my-4 mobile:px-4">
-      <MobileHomeTabs />
-      {activeMobileHomeTab === 'latestNew' ? (
-        <MobileLatestNewTab />
-      ) : (
-        <MobileLatestMoviesTab />
-      )}
+      {renderMobileHomeTabs()}
+      {activeMobileHomeTab === 'latestNew'
+        ? renderMobileLatestNewTab()
+        : renderMobileLatestMoviesTab()}
     </div>
   );
 
-  // Mobile BrowseBy tab (unchanged)
-  const MobileBrowseByContent = () => (
+  const renderMobileBrowseByContent = () => (
     <div className="mb-20">
       <PopularMovies movies={movies} isLoading={isLoading} />
 
@@ -666,8 +664,7 @@ function HomeScreen() {
     </div>
   );
 
-  // Desktop Trending content
-  const DesktopLatestNewContent = () => (
+  const renderDesktopLatestNewContent = () => (
     <div className="my-8">
       {latestNewLoading ? (
         <div className="w-full flex-colo py-12">
@@ -677,7 +674,7 @@ function HomeScreen() {
         <p className="text-red-500 text-sm">{latestNewError}</p>
       ) : trendingDisplayMovies.length > 0 ? (
         <>
-          <TrendingReorderBar />
+          {renderTrendingReorderBar()}
 
           <div className="grid xl:grid-cols-5 2xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 gap-4">
             {trendingDisplayMovies.slice(0, 100).map((m) => (
@@ -722,6 +719,9 @@ function HomeScreen() {
               Show More
             </Link>
           </div>
+
+          {/* ✅ Ad under Trending "Show More" */}
+          <EffectiveGateNativeBanner />
         </>
       ) : (
         <div className="w-full gap-6 flex-colo py-12">
@@ -734,8 +734,7 @@ function HomeScreen() {
     </div>
   );
 
-  // Desktop Latest content (existing)
-  const DesktopLatestContent = () => (
+  const renderDesktopLatestContent = () => (
     <div className="my-8">
       {isLoading ? (
         <div className="w-full flex-colo py-12">
@@ -757,6 +756,9 @@ function HomeScreen() {
               Show More
             </Link>
           </div>
+
+          {/* ✅ Ad under New Releases "Show More" */}
+          <EffectiveGateNativeBanner />
         </>
       ) : (
         <div className="w-full gap-6 flex-colo py-12">
@@ -771,8 +773,8 @@ function HomeScreen() {
     </div>
   );
 
-  // Desktop BrowseBy (existing)
-  const DesktopBrowseByContent = () => (
+  // ✅ BrowseBy Film Industry: Ad moved BELOW Punjabi section
+  const renderDesktopBrowseByContent = () => (
     <>
       <PopularMovies movies={movies} isLoading={isLoading} />
 
@@ -810,17 +812,29 @@ function HomeScreen() {
         <PunjabiSection />
       </LazyLoadSection>
 
+      {/* ✅ AD BELOW PUNJABI (requested) */}
+      <EffectiveGateNativeBanner />
+
       <LazyLoadSection height="400px">
         <Promos />
       </LazyLoadSection>
       <LazyLoadSection>
         <TopRated movies={topMovies} isLoading={topLoading} />
       </LazyLoadSection>
+
+      {/* Bottom "Show More" button stays */}
+      <div className="flex justify-center my-10">
+        <Link
+          to="/movies"
+          className="bg-customPurple hover:bg-transparent border-2 border-customPurple text-white px-10 py-3 rounded-md font-semibold text-base transitions"
+        >
+          Show More
+        </Link>
+      </div>
     </>
   );
 
-  // Desktop tabs (existing)
-  const DesktopTabs = () => (
+  const renderDesktopTabs = () => (
     <div className="flex items-center gap-4 my-6 border-b border-border pb-4">
       <button
         onClick={() => setActiveDesktopTab('latestNew')}
@@ -883,17 +897,17 @@ function HomeScreen() {
 
         {/* MOBILE */}
         <div className="sm:hidden">
-          {activeMobileTab === 'home' && <MobileHomeContent />}
-          {activeMobileTab === 'browseBy' && <MobileBrowseByContent />}
+          {activeMobileTab === 'home' && renderMobileHomeContent()}
+          {activeMobileTab === 'browseBy' && renderMobileBrowseByContent()}
         </div>
 
         {/* DESKTOP */}
         <div className="hidden sm:block">
-          <DesktopTabs />
+          {renderDesktopTabs()}
 
-          {activeDesktopTab === 'latestNew' && <DesktopLatestNewContent />}
-          {activeDesktopTab === 'latest' && <DesktopLatestContent />}
-          {activeDesktopTab === 'browseBy' && <DesktopBrowseByContent />}
+          {activeDesktopTab === 'latestNew' && renderDesktopLatestNewContent()}
+          {activeDesktopTab === 'latest' && renderDesktopLatestContent()}
+          {activeDesktopTab === 'browseBy' && renderDesktopBrowseByContent()}
         </div>
       </div>
     </Layout>

@@ -39,6 +39,9 @@ import {
   getRelatedMoviesAdminService,
 } from '../Redux/APIs/MoviesServices';
 
+// ✅ NEW: Native Banner Ad
+import EffectiveGateNativeBanner from '../Components/Ads/EffectiveGateNativeBanner';
+
 // ---------------- Helpers ----------------
 const FRONTEND_BASE_URL = 'https://www.moviefrost.com';
 
@@ -994,6 +997,8 @@ function WatchPage() {
           )}
         </div>
 
+
+
         {/* Desktop episode list */}
         {movie.type === 'WebSeries' && (
           <div className="hidden sm:block mt-6 bg-main border border-border rounded-lg p-4">
@@ -1039,7 +1044,8 @@ function WatchPage() {
             </div>
           </div>
         )}
-
+        {/* ✅ Ad under Player */}
+        <EffectiveGateNativeBanner />
         {/* Related Movies/WebSeries */}
         <div className="my-16">
           <Titles title="Related Movies" Icon={BsCollectionFill} />

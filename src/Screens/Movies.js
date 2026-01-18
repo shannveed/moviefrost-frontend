@@ -26,6 +26,9 @@ import {
   setBannerMoviesService,
 } from '../Redux/APIs/MoviesServices';
 
+// ✅ NEW: Native Banner Ad
+import EffectiveGateNativeBanner from '../Components/Ads/EffectiveGateNativeBanner';
+
 const MOVIES_PAGE_STATE_KEY = 'moviesPageState';
 const MOVIES_PAGE_RESTORE_KEY = 'moviesPageRestorePending';
 
@@ -486,7 +489,7 @@ function MoviesPage() {
         } movies, ${language?.title || 'all languages'}, ${
           year?.title || 'all years'
         }`}
-        url={`https://moviefrost.com/movies${
+        url={`https://www.moviefrost.com/movies${
           search ? `/${search}` : ''
         }${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}
       />
@@ -662,6 +665,9 @@ function MoviesPage() {
                 <TbPlayerTrackNext className="text-md" />
               </button>
             </div>
+
+            {/* ✅ Ad under pagination */}
+            <EffectiveGateNativeBanner />
           </>
         ) : (
           <div className="w-full gap-6 flex-colo min-h-screen">
